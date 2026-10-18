@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DuelGraph from '../components/DuelGraph.vue'
 import ManipulationFinder from '../components/ManipulationFinder.vue'
+import RichText from '../components/RichText'
 import RoundsView from '../components/RoundsView.vue'
 import SpatialMap from '../components/SpatialMap.vue'
 import { favourites, changed, model, resultFor, useSpatial, useYee } from '../composables/useApi'
@@ -11,6 +13,7 @@ import type { Crowd, Election, MethodId, SpatialCandidate } from '../types'
 
 // Everything from the journey on one map: as many candidates and crowds as you
 // like, every method side by side.
+const { t, n } = useI18n()
 const candidates = ref<SpatialCandidate[]>([
   { name: 'Ada', x: 0.25, y: 0.3 },
   { name: 'Bea', x: 0.52, y: 0.55 },
@@ -103,11 +106,8 @@ function updateCrowd(patch: Partial<Crowd>) {
 <template>
   <div class="sandbox">
     <header class="intro">
-      <h1>Sandbox</h1>
-      <p class="muted">
-        Drag candidates and crowds, add more of each, let voters lie, and compare every method on the same voters.
-        Click a method's card to colour the map by it.
-      </p>
+      <h1>{{ t('sandbox.title') }}</h1>
+      <p class="muted">{{ t('sandbox.intro') }}</p>
     </header>
 
     <div class="layout">
@@ -122,27 +122,29 @@ function updateCrowd(patch: Partial<Crowd>) {
             :winner="main?.outcome.winner"
             :yee="showYee ? yee : null"
             :selected="selected"
-            label="Sandbox map"
+            :label="t('sandbox.mapLabel')"
             @select="selected = $event"
           />
         </div>
         <div class="row tools">
-          <button class="btn small" :disabled="candidates.length >= 8" @click="addCandidate">+ Candidate</button>
+          <button class="btn small" :disabled="candidates.length >= 8" @click="addCandidate">{{ t('sandbox.addCandidate') }}</button>
           <button class="btn small" :disabled="candidates.length <= 2" @click="removeCandidate">− {{ candidates[candidates.length - 1].name }}</button>
-          <button class="btn small" :disabled="crowds.length >= 6" @click="addCrowd">+ Crowd</button>
-          <label class="row small"><input v-model="showYee" type="checkbox" /> Yee map ({{ methodName(primary) }})</label>
+          <button class="btn small" :disabled="crowds.length >= 6" @click="addCrowd">{{ t('sandbox.addCrowd') }}</button>
+          <label class="row small">
+            <input v-model="showYee" type="checkbox" /> {{ t('sandbox.yee', { method: methodName(primary) }) }}
+          </label>
         </div>
         <div v-if="selectedCrowd" class="card crowd-edit">
           <div class="row">
-            <span class="eyebrow">Selected crowd</span>
-            <button class="btn small" :disabled="crowds.length <= 1" @click="removeCrowd">Remove crowd</button>
+            <span class="eyebrow">{{ t('sandbox.selectedCrowd') }}</span>
+            <button class="btn small" :disabled="crowds.length <= 1" @click="removeCrowd">{{ t('sandbox.removeCrowd') }}</button>
           </div>
           <label class="small">
-            Voters: {{ selectedCrowd.count }}
+            {{ t('sandbox.crowdVoters', { n: selectedCrowd.count }) }}
             <input type="range" min="1" max="200" :value="selectedCrowd.count" @input="updateCrowd({ count: Number(($event.target as HTMLInputElement).value) })" />
           </label>
           <label class="small">
-            Spread: {{ selectedCrowd.spread.toFixed(2) }}
+            {{ t('sandbox.spread', { value: n(selectedCrowd.spread, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) }}
             <input type="range" min="0" max="0.45" step="0.01" :value="selectedCrowd.spread" @input="updateCrowd({ spread: Number(($event.target as HTMLInputElement).value) })" />
           </label>
         </div>
@@ -151,17 +153,17 @@ function updateCrowd(patch: Partial<Crowd>) {
       <div class="right">
         <div class="card stack">
           <label class="small">
-            Strategic voters: <strong>{{ Math.round(strategic * 100) }}%</strong>
+            <RichText :text="t('sandbox.strategic', { share: n(strategic, { style: 'percent' }) })" />
             <input v-model.number="strategic" type="range" min="0" max="1" step="0.05" />
           </label>
-          <label class="row small"><input v-model="useRadius" type="checkbox" /> Approve candidates within a fixed distance</label>
+          <label class="row small"><input v-model="useRadius" type="checkbox" /> {{ t('sandbox.useRadius') }}</label>
           <label v-if="useRadius" class="small">
-            Approval radius: {{ radius.toFixed(2) }}
+            {{ t('sandbox.radius', { value: n(radius, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }) }}
             <input v-model.number="radius" type="range" min="0.05" max="0.8" step="0.01" />
           </label>
-          <p v-else class="small muted">Voters approve every candidate closer than their average distance.</p>
+          <p v-else class="small muted">{{ t('sandbox.defaultApproval') }}</p>
           <div>
-            <div class="eyebrow">Methods to compare</div>
+            <div class="eyebrow">{{ t('sandbox.compare') }}</div>
             <div class="row methods">
               <button
                 v-for="m in ALL_METHODS"
@@ -190,10 +192,17 @@ function updateCrowd(patch: Partial<Crowd>) {
             <span class="m">{{ methodName(r.method) }}</span>
             <span class="w">
               <span class="sw" :style="{ background: color(r.outcome.winner) }" />
-              {{ r.outcome.tied.length > 1 ? 'tie' : names[r.outcome.winner] }}
+              {{ r.outcome.tied.length > 1 ? t('common.tie') : names[r.outcome.winner] }}
             </span>
-            <span v-if="r.spoilers.length" class="small spoil">⚠ {{ r.spoilers.map((s) => names[s.candidate]).join(', ') }} spoiling</span>
-            <span v-if="data.pairwise.condorcet_winner !== null && r.outcome.winner !== data.pairwise.condorcet_winner" class="small muted">not the Condorcet winner</span>
+            <span v-if="r.spoilers.length" class="small spoil">
+              {{ t('sandbox.spoiling', { names: r.spoilers.map((s) => names[s.candidate]).join(', ') }) }}
+            </span>
+            <span
+              v-if="data.pairwise.condorcet_winner !== null && r.outcome.winner !== data.pairwise.condorcet_winner"
+              class="small muted"
+            >
+              {{ t('sandbox.notCondorcet') }}
+            </span>
           </button>
         </div>
 
@@ -201,11 +210,11 @@ function updateCrowd(patch: Partial<Crowd>) {
           <RoundsView v-model:step="step" :outcome="main.outcome" :names="names" />
         </div>
         <div v-if="data" class="card">
-          <div class="eyebrow">Head to head</div>
+          <div class="eyebrow">{{ t('sandbox.headToHead') }}</div>
           <DuelGraph :names="names" :pairwise="data.pairwise" />
         </div>
         <div v-if="finderElection" class="card">
-          <div class="eyebrow">Can anyone win by lying under {{ methodName(primary) }}?</div>
+          <div class="eyebrow">{{ t('sandbox.canLie', { method: methodName(primary) }) }}</div>
           <ManipulationFinder :election="finderElection" :method="primary" :applicable="false" />
         </div>
       </div>

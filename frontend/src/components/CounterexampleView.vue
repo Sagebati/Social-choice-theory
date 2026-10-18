@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { BALLOT_KIND, methodName, winnerName } from '../election'
 import type { Counterexample } from '../types'
 import BallotList from './BallotList.vue'
+import RichText from './RichText'
 
 // A method breaking a criterion: the election before (and after) the change.
 const props = defineProps<{ example: Counterexample }>()
@@ -14,20 +15,32 @@ const kind = computed(() => BALLOT_KIND[props.example.method])
     <p class="explanation">{{ example.explanation }}</p>
     <div class="sides">
       <div class="side">
-        <div class="eyebrow">{{ example.after ? 'Before' : 'The election' }}</div>
+        <div class="eyebrow">{{ example.after ? $t('counterexample.before') : $t('counterexample.election') }}</div>
         <BallotList :names="example.before.candidates" :ballots="example.before.ballots" :kind="kind" />
-        <p class="small">
-          {{ methodName(example.method) }} elects
-          <strong>{{ winnerName(example.before.candidates, example.before_outcome) }}</strong>
-        </p>
+        <RichText
+          tag="p"
+          class="small"
+          :text="
+            $t('counterexample.elects', {
+              method: methodName(example.method),
+              winner: winnerName(example.before.candidates, example.before_outcome),
+            })
+          "
+        />
       </div>
       <div v-if="example.after && example.after_outcome" class="side">
-        <div class="eyebrow">After</div>
+        <div class="eyebrow">{{ $t('counterexample.after') }}</div>
         <BallotList :names="example.after.candidates" :ballots="example.after.ballots" :kind="kind" />
-        <p class="small">
-          {{ methodName(example.method) }} elects
-          <strong>{{ winnerName(example.after.candidates, example.after_outcome) }}</strong>
-        </p>
+        <RichText
+          tag="p"
+          class="small"
+          :text="
+            $t('counterexample.elects', {
+              method: methodName(example.method),
+              winner: winnerName(example.after.candidates, example.after_outcome),
+            })
+          "
+        />
       </div>
     </div>
   </div>

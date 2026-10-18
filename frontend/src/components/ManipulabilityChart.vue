@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { methodName } from '../election'
 import type { Manipulability } from '../types'
 
@@ -9,15 +10,16 @@ import type { Manipulability } from '../types'
 const props = defineProps<{ data: Manipulability[]; highlight?: string | null }>()
 
 const rows = computed(() => [...props.data].sort((a, b) => b.rate - a.rate))
-const pct = (r: number) => `${Math.round(r * 100)}%`
+const { t, n } = useI18n()
+const pct = (r: number) => n(r, { style: 'percent' })
 </script>
 
 <template>
   <figure class="chart">
     <div class="axis small muted" aria-hidden="true">
-      <span>0%</span><span>50%</span><span>100%</span>
+      <span>{{ pct(0) }}</span><span>{{ pct(0.5) }}</span><span>{{ pct(1) }}</span>
     </div>
-    <div class="bars" role="table" aria-label="Share of random elections that can be manipulated, by method">
+    <div class="bars" role="table" :aria-label="t('manipulability.aria')">
       <div
         v-for="r in rows"
         :key="r.method"
@@ -25,7 +27,7 @@ const pct = (r: number) => `${Math.round(r * 100)}%`
         role="row"
         :class="{ hl: highlight === r.method }"
         tabindex="0"
-        :title="`${methodName(r.method)}: ${r.manipulable} of ${r.samples} elections manipulable (${pct(r.rate)})`"
+        :title="t('manipulability.rowTitle', { method: methodName(r.method), n: r.manipulable, samples: r.samples, share: pct(r.rate) })"
       >
         <span class="label" role="rowheader">{{ methodName(r.method) }}</span>
         <span class="track" role="cell">
@@ -35,8 +37,7 @@ const pct = (r: number) => `${Math.round(r * 100)}%`
       </div>
     </div>
     <figcaption class="small muted">
-      {{ data[0]?.samples ?? 0 }} random elections with {{ data[0]?.candidates ?? 3 }} candidates; the same elections for
-      every method.
+      {{ t('manipulability.caption', { samples: data[0]?.samples ?? 0, candidates: data[0]?.candidates ?? 3 }) }}
     </figcaption>
   </figure>
 </template>

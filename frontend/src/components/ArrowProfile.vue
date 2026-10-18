@@ -13,9 +13,9 @@ defineProps<{ profile: ArrowProfile; names: string[]; changed?: number[]; captio
       <thead>
         <tr>
           <th v-for="(_, v) in profile.ballots" :key="v" :class="{ changed: changed?.includes(v) }" scope="col">
-            Voter {{ v + 1 }}
+            {{ $t('arrowProfile.voter', { n: v + 1 }) }}
           </th>
-          <th class="society" scope="col">Society</th>
+          <th class="society" scope="col">{{ $t('arrowProfile.society') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -32,7 +32,7 @@ defineProps<{ profile: ArrowProfile; names: string[]; changed?: number[]; captio
                 </span>
               </div>
             </template>
-            <span v-else class="cycle">no ranking<br />(a cycle)</span>
+            <span v-else class="cycle">{{ $t('arrowProfile.noRanking') }}<br />{{ $t('arrowProfile.cycle') }}</span>
           </td>
         </tr>
       </tbody>

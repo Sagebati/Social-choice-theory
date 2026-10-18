@@ -9,7 +9,7 @@ defineProps<{ names: string[]; pairwise: Pairwise }>()
 <template>
   <div class="wrap">
     <table>
-      <caption class="small muted">Voters preferring the row candidate to the column candidate</caption>
+      <caption class="small muted">{{ $t('duelMatrix.caption') }}</caption>
       <thead>
         <tr>
           <th />
@@ -31,7 +31,11 @@ defineProps<{ names: string[]; pairwise: Pairwise }>()
             <template v-if="i !== j">
               {{ pairwise.matrix[i][j] }}
               <span class="verdict">{{
-                pairwise.matrix[i][j] > pairwise.matrix[j][i] ? 'wins' : pairwise.matrix[i][j] < pairwise.matrix[j][i] ? 'loses' : 'tie'
+                pairwise.matrix[i][j] > pairwise.matrix[j][i]
+                  ? $t('duelMatrix.wins')
+                  : pairwise.matrix[i][j] < pairwise.matrix[j][i]
+                    ? $t('duelMatrix.loses')
+                    : $t('common.tie')
               }}</span>
             </template>
           </td>

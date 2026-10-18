@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { color, initial, onColor } from '../palette'
 import type { ElectionInput } from '../types'
 
@@ -17,6 +18,7 @@ const props = withDefaults(
 )
 
 const election = defineModel<ElectionInput>({ required: true })
+const { t } = useI18n()
 
 function update(fn: (e: ElectionInput) => void) {
   const copy: ElectionInput = {
@@ -53,28 +55,33 @@ function removeBloc(g: number) {
     <div v-for="(b, g) in election.ballots" :key="g" class="bloc" :class="{ highlight: highlight.includes(g) }">
       <div class="weight">
         <template v-if="!lockWeights">
-          <button class="step" :aria-label="`Fewer voters in bloc ${g + 1}`" @click="setWeight(g, b.weight - 1)">−</button>
+          <button class="step" :aria-label="t('profileEditor.fewer', { n: g + 1 })" @click="setWeight(g, b.weight - 1)">−</button>
           <input
             type="number"
             min="0"
             :max="maxWeight"
             :value="b.weight"
-            :aria-label="`Voters in bloc ${g + 1}`"
+            :aria-label="t('profileEditor.votersIn', { n: g + 1 })"
             @change="setWeight(g, Number(($event.target as HTMLInputElement).value))"
           />
-          <button class="step" :aria-label="`More voters in bloc ${g + 1}`" @click="setWeight(g, b.weight + 1)">+</button>
+          <button class="step" :aria-label="t('profileEditor.more', { n: g + 1 })" @click="setWeight(g, b.weight + 1)">+</button>
         </template>
         <strong v-else class="fixed">{{ b.weight }}</strong>
-        <span class="muted small">voters</span>
+        <span class="muted small">{{ t('profileEditor.voters', b.weight) }}</span>
       </div>
-      <ol class="ranking" :aria-label="`Ranking of bloc ${g + 1}`">
+      <ol class="ranking" :aria-label="t('profileEditor.rankingAria', { n: g + 1 })">
         <li v-for="(c, pos) in b.ranking" :key="c">
           <button
             class="cand"
             :style="{ background: color(c), color: onColor(c) }"
             :disabled="lockRankings || pos === 0"
-            :title="lockRankings || pos === 0 ? election.candidates[c] : `Move ${election.candidates[c]} up this ballot`"
-            :aria-label="`${pos + 1}: ${election.candidates[c]}${lockRankings || pos === 0 ? '' : ', move up'}`"
+            :title="lockRankings || pos === 0 ? election.candidates[c] : t('profileEditor.moveUp', { name: election.candidates[c] })"
+            :aria-label="
+              t(lockRankings || pos === 0 ? 'profileEditor.position' : 'profileEditor.positionMovable', {
+                pos: pos + 1,
+                name: election.candidates[c],
+              })
+            "
             @click="raise(g, pos)"
           >
             <span v-if="!lockRankings && pos > 0" class="arrow" aria-hidden="true">‹</span>
@@ -84,10 +91,10 @@ function removeBloc(g: number) {
           <span v-if="pos < b.ranking.length - 1" class="gt" aria-hidden="true">›</span>
         </li>
       </ol>
-      <button v-if="structural && election.ballots.length > 1" class="btn small" @click="removeBloc(g)">Remove</button>
+      <button v-if="structural && election.ballots.length > 1" class="btn small" @click="removeBloc(g)">{{ t('profileEditor.remove') }}</button>
     </div>
-    <button v-if="structural" class="btn small" @click="addBloc">+ Add a bloc of voters</button>
-    <p v-if="!lockRankings" class="hint muted small">Tap a candidate to move them up that bloc's ballot.</p>
+    <button v-if="structural" class="btn small" @click="addBloc">{{ t('profileEditor.addBloc') }}</button>
+    <p v-if="!lockRankings" class="hint muted small">{{ t('profileEditor.hint') }}</p>
   </div>
 </template>
 

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 import { BALLOT_KIND, methodName, tacticName } from '../election'
+import { locale } from '../i18n'
 import type { Election, ElectionInput, Manipulation, MethodId } from '../types'
 import Chip from './Chip.vue'
 
@@ -15,6 +17,7 @@ const emit = defineEmits<{ apply: [Election, Manipulation] }>()
 const results = ref<Manipulation[] | null>(null)
 const error = ref<string | null>(null)
 const loading = ref(false)
+const { t } = useI18n()
 
 // A different election makes old answers meaningless.
 watch(
@@ -24,6 +27,11 @@ watch(
     error.value = null
   },
 )
+
+// The explanations are written in the reader's language: ask again in the new one.
+watch(locale, () => {
+  if (results.value) void search()
+})
 
 async function search() {
   loading.value = true
@@ -42,14 +50,11 @@ async function search() {
   <div class="finder">
     <div class="row">
       <button class="btn primary" :disabled="loading" @click="search">
-        {{ loading ? 'Searching every possible lie…' : `Find a profitable lie (${methodName(method)})` }}
+        {{ loading ? t('manipulationFinder.searching') : t('manipulationFinder.find', { method: methodName(method) }) }}
       </button>
     </div>
     <p v-if="error" class="notice">{{ error }}</p>
-    <p v-else-if="results && results.length === 0" class="small">
-      No bloc of voters can get a better result by lying here. Not every election is manipulable, but the
-      Gibbard–Satterthwaite theorem says some always are.
-    </p>
+    <p v-else-if="results && results.length === 0" class="small">{{ t('manipulationFinder.none') }}</p>
     <ul v-else-if="results" class="list">
       <li v-for="(m, i) in results" :key="i" class="item">
         <div class="row">
@@ -58,16 +63,16 @@ async function search() {
             <Chip :index="m.honest_winner" :name="election.candidates[m.honest_winner]" /> →
             <Chip :index="m.new_winner" :name="election.candidates[m.new_winner]" strong />
           </span>
-          <span class="small muted">{{ m.voters }} liar{{ m.voters === 1 ? '' : 's' }}</span>
+          <span class="small muted">{{ t('manipulationFinder.liars', m.voters) }}</span>
         </div>
         <p class="small">{{ m.explanation }}</p>
         <button v-if="applicable" class="btn small" @click="emit('apply', m.election, m)">
-          Apply this lie
+          {{ t('manipulationFinder.apply') }}
         </button>
       </li>
     </ul>
     <p v-if="results && BALLOT_KIND[method] !== 'ranked' && results.length" class="small muted">
-      Only the part of the ballot this method reads is changed.
+      {{ t('manipulationFinder.partOnly') }}
     </p>
   </div>
 </template>
