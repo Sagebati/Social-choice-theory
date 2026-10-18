@@ -37,6 +37,17 @@ function initialLocale(): Locale {
   return 'en'
 }
 
+// French elides "de" and "que" before a vowel, names included: "le groupe
+// d’Ana", "plutôt qu’Erik". Messages are written with the full word, since the
+// name is a parameter.
+export function elide(text: string): string {
+  return text.replace(/\b([Dd]e|[Qq]ue) (?=[AEIOUÉÈÊÀ][a-zà-ÿ])/g, (_, word: string) => `${word.slice(0, -1)}’`)
+}
+
+function postTranslation<T>(text: T): T {
+  return (typeof text === 'string' && i18n.global.locale.value === 'fr' ? elide(text) : text) as T
+}
+
 // French uses the singular for 0 and 1 ("0 électeur", "1 électeur").
 // With three forms ("none | one | many") the first is for zero, as in English.
 function frenchPlural(n: number, forms: number): number {
@@ -53,6 +64,7 @@ export const i18n = createI18n({
   // Messages carry <strong>, <em> and links, rendered by RichText as elements,
   // never as HTML.
   warnHtmlMessage: false,
+  postTranslation,
   missingWarn: import.meta.env.DEV,
   fallbackWarn: import.meta.env.DEV,
 })

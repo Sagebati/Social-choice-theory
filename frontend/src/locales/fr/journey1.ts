@@ -69,7 +69,7 @@ const messages: typeof source = {
 
   t05: {
     intro:
-      'Vous le connaissez bien : c’est ainsi que la France élit son président, avec une parade au défaut du scrutin à un tour. Si personne n’obtient la majorité, les deux premiers se retrouvent deux semaines plus tard pour un <strong>second tour</strong>, et tout le monde revote, en choisissant entre ces deux-là seulement.',
+      'Vous le connaissez bien : c’est ainsi que la France élit son président, et c’est une parade au défaut du scrutin à un tour. Si personne n’obtient la majorité, les deux premiers se retrouvent deux semaines plus tard pour un <strong>second tour</strong>, et tout le monde revote, en choisissant entre ces deux-là seulement.',
     roundOne:
       'Le premier tour, c’est le décompte à une croix que vous connaissez déjà : Erik 9, Amira 7. Personne n’a la majorité, donc Erik et Amira vont au second tour. Chaque groupe coche maintenant celui des deux finalistes qu’il classe le plus haut.',
     question: 'Qui remporte le second tour ?',

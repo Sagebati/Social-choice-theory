@@ -37,7 +37,7 @@ describe('French messages', () => {
   it('are actually translated', () => {
     // Names, symbols and words French borrows as they are.
     const same = [...english].filter(([key, s]) => french.get(key) === s && /[a-z]{4,}/.test(s))
-    const allowed = /^(✓ Condorcet|STAR|Minimax|Coombs|Copeland|Schulze|Duels|Points|Push-over|Riverton|auto|points|\{.*)/
+    const allowed = /^(✓ Condorcet|Participation|STAR|Minimax|Coombs|Copeland|Schulze|Duels|Points|Push-over|Riverton|auto|points|\{.*)/
     expect(same.filter(([, s]) => !allowed.test(s)).map(([k]) => k)).toEqual([])
   })
 })
@@ -84,5 +84,16 @@ describe('French typography', () => {
       'Qui gagne ? Lui : « Erik » ; enfin !',
     )
     expect(typesetFrench('https://example.org, 16–14')).toBe('https://example.org, 16–14')
+  })
+})
+
+describe('French elision', () => {
+  it('turns "de" and "que" into "d’" and "qu’" before a vowel', async () => {
+    const { elide } = await import('../i18n')
+    expect(elide('le groupe de Ana, plutôt que Erik, de Bruno et de Écully')).toBe(
+      'le groupe d’Ana, plutôt qu’Erik, de Bruno et d’Écully',
+    )
+    expect(elide('De Amira à la victoire de A')).toBe('D’Amira à la victoire de A')
+    expect(elide('monde Ana')).toBe('monde Ana')
   })
 })

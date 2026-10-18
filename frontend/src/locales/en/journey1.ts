@@ -74,7 +74,7 @@ export default {
     challenge: 'Look at the runoff column on each ballot below and check the count.',
     success: '{winner} wins the runoff {won}–{lost}. Same voters, second system, second mayor.',
     lesson:
-      'A runoff can never elect someone a majority would vote against one on one, so Erik, who loses every duel, is safe from winning. But a runoff only ever looks at two names, chosen by a plurality count, with all its flaws.',
+      'A runoff can never elect someone who loses one on one to every rival, so Erik, who loses every duel, is safe from winning. But a runoff only ever looks at two names, chosen by a plurality count, with all its flaws.',
     hint: 'Make a prediction to hold round two.',
   },
 

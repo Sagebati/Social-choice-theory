@@ -189,7 +189,7 @@ const messages: typeof source = {
       condorcet_loser: 'Perdant de Condorcet',
       pareto: 'Unanimité',
       monotonicity: 'Monotonie',
-      participation: 'Intérêt à voter',
+      participation: 'Participation',
       iia: 'Sans trouble-fête (IIA)',
       clones: 'Insensible aux clones',
     },
