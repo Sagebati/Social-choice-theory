@@ -34,18 +34,16 @@ const messages: typeof source = {
       p1: 'Comparez les candidats deux à deux. Celui qui bat chacun de ses rivaux dans ces votes majoritaires en face-à-face est le <strong>vainqueur de Condorcet</strong> (d’après le marquis de Condorcet, 1785). Élire quelqu’un d’autre, c’est passer outre une majorité qui lui préférait le vainqueur de Condorcet. Le scrutin à un tour, le vote alternatif, Borda et les méthodes à notes peuvent tous le manquer.',
       p2: 'Le hic : il n’y a pas toujours de vainqueur de Condorcet. Ada peut battre Bea, Bea battre Cal et Cal battre Ada, chaque fois avec une vraie majorité. C’est le <strong>paradoxe de Condorcet</strong>, le terrain de jeu de ceux qui fixent l’ordre du jour et de ceux qui enterrent leurs rivaux.',
       play1: 'Jouer : un contre un',
-      play2: 'Jouer : fabriquer un cycle',
     },
     arrow: {
       title: 'Le théorème d’impossibilité d’Arrow',
       p: 'Kenneth Arrow (1951) cherchait une règle qui transforme n’importe quels classements des électeurs en un classement pour la société et qui (1) donne toujours un classement cohérent, (2) respecte l’unanimité, (3) classe X face à Y d’après la seule façon dont les électeurs classent X face à Y (pas de trouble-fête) et (4) n’a pas de dictateur. Dès trois candidats, <strong>aucune règle ne remplit les quatre conditions</strong>. Chaque méthode à classement en viole au moins une ; laquelle, c’est sa personnalité.',
-      play: 'Jouer : la liste au père Noël',
       lab: 'Vérifier chaque élection au labo',
     },
     gibbard: {
       title: 'Gibbard-Satterthwaite',
       p: 'Le jumeau du théorème d’Arrow, côté stratégie (Gibbard 1973, Satterthwaite 1975) : dès trois candidats, toute méthode qui peut élire chacun d’eux et n’est pas une dictature récompense parfois un électeur qui ment. Aucune règle, si bien conçue soit-elle, ne fait disparaître la triche. On peut seulement la rendre plus rare, plus risquée ou plus difficile à calculer.',
-      play: 'Jouer : tout système se manipule',
+      play: 'Jouer : le vote utile',
     },
     tacticsTitle: 'Les tactiques',
     tactics: {
@@ -208,12 +206,6 @@ const messages: typeof source = {
     beats: 'bat',
     cycle: 'Pas de vainqueur de Condorcet : {cycle}.',
     ties: 'Pas de vainqueur de Condorcet (certains duels sont à égalité).',
-  },
-
-  duelMatrix: {
-    caption: 'Électeurs qui préfèrent le candidat de la ligne à celui de la colonne',
-    wins: 'gagne',
-    loses: 'perd',
   },
 
   manipulability: {

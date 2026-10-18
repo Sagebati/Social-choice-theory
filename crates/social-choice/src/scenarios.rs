@@ -21,7 +21,7 @@ pub struct Scenario {
 /// plurality, two-round runoff, instant runoff, Borda and the Condorcet methods.
 ///
 /// Candidates: Amira, Bruno, Camille, Daniel, Erik. Ballots, one per group:
-/// Frank's 9, Leo's 7, Ana's 6, Fatou's 5 and Margaret's 3.
+/// Lucas's 9, Léo's 7, Aïda's 6, Clélia's 5 and Robinson's 3.
 pub fn riverton() -> Election {
     Election::new(["Amira", "Bruno", "Camille", "Daniel", "Erik"])
         .with(9, &[4, 1, 2, 3, 0])
@@ -215,8 +215,8 @@ mod tests {
         }
     }
 
-    /// Every claim the journey makes about Riverton. Groups: 0 Frank, 1 Leo,
-    /// 2 Ana, 3 Fatou, 4 Margaret. Candidates: 0 Amira, 1 Bruno, 2 Camille,
+    /// Every claim the journey makes about Riverton. Groups: 0 Lucas, 1 Léo,
+    /// 2 Aïda, 3 Clélia, 4 Robinson. Candidates: 0 Amira, 1 Bruno, 2 Camille,
     /// 3 Daniel, 4 Erik.
     mod riverton {
         use super::*;
@@ -290,7 +290,7 @@ mod tests {
         #[test]
         fn plurality_pitfalls() {
             let e = e();
-            // Compromise: Leo's group votes Bruno, or Margaret's votes Amira.
+            // Compromise: Léo's group votes Bruno, or Robinson's votes Amira.
             assert_eq!(winner(Plurality, &with_ballot(&e, 1, 7, &[1, 0, 2, 3, 4])), "Bruno");
             assert_eq!(winner(Plurality, &with_ballot(&e, 4, 3, &[0, 1, 3, 2, 4])), "Amira");
             // Spoilers.
@@ -308,24 +308,24 @@ mod tests {
         #[test]
         fn two_round_pitfalls() {
             let e = e();
-            // Four of Frank's group put Amira first, and Amira loses to Camille.
+            // Four of Lucas's group put Amira first, and Amira loses to Camille.
             let converts = with_ballot(&e, 0, 4, &[AMIRA, ERIK, BRUNO, CAMILLE, DANIEL]);
             assert_eq!(winner(TwoRound, &converts), "Camille");
-            // Four of Frank's group stay home: Camille, whom Frank prefers to Amira.
+            // Four of Lucas's group stay home: Camille, whom Lucas prefers to Amira.
             assert_eq!(winner(TwoRound, &staying_home(&e, 0, 4)), "Camille");
-            // Margaret's group backs Daniel in round one: Daniel, whom they prefer to Amira.
+            // Robinson's group backs Daniel in round one: Daniel, whom they prefer to Amira.
             assert_eq!(winner(TwoRound, &with_ballot(&e, 4, 3, &[DANIEL, AMIRA, BRUNO, CAMILLE, ERIK])), "Daniel");
         }
 
         #[test]
         fn instant_runoff_pitfalls() {
             let e = e();
-            // Two of Leo's group put Daniel first, and Daniel loses to Camille.
+            // Two of Léo's group put Daniel first, and Daniel loses to Camille.
             assert_eq!(winner(Irv, &with_ballot(&e, 1, 2, &[DANIEL, AMIRA, BRUNO, CAMILLE, ERIK])), "Camille");
-            // Staying home: Frank's and Leo's groups both prefer Camille to Daniel.
+            // Staying home: Lucas's and Léo's groups both prefer Camille to Daniel.
             assert_eq!(winner(Irv, &staying_home(&e, 0, 4)), "Camille");
             assert_eq!(winner(Irv, &staying_home(&e, 1, 2)), "Camille");
-            // Three more people like Margaret turn up and get Camille, whom they like less than Daniel.
+            // Three more people like Robinson turn up and get Camille, whom they like less than Daniel.
             let mut more = e.clone();
             more.ballots[4].weight += 3;
             assert_eq!(winner(Irv, &more), "Camille");
@@ -334,7 +334,7 @@ mod tests {
         #[test]
         fn borda_pitfalls() {
             let e = e();
-            // Margaret's group buries Camille.
+            // Robinson's group buries Camille.
             assert_eq!(winner(Borda, &with_ballot(&e, 4, 3, &[BRUNO, AMIRA, DANIEL, ERIK, CAMILLE])), "Bruno");
             // Teaming: Bruno's party fields a near-copy that every voter ranks just below
             // Bruno. The copy wins nothing, but Bruno now wins the Borda count.
@@ -346,7 +346,7 @@ mod tests {
         #[test]
         fn condorcet_pitfalls() {
             let e = e();
-            // Ana's group buries Bruno, fakes a cycle and wins.
+            // Aïda's group buries Bruno, fakes a cycle and wins.
             let buried = with_ballot(&e, 2, 6, &[CAMILLE, AMIRA, DANIEL, ERIK, BRUNO]);
             assert!(PairwiseMatrix::new(&buried).condorcet_winner().is_none());
             for m in [Schulze, RankedPairs, Minimax] {
@@ -357,14 +357,14 @@ mod tests {
         #[test]
         fn rated_pitfalls() {
             let e = e();
-            // A bullet vote by Frank's or Leo's group backfires: Daniel, ranked fourth by both.
+            // A bullet vote by Lucas's or Léo's group backfires: Daniel, ranked fourth by both.
             for g in [0, 1] {
                 let mut bullet = e.clone();
                 let top = bullet.ballots[g].ranking[0];
                 bullet.ballots[g].approvals = (0..5).map(|c| c == top).collect();
                 assert_eq!(winner(Approval, &bullet), "Daniel");
             }
-            // Under STAR, Ana's group exaggerates and gets Daniel, whom they prefer to Bruno.
+            // Under STAR, Aïda's group exaggerates and gets Daniel, whom they prefer to Bruno.
             let star = find_manipulations(&e, Star, 50);
             assert!(star.iter().any(|m| m.group == 2 && m.voters == 6 && m.new_winner == DANIEL));
             // Approval cannot be manipulated by any group here.

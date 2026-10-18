@@ -11,9 +11,9 @@ of social choice theory.
   library, compiled to WebAssembly and run as a Cloudflare Worker with
   [`workers-rs`](https://github.com/cloudflare/workers-rs).
 * **`frontend`**: a Vue 3 explorable in the spirit of Nicky Case's *The
-  Evolution of Trust*: eighteen short steps, each adding one new idea and one
-  new tool, each with something to predict or a puzzle to solve before the
-  lesson appears. It comes with a sandbox, a rigging handbook and a theorem lab.
+  Evolution of Trust*: a full-screen slide deck on one town square, where you
+  bet on each count and watch ballots fly, piles move and faces react. It comes
+  with a sandbox, a rigging handbook and a theorem lab.
 
 Every number on the page is computed by the Worker, not looked up. The prose
 version of the guide is in [`docs/rigging-guide.md`](docs/rigging-guide.md)
@@ -34,25 +34,38 @@ changes, and with it the mayor.
 
 | Group | Voters | Ranking |
 | --- | --- | --- |
-| Frank, hardware store | 9 | Erik > Bruno > Camille > Daniel > Amira |
-| Leo, bike courier | 7 | Amira > Bruno > Camille > Daniel > Erik |
-| Ana, parent of two | 6 | Camille > Daniel > Bruno > Amira > Erik |
-| Fatou, night-shift nurse | 5 | Daniel > Camille > Erik > Amira > Bruno |
-| Margaret, retired city clerk | 3 | Bruno > Daniel > Amira > Camille > Erik |
+| Lucas, hardware store | 9 | Erik > Bruno > Camille > Daniel > Amira |
+| Léo, bike courier | 7 | Amira > Bruno > Camille > Daniel > Erik |
+| Aïda, parent of two | 6 | Camille > Daniel > Bruno > Amira > Erik |
+| Clélia, night-shift nurse | 5 | Daniel > Camille > Erik > Amira > Bruno |
+| Robinson, retired city clerk | 3 | Bruno > Daniel > Amira > Camille > Erik |
 
-| Chapter | Steps | What you play with | Mayor |
+The journey is a full-screen slide deck played on Riverton's town square, in
+the spirit of *The Evolution of Trust*: the words sit inside the scene
+(captions, labels, the voters' speech bubbles, a stamp for each lesson), and
+every count is something you watch happen. Before each count you bet on the
+winner; a board keeps score.
+
+| # | Slide | What happens | Mayor |
 | --- | --- | --- | --- |
-| Meet Riverton | 1 | The five groups, their reasons, and your own pick | |
-| One mark | 2–4 | Plurality, the lesser evil (compromising), the spoiler | Erik |
-| Two rounds | 5–6 | The two-round runoff; winning by losing votes, and by staying home | Amira |
-| Rank everyone | 7–8 | Instant runoff round by round, the no-show paradox | Daniel |
-| Points | 9–10 | Borda count; burying a rival, and fielding a clone, with a machine that finds profitable lies | Camille |
-| Head to head | 11–12 | Every duel, the Condorcet winner, and faking a cycle by burying | Bruno |
-| Ticks and stars | 13–14 | Approval and bullet voting; score vs STAR under exaggeration | Bruno (score: Camille) |
-| The impossible ballot | 15–18 | Five systems, five mayors; Arrow's theorem checked on all 216 elections; a grid of every profitable lie (Gibbard–Satterthwaite); cheat sheet | |
+| 1 | Riverton elects a mayor | The five candidates walk on | |
+| 2 | Five neighbours, five opinions | The spokespeople and their rankings; tap a face to hear why | |
+| 3 | Each one speaks for a group | Each spokesperson's group fills in: 30 voters | |
+| 4 | The game | Six counts to bet on | |
+| 5 | One mark | Ballots fly into piles under the majority line | Erik |
+| 6 | The lesser evil (vote utile) | Léo's group marks Bruno instead of Amira | Bruno |
+| 7 | Two rounds | The top two meet; the other ballots move to the finalist each voter prefers | Amira |
+| 8 | The lesser evil, in round one | Robinson's group marks Daniel in round one and puts him in the runoff | Daniel |
+| 9 | Instant runoff | The smallest pile is knocked out, round after round | Daniel |
+| 10 | Borda points | Coins rain into jars | Camille |
+| 11 | Burying | Robinson's group moves Camille to last; three coins change jars | Bruno |
+| 12 | Head to head | The crowd splits for each of the ten duels; arrows build the duel map | Bruno |
+| 13 | Approval | Ticks for each group's top two, then Lucas's group ticks only Erik and it backfires | Bruno, then Daniel |
+| 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's theorem | |
 
-A scoreboard at the top of each step fills in as you meet each system. The
-opinion map and Yee diagrams live in the sandbox.
+Who wins and by how much comes from the Worker; the stage only shows which
+ballot goes where (`frontend/src/stage`). The opinion map, Yee diagrams,
+criteria and theorems live in the sandbox, the rigging handbook and the lab.
 
 ## The library
 
@@ -171,9 +184,10 @@ curl -s localhost:8787/api/elect -H 'content-type: application/json' -d '{
 crates/social-choice/   the Rust library
 backend/                Axum router (src/api.rs) + Worker entry point (src/lib.rs), wrangler.toml
 frontend/               Vue 3 + Vite + TypeScript
-  src/journey/          the eighteen steps, cast in src/cast.ts
+  src/stage/            the journey's town square: TownStage, its animations and ballot plans
+  src/cast.ts           Riverton's candidates and voter groups
   src/pages/            sandbox, rigging handbook, theorem lab
-  src/components/       persona ballots, tallies, duel diagram, opinion map, Arrow lab, …
+  src/components/       tallies, duel diagram, opinion map, Arrow lab, …
   src/locales/          English and French messages
 docs/rigging-guide.md   the written guide
 docs/glossary-fr.md     the French terms

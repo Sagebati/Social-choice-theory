@@ -39,49 +39,51 @@ function cycleTheme() {
 </script>
 
 <template>
-  <header class="top">
-    <div class="inner">
-      <RouterLink to="/learn/1" class="brand">
-        <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
-          <circle cx="11" cy="12" r="5.5" fill="var(--c0)" />
-          <circle cx="21" cy="12" r="5.5" fill="var(--c1)" />
-          <circle cx="16" cy="21" r="5.5" fill="var(--c2)" />
-        </svg>
-        <span>{{ t('app.title') }}</span>
-      </RouterLink>
-      <nav class="links" :aria-label="t('app.nav.aria')">
-        <RouterLink to="/learn/1" :class="{ active: $route.name === 'journey' }">{{ t('app.nav.journey') }}</RouterLink>
-        <RouterLink to="/sandbox">{{ t('app.nav.sandbox') }}</RouterLink>
-        <RouterLink to="/rigging">{{ t('app.nav.rigging') }}</RouterLink>
-        <RouterLink to="/lab">{{ t('app.nav.lab') }}</RouterLink>
-      </nav>
-      <div class="langs" role="group" :aria-label="t('app.language')">
+  <div class="shell" :class="{ full: !!$route.meta.fullscreen }">
+    <header class="top">
+      <div class="inner">
+        <RouterLink to="/learn/1" class="brand">
+          <svg viewBox="0 0 32 32" width="26" height="26" aria-hidden="true">
+            <circle cx="11" cy="12" r="5.5" fill="var(--c0)" />
+            <circle cx="21" cy="12" r="5.5" fill="var(--c1)" />
+            <circle cx="16" cy="21" r="5.5" fill="var(--c2)" />
+          </svg>
+          <span>{{ t('app.title') }}</span>
+        </RouterLink>
+        <nav class="links" :aria-label="t('app.nav.aria')">
+          <RouterLink to="/learn/1" :class="{ active: $route.name === 'journey' }">{{ t('app.nav.journey') }}</RouterLink>
+          <RouterLink to="/sandbox">{{ t('app.nav.sandbox') }}</RouterLink>
+          <RouterLink to="/rigging">{{ t('app.nav.rigging') }}</RouterLink>
+          <RouterLink to="/lab">{{ t('app.nav.lab') }}</RouterLink>
+        </nav>
+        <div class="langs" role="group" :aria-label="t('app.language')">
+          <button
+            v-for="l in LOCALES"
+            :key="l.id"
+            class="lang"
+            :lang="l.id"
+            :title="l.label"
+            :aria-label="l.label"
+            :aria-pressed="locale === l.id"
+            @click="setLocale(l.id)"
+          >
+            {{ l.id.toUpperCase() }}
+          </button>
+        </div>
         <button
-          v-for="l in LOCALES"
-          :key="l.id"
-          class="lang"
-          :lang="l.id"
-          :title="l.label"
-          :aria-label="l.label"
-          :aria-pressed="locale === l.id"
-          @click="setLocale(l.id)"
+          class="btn small theme"
+          :aria-label="t('app.theme.aria', { theme: t(`app.theme.${theme}`) })"
+          @click="cycleTheme"
         >
-          {{ l.id.toUpperCase() }}
+          <span class="label">{{ t('app.theme.prefix') }}</span>{{ t(`app.theme.${theme}`) }}
         </button>
       </div>
-      <button
-        class="btn small theme"
-        :aria-label="t('app.theme.aria', { theme: t(`app.theme.${theme}`) })"
-        @click="cycleTheme"
-      >
-        <span class="label">{{ t('app.theme.prefix') }}</span>{{ t(`app.theme.${theme}`) }}
-      </button>
-    </div>
-  </header>
-  <main class="page">
-    <RouterView />
-  </main>
-  <footer class="foot small muted">{{ t('app.footer') }}</footer>
+    </header>
+    <main class="page">
+      <RouterView />
+    </main>
+    <footer v-if="!$route.meta.fullscreen" class="foot small muted">{{ t('app.footer') }}</footer>
+  </div>
 </template>
 
 <style scoped>
@@ -140,6 +142,22 @@ function cycleTheme() {
   max-width: 1180px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
+}
+
+/* The journey fills the screen below the header. */
+.shell.full {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell.full .page {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  display: flex;
 }
 
 .foot {

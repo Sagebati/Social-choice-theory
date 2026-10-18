@@ -38,7 +38,7 @@ function initialLocale(): Locale {
 }
 
 // French elides "de" and "que" before a vowel, names included: "le groupe
-// d’Ana", "plutôt qu’Erik". Messages are written with the full word, since the
+// d’Aïda", "plutôt qu’Erik". Messages are written with the full word, since the
 // name is a parameter.
 export function elide(text: string): string {
   return text.replace(/\b([Dd]e|[Qq]ue) (?=[AEIOUÉÈÊÀ][a-zà-ÿ])/g, (_, word: string) => `${word.slice(0, -1)}’`)

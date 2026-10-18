@@ -21,13 +21,13 @@ translate something new.
 French grammar needs genders that the English text avoids. Prefer phrasings
 that don't need one, above all in messages where a name is a parameter:
 
-* *le groupe de Frank* (the group, not the person, is the subject),
+* *le groupe de Lucas* (the group, not the person, is the subject),
 * *{name} l’emporte*, *{name} gagne*, *{name} devient maire*, *{name} arrive en
   tête*, *{name} sort de la course* (not *est élu·e*, *est éliminé·e*).
 
-When a fixed sentence about one person can't avoid it: Amira, Camille, Gina,
-Ana, Fatou and Margaret take the feminine; Bruno, Daniel, Erik, Frank and Leo
-the masculine. *Maire* and *parent* are epicene. Generic voters are
+When a fixed sentence about one person can't avoid it: Amira, Camille, Aïda
+and Clélia take the feminine; Bruno, Daniel, Erik, Lucas, Léo and Robinson the
+masculine. *Maire* and *parent* are epicene. Generic voters are
 *électeurs*.
 
 ## Voting methods

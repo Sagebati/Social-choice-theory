@@ -34,18 +34,16 @@ export default {
       p1: 'Compare candidates two at a time. A candidate who beats every rival in these one-on-one majority votes is the <strong>Condorcet winner</strong> (after the Marquis de Condorcet, 1785). Electing anyone else means a majority preferred the Condorcet winner to your pick. Plurality, instant runoff, Borda and the rated methods can all miss them.',
       p2: 'The catch: there may be no Condorcet winner at all. Ada can beat Bea, Bea beat Cal and Cal beat Ada, each by a real majority. This is the <strong>Condorcet paradox</strong>, and it is where agenda-setters and buriers do their work.',
       play1: 'Play: one on one',
-      play2: 'Play: faking a cycle',
     },
     arrow: {
       title: "Arrow's impossibility theorem",
       p: 'Kenneth Arrow (1951) asked for a rule that turns any set of voter rankings into a ranking for society and is (1) always a consistent ranking, (2) respects unanimity, (3) ranks X against Y using only how voters rank X against Y (no spoilers), and (4) has no dictator. With three or more candidates, <strong>no rule can do all four</strong>. Every ranked method breaks at least one; which one it breaks is its personality.',
-      play: 'Play: the wishlist',
       lab: 'Check every election in the lab',
     },
     gibbard: {
       title: 'Gibbard–Satterthwaite',
       p: "The strategy-proofness twin of Arrow's theorem (Gibbard 1973, Satterthwaite 1975): with three or more candidates, every method that can elect any of them and is not a dictatorship sometimes rewards a voter for lying. Rigging can't be designed away. It can only be made rarer, riskier or harder to compute.",
-      play: 'Play: everyone can be gamed',
+      play: 'Play: the lesser evil',
     },
     tacticsTitle: 'The tactics',
     tactics: {
@@ -208,12 +206,6 @@ export default {
     beats: 'beats',
     cycle: 'No Condorcet winner: {cycle}.',
     ties: 'No Condorcet winner (some contests are tied).',
-  },
-
-  duelMatrix: {
-    caption: 'Voters preferring the row candidate to the column candidate',
-    wins: 'wins',
-    loses: 'loses',
   },
 
   manipulability: {

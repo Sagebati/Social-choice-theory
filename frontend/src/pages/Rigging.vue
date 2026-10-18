@@ -81,15 +81,13 @@ async function tryScenario(id: string | null) {
         <RichText tag="p" :text="t('rigging.condorcet.p1')" />
         <RichText tag="p" :text="t('rigging.condorcet.p2')" />
         <div class="row">
-          <RouterLink class="btn small" to="/learn/11">{{ t('rigging.condorcet.play1') }}</RouterLink>
-          <RouterLink class="btn small" to="/learn/12">{{ t('rigging.condorcet.play2') }}</RouterLink>
+          <RouterLink class="btn small" to="/learn/12">{{ t('rigging.condorcet.play1') }}</RouterLink>
         </div>
       </div>
       <div class="card">
         <h3>{{ t('rigging.arrow.title') }}</h3>
         <RichText tag="p" :text="t('rigging.arrow.p')" />
         <div class="row">
-          <RouterLink class="btn small" to="/learn/16">{{ t('rigging.arrow.play') }}</RouterLink>
           <RouterLink class="btn small" to="/lab">{{ t('rigging.arrow.lab') }}</RouterLink>
         </div>
       </div>
@@ -97,7 +95,7 @@ async function tryScenario(id: string | null) {
         <h3>{{ t('rigging.gibbard.title') }}</h3>
         <p>{{ t('rigging.gibbard.p') }}</p>
         <div class="row">
-          <RouterLink class="btn small" to="/learn/17">{{ t('rigging.gibbard.play') }}</RouterLink>
+          <RouterLink class="btn small" to="/learn/6">{{ t('rigging.gibbard.play') }}</RouterLink>
         </div>
       </div>
     </section>

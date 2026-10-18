@@ -8,13 +8,13 @@ import { i18n } from './i18n'
 import type { BallotInput, ElectionInput } from './types'
 
 export interface Candidate {
-  key: 'amira' | 'bruno' | 'camille' | 'daniel' | 'erik' | 'gina'
+  key: 'amira' | 'bruno' | 'camille' | 'daniel' | 'erik'
   name: string
   fullName: string
 }
 
 export interface Persona {
-  key: 'frank' | 'leo' | 'ana' | 'fatou' | 'margaret'
+  key: 'lucas' | 'leo' | 'aida' | 'clelia' | 'robinson'
   name: string
   /** How many voters in town think exactly like this persona. */
   voters: number
@@ -36,105 +36,58 @@ export const CANDIDATES: Candidate[] = [
   { key: 'erik', name: 'Erik', fullName: 'Erik Brandt' },
 ]
 
-export const NAMES = CANDIDATES.map((c) => c.name)
-
-// Bruno's party can field a near-copy of Bruno (the teaming trick).
-export const CLONE: Candidate = { key: 'gina', name: 'Gina', fullName: 'Gina Costa' }
-
 export const PERSONAS: Persona[] = [
   {
-    key: 'frank',
-    name: 'Frank',
+    key: 'lucas',
+    name: 'Lucas',
     voters: 9,
     ranking: [ERIK, BRUNO, CAMILLE, DANIEL, AMIRA],
   },
   {
     key: 'leo',
-    name: 'Leo',
+    name: 'Léo',
     voters: 7,
     ranking: [AMIRA, BRUNO, CAMILLE, DANIEL, ERIK],
   },
   {
-    key: 'ana',
-    name: 'Ana',
+    key: 'aida',
+    name: 'Aïda',
     voters: 6,
     ranking: [CAMILLE, DANIEL, BRUNO, AMIRA, ERIK],
   },
   {
-    key: 'fatou',
-    name: 'Fatou',
+    key: 'clelia',
+    name: 'Clélia',
     voters: 5,
     ranking: [DANIEL, CAMILLE, ERIK, AMIRA, BRUNO],
   },
   {
-    key: 'margaret',
-    name: 'Margaret',
+    key: 'robinson',
+    name: 'Robinson',
     voters: 3,
     ranking: [BRUNO, DANIEL, AMIRA, CAMILLE, ERIK],
   },
 ]
 
-export const TOTAL_VOTERS = PERSONAS.reduce((sum, p) => sum + p.voters, 0)
-
-/** One group's ballot, possibly different from their honest ranking. */
+/** One group's ballot, possibly different from its honest ranking. */
 export interface CastBallot {
   ranking: number[]
   approvals?: boolean[]
-  scores?: number[]
-  /** How many of the group actually vote (defaults to all of them). */
-  voters?: number
 }
 
-export const honestBallots = (): CastBallot[] => PERSONAS.map((p) => ({ ranking: [...p.ranking] }))
-
-/** Ballots built from a ranking approve the top two and score 5, 4, 3, 1, 0. */
+/** Ballots built from a ranking approve the top two. */
 export function defaultApprovals(ranking: number[]): boolean[] {
   return CANDIDATES.map((_, c) => ranking.indexOf(c) < 2)
 }
 
-export function defaultScores(ranking: number[]): number[] {
-  const byPlace = [5, 4, 3, 1, 0]
-  return CANDIDATES.map((_, c) => byPlace[ranking.indexOf(c)])
+/** The election the API counts: `ballots[i]` is the ballot persona i's whole group casts. */
+export function electionOf(ballots: CastBallot[]): ElectionInput {
+  return {
+    candidates: CANDIDATES.map((c) => c.name),
+    ballots: ballots.map(
+      (b, g): BallotInput => ({ weight: PERSONAS[g].voters, ranking: [...b.ranking], ...(b.approvals ? { approvals: [...b.approvals] } : {}) }),
+    ),
+  }
 }
 
-/**
- * The election the API counts. `ballots[i]` replaces persona i's honest ballot;
- * `extra` adds more groups (e.g. newcomers); `withdrawn` removes candidates;
- * `clone` adds Gina right after Bruno on every ballot.
- */
-export function electionOf(
-  ballots: CastBallot[] = honestBallots(),
-  options: { withdrawn?: number[]; clone?: boolean; extra?: CastBallot[] } = {},
-): { election: ElectionInput; candidates: number[] } {
-  const withdrawn = options.withdrawn ?? []
-  const all = [...ballots, ...(options.extra ?? [])]
-  // Candidate indices kept, in order; Gina (index 5) comes last when present.
-  const kept = [...CANDIDATES.keys()].filter((c) => !withdrawn.includes(c))
-  if (options.clone) kept.push(5)
-  const index = new Map(kept.map((c, i) => [c, i]))
-  const names = kept.map((c) => (c === 5 ? CLONE.name : CANDIDATES[c].name))
-  const result: BallotInput[] = []
-  all.forEach((b, g) => {
-    const weight = b.voters ?? PERSONAS[g]?.voters ?? 0
-    if (weight <= 0) return
-    let ranking = b.ranking.filter((c) => !withdrawn.includes(c))
-    if (options.clone) ranking = ranking.flatMap((c) => (c === BRUNO ? [BRUNO, 5] : [c]))
-    const ballot: BallotInput = { weight, ranking: ranking.map((c) => index.get(c)!) }
-    if (b.approvals) ballot.approvals = kept.map((c) => (c === 5 ? b.approvals![BRUNO] : b.approvals![c]))
-    if (b.scores) ballot.scores = kept.map((c) => (c === 5 ? b.scores![BRUNO] : b.scores![c]))
-    result.push(ballot)
-  })
-  return { election: { candidates: names, ballots: result }, candidates: kept }
-}
-
-/** Where persona `p` honestly ranks candidate `c` (0 is their favourite). */
-export const placeOf = (p: number, c: number) => PERSONAS[p].ranking.indexOf(c)
-
-/** Is persona `p` better off with `now` than with `before`? */
-export const betterOff = (p: number, before: number, now: number) => placeOf(p, now) < placeOf(p, before)
-
-const { t } = i18n.global
-export const candidateRole = (c: Candidate) => t(`cast.candidates.${c.key}.role`)
-export const candidatePitch = (c: Candidate) => t(`cast.candidates.${c.key}.pitch`)
-export const personaRole = (p: Persona) => t(`cast.personas.${p.key}.role`)
-export const personaWhy = (p: Persona) => t(`cast.personas.${p.key}.why`)
+export const candidateRole = (c: Candidate) => i18n.global.t(`cast.candidates.${c.key}.role`)

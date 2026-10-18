@@ -7,10 +7,9 @@ parameter or link, or a word left untranslated. Terms are in
 
 | File | Holds |
 | --- | --- |
-| `app.ts` | the header, the journey's chrome, method and tactic names, shared components |
-| `cast.ts` | what Riverton's candidates stand for and why each group votes as it does |
-| `journey1.ts` | steps 1–9, under `t01` … `t09` |
-| `journey2.ts` | steps 10–18, under `t10` … `t18` |
+| `app.ts` | the header, method and tactic names, shared components |
+| `cast.ts` | who Riverton's candidates and spokespeople are |
+| `deck.ts` | every word of the journey's slides, voices included (`src/stage`) |
 | `pages.ts` | the sandbox, handbook and lab, and the components only they use |
 
 Writing messages:

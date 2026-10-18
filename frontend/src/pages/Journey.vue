@@ -1,219 +1,157 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useProgress } from '../composables/useProgress'
-import { CHAPTERS, SLIDES } from '../journey/slides'
+import { api } from '../api'
+import { electionOf, type CastBallot } from '../cast'
+import { listOf, locale } from '../i18n'
+import { bullet, bury, compromise, compromiseTwoRound, honest } from '../stage/plan'
+import { TownStage, type DeckData } from '../stage/TownStage'
+import '../stage/stage.css'
+import type { ElectResponse, MethodId } from '../types'
+
+// The journey: a full-screen slide deck played on Riverton's town square.
+// The five elections it counts are asked of the server once; the stage animates
+// them slide by slide, and the address follows the slide (/learn/1 … /learn/13).
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { reach } = useProgress()
+const svg = ref<SVGSVGElement | null>(null)
+const live = ref('')
+const error = ref<string | null>(null)
+const ready = ref(false)
+let stage: TownStage | null = null
+let alive = true
 
 const index = computed(() => {
   const n = Number(route.params.step ?? 1)
-  return Number.isInteger(n) && n >= 1 && n <= SLIDES.length ? n - 1 : 0
+  return Number.isInteger(n) && n >= 1 && n <= TownStage.SLIDES ? n - 1 : 0
 })
-const slide = computed(() => SLIDES[index.value])
-const title = (i: number) => t(`journey.steps.${SLIDES[i].id}`)
-const toolbox = computed(() =>
-  SLIDES.slice(0, index.value + 1).flatMap((s, i) =>
-    s.unlocks.map((tool) => ({ ...tool, label: t(`journey.tools.${tool.id}`), fresh: i === index.value })),
-  ),
-)
-const chapters = computed(() =>
-  CHAPTERS.map((id, c) => ({
-    id,
-    name: t(`journey.chapters.${id}`),
-    steps: SLIDES.map((_, i) => ({ i, title: title(i) })).filter((_, i) => SLIDES[i].chapter === c),
-  })),
-)
 
 function go(i: number) {
-  if (i < 0 || i >= SLIDES.length) return
+  if (i < 0 || i >= TownStage.SLIDES) return
   void router.push({ name: 'journey', params: { step: i + 1 } })
 }
 
-watch(
-  index,
-  (i) => {
-    reach(i)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  },
-  { immediate: true },
-)
+async function load(): Promise<DeckData> {
+  const count = (ballots: CastBallot[], methods: MethodId[]) => api.elect(electionOf(ballots), methods)
+  const outcome = (r: ElectResponse, m: MethodId) => {
+    const found = r.results.find((x) => x.outcome.method === m)
+    if (!found) throw new Error(`missing ${m}`)
+    return found.outcome
+  }
+  const [h, c, c2, b, u] = await Promise.all([
+    count(honest(), ['plurality', 'two_round', 'irv', 'borda', 'approval', 'schulze']),
+    count(compromise(), ['plurality']),
+    count(compromiseTwoRound(), ['two_round']),
+    count(bury(), ['borda']),
+    count(bullet(), ['approval']),
+  ])
+  return {
+    honest: {
+      plurality: outcome(h, 'plurality'),
+      two_round: outcome(h, 'two_round'),
+      irv: outcome(h, 'irv'),
+      borda: outcome(h, 'borda'),
+      approval: outcome(h, 'approval'),
+    },
+    matrix: h.pairwise.matrix,
+    condorcetWinner: h.pairwise.condorcet_winner ?? outcome(h, 'schulze').winner,
+    condorcetLoser: h.pairwise.condorcet_loser ?? -1,
+    compromise: outcome(c, 'plurality'),
+    compromiseTwoRound: outcome(c2, 'two_round'),
+    bury: outcome(b, 'borda'),
+    bullet: outcome(u, 'approval'),
+  }
+}
 
-// Page Up / Page Down step through the journey; arrow keys belong to the map.
 function onKey(event: KeyboardEvent) {
   const target = event.target as HTMLElement | null
   if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
-  if (event.key === 'PageDown') go(index.value + 1)
-  if (event.key === 'PageUp') go(index.value - 1)
+  if (event.key === 'ArrowRight' || event.key === 'PageDown') go(index.value + 1)
+  if (event.key === 'ArrowLeft' || event.key === 'PageUp') go(index.value - 1)
 }
-onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
+onMounted(async () => {
+  window.addEventListener('keydown', onKey)
+  let data: DeckData
+  try {
+    data = await load()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+    return
+  }
+  if (!alive || !svg.value) return
+  stage = new TownStage(svg.value, {
+    t: (key, params) => t(key, params ?? {}),
+    list: listOf,
+    data,
+    reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    navigate: go,
+    open: (path) => void router.push(path),
+    announce: (words) => (live.value = words),
+  })
+  ready.value = true
+  stage.show(index.value)
+})
+
+watch(index, (i) => stage?.show(i))
+watch(locale, () => stage?.replay())
+
+onBeforeUnmount(() => {
+  alive = false
+  window.removeEventListener('keydown', onKey)
+  stage?.dispose()
+  stage = null
+})
 </script>
 
 <template>
-  <div class="journey">
-    <nav class="progress" :aria-label="t('journey.stepsAria')">
-      <div v-for="(chapter, c) in chapters" :key="chapter.id" class="chapter" :class="{ current: slide.chapter === c }">
-        <span class="chapter-name">{{ c + 1 }}. {{ chapter.name }}</span>
-        <span class="dots">
-          <button
-            v-for="step in chapter.steps"
-            :key="step.i"
-            class="dot"
-            :class="{ done: step.i < index, here: step.i === index }"
-            :aria-label="t('journey.stepLabel', { n: step.i + 1, title: step.title })"
-            :aria-current="step.i === index ? 'step' : undefined"
-            :title="step.title"
-            @click="go(step.i)"
-          />
-        </span>
-      </div>
-    </nav>
-
-    <div class="eyebrow">
-      {{
-        t('journey.eyebrow', {
-          chapter: slide.chapter + 1,
-          name: chapters[slide.chapter].name,
-          step: index + 1,
-          total: SLIDES.length,
-        })
-      }}
-    </div>
-    <component :is="slide.component" :key="slide.id" />
-
-    <footer class="nav">
-      <button class="btn" :disabled="index === 0" @click="go(index - 1)">{{ t('journey.back') }}</button>
-      <div class="toolbox" :aria-label="t('journey.toolboxAria')">
-        <span class="eyebrow">{{ t('journey.toolbox') }}</span>
-        <span
-          v-for="tool in toolbox"
-          :key="tool.id"
-          class="tool"
-          :class="{ fresh: tool.fresh }"
-          :title="tool.fresh ? t('journey.newTool', { tool: tool.label }) : tool.label"
-        >
-          <span aria-hidden="true">{{ tool.icon }}</span> {{ tool.label
-          }}<span v-if="tool.fresh" class="new">{{ t('journey.new') }}</span>
-        </span>
-      </div>
-      <button v-if="index < SLIDES.length - 1" class="btn primary" @click="go(index + 1)">
-        {{ t('journey.next', { title: title(index + 1) }) }}
-      </button>
-    </footer>
+  <div class="deck">
+    <svg ref="svg" class="town-stage" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="t('deck.aria')" />
+    <p v-if="error" class="state notice">{{ t('common.apiError', { error }) }}</p>
+    <p v-else-if="!ready" class="state muted">{{ t('deck.loading') }}</p>
+    <p class="turn">{{ t('deck.turn') }}</p>
+    <p class="visually-hidden" aria-live="polite">{{ live }}</p>
   </div>
 </template>
 
 <style scoped>
-.journey {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.progress {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--grid);
-}
-
-.chapter {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.chapter-name {
-  font-size: 0.72rem;
-  color: var(--muted);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.chapter.current .chapter-name {
-  color: var(--ink);
-}
-
-.dots {
-  display: flex;
-  gap: 5px;
-}
-
-.dot {
-  width: 22px;
-  height: 8px;
-  border-radius: 4px;
-  border: none;
-  background: var(--grid);
-  padding: 0;
-}
-
-.dot.done {
-  background: var(--ink-2);
-}
-
-.dot.here {
-  background: var(--ink);
-  width: 34px;
-}
-
-.nav {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--grid);
-  padding-top: 1rem;
-  flex-wrap: wrap;
-}
-
-.toolbox {
-  display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
-  align-items: center;
+.deck {
+  position: relative;
   flex: 1;
-  justify-content: center;
+  min-height: 0;
+  display: flex;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 env(safe-area-inset-bottom, 0px);
 }
 
-.toolbox .eyebrow {
-  margin: 0 0.3rem 0 0;
+.state {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
 }
 
-.tool {
-  font-size: 0.78rem;
-  padding: 0.15rem 0.55rem;
-  border-radius: 999px;
-  background: var(--surface-2);
-  white-space: nowrap;
+.turn {
+  display: none;
 }
 
-.tool.fresh {
-  background: var(--ink);
-  color: var(--surface);
-  font-weight: 700;
-}
-
-.new {
-  margin-left: 0.35rem;
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-@media (max-width: 860px) {
-  .chapter-name {
-    display: none;
-  }
-
-  .progress {
-    gap: 0.6rem;
+@media (orientation: portrait) and (max-width: 700px) {
+  .turn {
+    display: block;
+    position: absolute;
+    top: 0.5rem;
+    left: 0;
+    right: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ink-2);
   }
 }
 </style>
