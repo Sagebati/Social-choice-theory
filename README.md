@@ -11,7 +11,7 @@ of social choice theory.
   library, compiled to WebAssembly and run as a Cloudflare Worker with
   [`workers-rs`](https://github.com/cloudflare/workers-rs).
 * **`frontend`**: a Vue 3 explorable in the spirit of Nicky Case's *The
-  Evolution of Trust*: seventeen short steps, each adding one new idea and one
+  Evolution of Trust*: eighteen short steps, each adding one new idea and one
   new tool, each with something to predict or a puzzle to solve before the
   lesson appears. It comes with a sandbox, a rigging handbook and a theorem lab.
 
@@ -20,15 +20,31 @@ version of the guide is in [`docs/rigging-guide.md`](docs/rigging-guide.md).
 
 ## The journey
 
-| Chapter | Steps | What you play with |
+The whole journey follows one town. Riverton is electing a mayor, and the same
+five groups of voters (30 people) vote in every chapter; only the counting rule
+changes, and with it the mayor.
+
+| Group | Voters | Ranking |
 | --- | --- | --- |
-| One person, one mark | 1–4 | The opinion map, plurality, the spoiler effect, lesser-evil (compromise) voting |
-| Rank everyone | 5–7 | Instant runoff round by round, the centre squeeze and Yee diagrams, winning by losing (non-monotonicity, push-over) |
-| Points for everyone | 8–9 | Borda count; burying and teaming, plus a machine that finds profitable lies |
-| Head to head | 10–12 | The Condorcet winner, the Condorcet paradox and agenda rigging, burying under Condorcet methods |
-| Grade, don't rank | 13–14 | Approval voting and where to draw the line; score vs STAR under exaggeration |
-| The impossible ballot | 15–16 | Arrow's theorem checked on all 216 elections; Gibbard–Satterthwaite measured |
-| Your turn | 17 | Cheat sheet, then the sandbox, handbook and lab |
+| Frank, hardware store | 9 | Erik > Bruno > Camille > Daniel > Amira |
+| Leo, bike courier | 7 | Amira > Bruno > Camille > Daniel > Erik |
+| Ana, parent of two | 6 | Camille > Daniel > Bruno > Amira > Erik |
+| Fatou, night-shift nurse | 5 | Daniel > Camille > Erik > Amira > Bruno |
+| Margaret, retired city clerk | 3 | Bruno > Daniel > Amira > Camille > Erik |
+
+| Chapter | Steps | What you play with | Mayor |
+| --- | --- | --- | --- |
+| Meet Riverton | 1 | The five groups, their reasons, and your own pick | |
+| One mark | 2–4 | Plurality, the lesser evil (compromising), the spoiler | Erik |
+| Two rounds | 5–6 | The two-round runoff; winning by losing votes, and by staying home | Amira |
+| Rank everyone | 7–8 | Instant runoff round by round, the no-show paradox | Daniel |
+| Points | 9–10 | Borda count; burying a rival, and fielding a clone, with a machine that finds profitable lies | Camille |
+| Head to head | 11–12 | Every duel, the Condorcet winner, and faking a cycle by burying | Bruno |
+| Ticks and stars | 13–14 | Approval and bullet voting; score vs STAR under exaggeration | Bruno (score: Camille) |
+| The impossible ballot | 15–18 | Five systems, five mayors; Arrow's theorem checked on all 216 elections; a grid of every profitable lie (Gibbard–Satterthwaite); cheat sheet | |
+
+A scoreboard at the top of each step fills in as you meet each system. The
+opinion map and Yee diagrams live in the sandbox.
 
 ## The library
 
@@ -145,8 +161,8 @@ curl -s localhost:8787/api/elect -H 'content-type: application/json' -d '{
 crates/social-choice/   the Rust library
 backend/                Axum router (src/api.rs) + Worker entry point (src/lib.rs), wrangler.toml
 frontend/               Vue 3 + Vite + TypeScript
-  src/journey/          the seventeen steps
+  src/journey/          the eighteen steps, cast in src/cast.ts
   src/pages/            sandbox, rigging handbook, theorem lab
-  src/components/       opinion map, tallies, duel diagram, ballot editor, Arrow lab, …
+  src/components/       persona ballots, tallies, duel diagram, opinion map, Arrow lab, …
 docs/rigging-guide.md   the written guide
 ```

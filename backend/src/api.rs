@@ -463,7 +463,7 @@ mod tests {
         assert_eq!(methods.as_array().unwrap().len(), Method::ALL.len());
         assert!(methods[0]["rigging"].as_array().unwrap().len() >= 2);
         let (_, scenarios) = call(HttpMethod::GET, "/api/scenarios", None);
-        assert_eq!(scenarios[0]["id"], "spoiler");
+        assert_eq!(scenarios[0]["id"], "riverton");
     }
 
     #[test]

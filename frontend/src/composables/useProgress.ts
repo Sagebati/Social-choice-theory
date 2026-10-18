@@ -7,6 +7,8 @@ interface Progress {
   /** Puzzles the reader skipped with "just show me". */
   revealed: Record<string, true>
   furthest: number
+  /** Who the reader thought should be mayor, at the start. */
+  pick: number | null
 }
 
 const KEY = 'who-really-won/progress'
@@ -16,12 +18,17 @@ function load(): Progress {
     const raw = localStorage.getItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<Progress>
-      return { solved: parsed.solved ?? {}, revealed: parsed.revealed ?? {}, furthest: parsed.furthest ?? 0 }
+      return {
+        solved: parsed.solved ?? {},
+        revealed: parsed.revealed ?? {},
+        furthest: parsed.furthest ?? 0,
+        pick: parsed.pick ?? null,
+      }
     }
   } catch {
     // Private mode or blocked storage: start fresh.
   }
-  return { solved: {}, revealed: {}, furthest: 0 }
+  return { solved: {}, revealed: {}, furthest: 0, pick: null }
 }
 
 const progress = reactive<Progress>(load())
@@ -61,6 +68,7 @@ export function useProgress() {
       progress.solved = {}
       progress.revealed = {}
       progress.furthest = 0
+      progress.pick = null
     },
   }
 }

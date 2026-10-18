@@ -1,23 +1,24 @@
 import type { Component } from 'vue'
-import S01Map from './slides/S01Map.vue'
-import S02Crowd from './slides/S02Crowd.vue'
-import S03Spoiler from './slides/S03Spoiler.vue'
-import S04LesserEvil from './slides/S04LesserEvil.vue'
-import S05Runoff from './slides/S05Runoff.vue'
-import S06Squeeze from './slides/S06Squeeze.vue'
-import S07Monotonicity from './slides/S07Monotonicity.vue'
-import S08Borda from './slides/S08Borda.vue'
-import S09BordaGaming from './slides/S09BordaGaming.vue'
-import S10HeadToHead from './slides/S10HeadToHead.vue'
-import S11Cycle from './slides/S11Cycle.vue'
-import S12Burying from './slides/S12Burying.vue'
-import S13Approval from './slides/S13Approval.vue'
-import S14Score from './slides/S14Score.vue'
-import S15Arrow from './slides/S15Arrow.vue'
-import S16Gibbard from './slides/S16Gibbard.vue'
-import S17YourTurn from './slides/S17YourTurn.vue'
+import T01Town from './slides/T01Town.vue'
+import T02OneMark from './slides/T02OneMark.vue'
+import T03LesserEvil from './slides/T03LesserEvil.vue'
+import T04Spoiler from './slides/T04Spoiler.vue'
+import T05TwoRounds from './slides/T05TwoRounds.vue'
+import T06RunoffTraps from './slides/T06RunoffTraps.vue'
+import T07Runoff from './slides/T07Runoff.vue'
+import T08StayHome from './slides/T08StayHome.vue'
+import T09Borda from './slides/T09Borda.vue'
+import T10BordaTricks from './slides/T10BordaTricks.vue'
+import T11HeadToHead from './slides/T11HeadToHead.vue'
+import T12FakeCycle from './slides/T12FakeCycle.vue'
+import T13Approval from './slides/T13Approval.vue'
+import T14Stars from './slides/T14Stars.vue'
+import T15FiveMayors from './slides/T15FiveMayors.vue'
+import T16Arrow from './slides/T16Arrow.vue'
+import T17RigMatrix from './slides/T17RigMatrix.vue'
+import T18YourTurn from './slides/T18YourTurn.vue'
 
-/** A tool the reader picks up along the way; the sandbox offers them all. */
+/** A tool the reader picks up along the way. */
 export interface Tool {
   icon: string
   label: string
@@ -33,31 +34,33 @@ export interface Slide {
 }
 
 export const CHAPTERS = [
-  'One person, one mark',
+  'Meet Riverton',
+  'One mark',
+  'Two rounds',
   'Rank everyone',
-  'Points for everyone',
+  'Points',
   'Head to head',
-  'Grade, don’t rank',
+  'Ticks and stars',
   'The impossible ballot',
-  'Your turn',
 ]
 
 export const SLIDES: Slide[] = [
-  { id: 'map', chapter: CHAPTERS[0], title: 'Where do you stand?', component: S01Map, unlocks: [{ icon: '🗺️', label: 'Opinion map' }] },
-  { id: 'crowd', chapter: CHAPTERS[0], title: 'Everybody votes', component: S02Crowd, unlocks: [{ icon: '✗', label: 'Plurality' }] },
-  { id: 'spoiler', chapter: CHAPTERS[0], title: 'The spoiler', component: S03Spoiler, unlocks: [{ icon: '⚠️', label: 'Spoiler detector' }] },
-  { id: 'lesser-evil', chapter: CHAPTERS[0], title: 'The lesser evil', component: S04LesserEvil, unlocks: [{ icon: '🎭', label: 'Strategic voters' }] },
-  { id: 'runoff', chapter: CHAPTERS[1], title: 'Rank them all', component: S05Runoff, unlocks: [{ icon: '🔢', label: 'Ranked ballots' }, { icon: '🔁', label: 'Instant runoff' }] },
-  { id: 'squeeze', chapter: CHAPTERS[1], title: 'Squeezed out', component: S06Squeeze, unlocks: [{ icon: '🎨', label: 'Yee map' }] },
-  { id: 'monotonicity', chapter: CHAPTERS[1], title: 'Winning by losing', component: S07Monotonicity, unlocks: [{ icon: '🗳️', label: 'Ballot box' }] },
-  { id: 'borda', chapter: CHAPTERS[2], title: 'Points for everyone', component: S08Borda, unlocks: [{ icon: '🥇', label: 'Borda count' }] },
-  { id: 'borda-gaming', chapter: CHAPTERS[2], title: 'Bury the rival, field a twin', component: S09BordaGaming, unlocks: [{ icon: '🕵️', label: 'Lie finder' }] },
-  { id: 'condorcet', chapter: CHAPTERS[3], title: 'One on one', component: S10HeadToHead, unlocks: [{ icon: '⚔️', label: 'Duel diagram' }] },
-  { id: 'cycle', chapter: CHAPTERS[3], title: 'Rock, paper, scissors', component: S11Cycle, unlocks: [{ icon: '🔄', label: 'Cycle detector' }, { icon: '📋', label: 'Agenda' }] },
-  { id: 'burying', chapter: CHAPTERS[3], title: 'Breaking the cycle', component: S12Burying, unlocks: [{ icon: '🔗', label: 'Condorcet methods' }] },
-  { id: 'approval', chapter: CHAPTERS[4], title: 'Approve of many', component: S13Approval, unlocks: [{ icon: '✅', label: 'Approval' }] },
-  { id: 'score', chapter: CHAPTERS[4], title: 'Stars, and the urge to exaggerate', component: S14Score, unlocks: [{ icon: '⭐', label: 'Score & STAR' }] },
-  { id: 'arrow', chapter: CHAPTERS[5], title: 'Arrow’s impossible wishlist', component: S15Arrow, unlocks: [{ icon: '🏛️', label: 'Arrow checker' }] },
-  { id: 'gibbard', chapter: CHAPTERS[5], title: 'Everyone can be gamed', component: S16Gibbard, unlocks: [{ icon: '📊', label: 'Manipulability meter' }] },
-  { id: 'your-turn', chapter: CHAPTERS[6], title: 'Your turn', component: S17YourTurn, unlocks: [] },
+  { id: 'town', chapter: CHAPTERS[0], title: 'Riverton elects a mayor', component: T01Town, unlocks: [{ icon: '👥', label: 'Five voter groups' }] },
+  { id: 'one-mark', chapter: CHAPTERS[1], title: 'One mark each', component: T02OneMark, unlocks: [{ icon: '✗', label: 'Single-mark ballot' }] },
+  { id: 'lesser-evil', chapter: CHAPTERS[1], title: 'The lesser evil', component: T03LesserEvil, unlocks: [{ icon: '🎭', label: 'Vote for a group' }] },
+  { id: 'spoiler', chapter: CHAPTERS[1], title: 'The spoiler', component: T04Spoiler, unlocks: [{ icon: '🚪', label: 'Withdraw a candidate' }] },
+  { id: 'two-rounds', chapter: CHAPTERS[2], title: 'Two rounds', component: T05TwoRounds, unlocks: [{ icon: '2️⃣', label: 'Runoff ballot' }] },
+  { id: 'runoff-traps', chapter: CHAPTERS[2], title: 'Two rounds, two traps', component: T06RunoffTraps, unlocks: [{ icon: '🏠', label: 'Stay home' }] },
+  { id: 'instant-runoff', chapter: CHAPTERS[3], title: 'Rank them all', component: T07Runoff, unlocks: [{ icon: '🔢', label: 'Ranked ballot' }, { icon: '🔁', label: 'Vote transfers' }] },
+  { id: 'stay-home', chapter: CHAPTERS[3], title: 'Better off staying home', component: T08StayHome, unlocks: [] },
+  { id: 'borda', chapter: CHAPTERS[4], title: 'Points for every place', component: T09Borda, unlocks: [{ icon: '🥇', label: 'Points' }] },
+  { id: 'borda-tricks', chapter: CHAPTERS[4], title: 'Bury the rival, field a twin', component: T10BordaTricks, unlocks: [{ icon: '🕵️', label: 'Lie finder' }, { icon: '👯', label: 'Twin candidate' }] },
+  { id: 'head-to-head', chapter: CHAPTERS[5], title: 'One on one', component: T11HeadToHead, unlocks: [{ icon: '⚔️', label: 'Duels' }] },
+  { id: 'fake-cycle', chapter: CHAPTERS[5], title: 'Faking a cycle', component: T12FakeCycle, unlocks: [{ icon: '🔄', label: 'Cycle detector' }] },
+  { id: 'approval', chapter: CHAPTERS[6], title: 'Tick everyone you’d accept', component: T13Approval, unlocks: [{ icon: '✅', label: 'Ticks' }] },
+  { id: 'stars', chapter: CHAPTERS[6], title: 'Stars, and the urge to exaggerate', component: T14Stars, unlocks: [{ icon: '⭐', label: 'Stars' }] },
+  { id: 'five-mayors', chapter: CHAPTERS[7], title: 'Five systems, five mayors', component: T15FiveMayors, unlocks: [{ icon: '📋', label: 'Scoreboard' }] },
+  { id: 'arrow', chapter: CHAPTERS[7], title: 'Arrow’s impossible wishlist', component: T16Arrow, unlocks: [{ icon: '🏛️', label: 'Arrow checker' }] },
+  { id: 'gibbard', chapter: CHAPTERS[7], title: 'Everyone can be gamed', component: T17RigMatrix, unlocks: [{ icon: '🧮', label: 'Rigging grid' }] },
+  { id: 'your-turn', chapter: CHAPTERS[7], title: 'Your turn', component: T18YourTurn, unlocks: [] },
 ]

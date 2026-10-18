@@ -91,8 +91,8 @@ async function tryScenario(id: string | null) {
           do their work.
         </p>
         <div class="row">
-          <RouterLink class="btn small" to="/learn/10">Play: one on one</RouterLink>
-          <RouterLink class="btn small" to="/learn/11">Play: rock, paper, scissors</RouterLink>
+          <RouterLink class="btn small" to="/learn/11">Play: one on one</RouterLink>
+          <RouterLink class="btn small" to="/learn/12">Play: faking a cycle</RouterLink>
         </div>
       </div>
       <div class="card">
@@ -105,7 +105,7 @@ async function tryScenario(id: string | null) {
           personality.
         </p>
         <div class="row">
-          <RouterLink class="btn small" to="/learn/15">Play: the wishlist</RouterLink>
+          <RouterLink class="btn small" to="/learn/16">Play: the wishlist</RouterLink>
           <RouterLink class="btn small" to="/lab">Check every election in the lab</RouterLink>
         </div>
       </div>
@@ -117,7 +117,7 @@ async function tryScenario(id: string | null) {
           lying. Rigging can't be designed away. It can only be made rarer, riskier or harder to compute.
         </p>
         <div class="row">
-          <RouterLink class="btn small" to="/learn/16">Play: everyone can be gamed</RouterLink>
+          <RouterLink class="btn small" to="/learn/17">Play: everyone can be gamed</RouterLink>
         </div>
       </div>
     </section>
