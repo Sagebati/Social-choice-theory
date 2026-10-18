@@ -2,6 +2,7 @@
 //! The tests at the bottom check every claim the stories make.
 
 use crate::election::Election;
+use crate::lang::Lang;
 use crate::methods::Method;
 use serde::Serialize;
 
@@ -31,90 +32,145 @@ pub fn riverton() -> Election {
 }
 
 pub fn all() -> Vec<Scenario> {
+    all_in(Lang::En)
+}
+
+/// Every scenario, with its title and story in `lang`.
+pub fn all_in(lang: Lang) -> Vec<Scenario> {
     use Method::*;
     vec![
         Scenario {
             id: "riverton",
-            title: "Riverton elects a mayor",
-            story: "Thirty voters in five groups, five candidates. Plurality elects Erik, two rounds elect \
-                    Amira, instant runoff elects Daniel, the Borda count elects Camille, and every Condorcet \
-                    method elects Bruno, who beats each rival one on one. Erik, the plurality winner, loses \
-                    every one-on-one contest.",
+            title: lang.pick("Riverton elects a mayor", "Riverton élit son maire"),
+            story: lang.pick(
+                "Thirty voters in five groups, five candidates. Plurality elects Erik, two rounds elect \
+                        Amira, instant runoff elects Daniel, the Borda count elects Camille, and every Condorcet \
+                        method elects Bruno, who beats each rival one on one. Erik, the plurality winner, loses \
+                        every one-on-one contest.",
+                "Trente électeurs répartis en cinq groupes, cinq candidats. Le scrutin à un tour élit Erik, le scrutin \
+                        à deux tours élit Amira, le vote alternatif Daniel, la méthode de Borda Camille, et toutes les \
+                        méthodes de Condorcet élisent Bruno, qui bat chaque rival en duel. Erik, vainqueur du scrutin \
+                        à un tour, perd tous ses duels.",
+            ),
             methods: vec![Plurality, TwoRound, Irv, Borda, Schulze, Approval, Star],
             election: riverton(),
         },
         Scenario {
             id: "spoiler",
-            title: "The spoiler",
-            story: "Ada leads with 40 first choices. Bea and Cal split the other 60, although every Cal \
-                    voter would take Bea over Ada. Under plurality Ada wins; if Cal dropped out, Bea would \
-                    win. Bea is also the Condorcet winner, beating Ada 60–40 and Cal 75–25.",
+            title: lang.pick("The spoiler", "Le trouble-fête"),
+            story: lang.pick(
+                "Ada leads with 40 first choices. Bea and Cal split the other 60, although every Cal \
+                        voter would take Bea over Ada. Under plurality Ada wins; if Cal dropped out, Bea would \
+                        win. Bea is also the Condorcet winner, beating Ada 60–40 and Cal 75–25.",
+                "Ada est en tête avec 40 premiers choix. Bea et Cal se partagent les 60 autres, alors que tous les \
+                 électeurs de Cal préféreraient Bea à Ada. Au scrutin à un tour, Ada gagne ; si Cal se retirait, Bea \
+                 gagnerait. Bea est d’ailleurs vainqueur de Condorcet : 60 à 40 contre Ada, 75 à 25 contre Cal.",
+            ),
             methods: vec![Plurality, Irv, Borda, Schulze],
             election: Election::named(3).with(40, &[0, 1, 2]).with(35, &[1, 2, 0]).with(25, &[2, 1, 0]),
         },
         Scenario {
             id: "center_squeeze",
-            title: "Centre squeeze",
-            story: "Bea sits in the middle and is everybody's first or second choice. She would beat Ada \
-                    65–35 and Cal 67–33 head to head. But Bea has the fewest first choices, so instant \
-                    runoff eliminates Bea first and Ada wins.",
+            title: lang.pick("Centre squeeze", "Le centre pris en étau"),
+            story: lang.pick(
+                "Bea sits in the middle and is everybody's first or second choice. She would beat Ada \
+                        65–35 and Cal 67–33 head to head. But Bea has the fewest first choices, so instant \
+                        runoff eliminates Bea first and Ada wins.",
+                "Bea est au centre : c’est le premier ou le deuxième choix de tout le monde. En duel, elle battrait \
+                 Ada 65 à 35 et Cal 67 à 33. Mais Bea a le moins de premiers choix : le vote alternatif l’élimine \
+                 d’emblée, et Ada gagne.",
+            ),
             methods: vec![Plurality, Irv, Borda, Schulze],
             election: Election::named(3).with(35, &[0, 1, 2]).with(33, &[2, 1, 0]).with(32, &[1, 0, 2]),
         },
         Scenario {
             id: "monotonicity",
-            title: "Winning by losing",
-            story: "Under instant runoff Ada wins: Cal is eliminated and Cal's voters move to Ada. Now \
-                    suppose 10 of Bea's voters are won over and rank Ada first. Bea drops below Cal, is \
-                    eliminated instead, Bea's voters flow to Cal, and Cal beats Ada 51–49. Gaining support \
-                    cost Ada the election.",
+            title: lang.pick("Winning by losing", "Perdre en gagnant des voix"),
+            story: lang.pick(
+                "Under instant runoff Ada wins: Cal is eliminated and Cal's voters move to Ada. Now \
+                        suppose 10 of Bea's voters are won over and rank Ada first. Bea drops below Cal, is \
+                        eliminated instead, Bea's voters flow to Cal, and Cal beats Ada 51–49. Gaining support \
+                        cost Ada the election.",
+                "Au vote alternatif, Ada gagne : Cal sort de la course et ses électeurs se reportent sur Ada. \
+                 Supposons maintenant que 10 électeurs de Bea, convaincus, placent Ada en tête. Bea passe derrière Cal \
+                 et sort à sa place, les voix de Bea se reportent sur Cal, et Cal bat Ada 51 à 49. Gagner des soutiens \
+                 a coûté l’élection à Ada.",
+            ),
             methods: vec![Irv, TwoRound, Plurality],
             election: Election::named(3).with(39, &[0, 1, 2]).with(35, &[1, 2, 0]).with(26, &[2, 0, 1]),
         },
         Scenario {
             id: "no_show",
-            title: "Better off staying home",
-            story: "Under instant runoff Bea is eliminated first, Bea's voters go to Ada, and Ada beats Cal \
-                    50–40. Now 15 more voters turn up ranking Bea > Ada > Cal. Bea overtakes Ada, so Ada \
-                    is eliminated instead, Ada's voters go to Cal, and Cal wins. The newcomers preferred \
-                    Ada to Cal: by voting they elected the candidate they liked least.",
+            title: lang.pick("Better off staying home", "Mieux vaut rester chez soi"),
+            story: lang.pick(
+                "Under instant runoff Bea is eliminated first, Bea's voters go to Ada, and Ada beats Cal \
+                        50–40. Now 15 more voters turn up ranking Bea > Ada > Cal. Bea overtakes Ada, so Ada \
+                        is eliminated instead, Ada's voters go to Cal, and Cal wins. The newcomers preferred \
+                        Ada to Cal: by voting they elected the candidate they liked least.",
+                "Au vote alternatif, Bea sort de la course en premier, ses voix se reportent sur Ada, et Ada bat Cal \
+                 50 à 40. Arrivent alors 15 électeurs de plus, qui votent Bea > Ada > Cal. Bea dépasse Ada, qui sort à \
+                 sa place ; les voix d’Ada se reportent sur Cal, qui gagne. Les nouveaux venus préféraient Ada à Cal : \
+                 en votant, ils ont fait élire le candidat qu’ils aimaient le moins.",
+            ),
             methods: vec![Irv, Plurality, Schulze],
             election: Election::named(3).with(20, &[1, 0, 2]).with(40, &[2, 0, 1]).with(30, &[0, 2, 1]),
         },
         Scenario {
             id: "condorcet_paradox",
-            title: "Rock, paper, scissors",
-            story: "A majority prefers Ada to Bea (6–3), a majority prefers Bea to Cal (7–2), and a \
-                    majority prefers Cal to Ada (5–4). Every candidate loses to somebody, so there is no \
-                    Condorcet winner. In an agenda of duels, whoever enters last wins.",
+            title: lang.pick("Rock, paper, scissors", "Pierre, feuille, ciseaux"),
+            story: lang.pick(
+                "A majority prefers Ada to Bea (6–3), a majority prefers Bea to Cal (7–2), and a \
+                        majority prefers Cal to Ada (5–4). Every candidate loses to somebody, so there is no \
+                        Condorcet winner. In an agenda of duels, whoever enters last wins.",
+                "Une majorité préfère Ada à Bea (6 à 3), une majorité préfère Bea à Cal (7 à 2), et une majorité \
+                 préfère Cal à Ada (5 à 4). Chaque candidat perd contre quelqu’un : il n’y a pas de vainqueur de \
+                 Condorcet. Dans une série de duels selon un ordre du jour, le dernier à entrer en lice gagne.",
+            ),
             methods: vec![Agenda, Copeland, Minimax, Schulze, RankedPairs, Irv],
             election: Election::named(3).with(4, &[0, 1, 2]).with(3, &[1, 2, 0]).with(2, &[2, 0, 1]),
         },
         Scenario {
             id: "condorcet_burying",
-            title: "Burying the Condorcet winner",
-            story: "Ada is the Condorcet winner, beating Bea 20–15 and Cal 25–10. Bea's 15 supporters \
-                    honestly rank Ada second. If 11 or more of them rank Ada last instead, Cal beats Ada \
-                    (21–14 or more), the majorities go round in a cycle, and its weakest link becomes \
-                    Ada's 20–15 win over Bea. Schulze, ranked pairs and minimax all break the cycle \
-                    there, and Bea wins.",
+            title: lang.pick("Burying the Condorcet winner", "Enterrer le vainqueur de Condorcet"),
+            story: lang.pick(
+                "Ada is the Condorcet winner, beating Bea 20–15 and Cal 25–10. Bea's 15 supporters \
+                        honestly rank Ada second. If 11 or more of them rank Ada last instead, Cal beats Ada \
+                        (21–14 or more), the majorities go round in a cycle, and its weakest link becomes \
+                        Ada's 20–15 win over Bea. Schulze, ranked pairs and minimax all break the cycle \
+                        there, and Bea wins.",
+                "Ada est vainqueur de Condorcet : 20 à 15 contre Bea et 25 à 10 contre Cal. Les 15 partisans de Bea \
+                 classent sincèrement Ada deuxième. Si 11 d’entre eux ou plus la classent plutôt dernière, Cal bat Ada \
+                 (21 à 14 ou plus), les majorités tournent en rond, et le maillon le plus faible du cycle devient la \
+                 victoire d’Ada sur Bea, 20 à 15. Schulze, les paires classées et le minimax brisent tous le cycle à \
+                 cet endroit, et Bea gagne.",
+            ),
             methods: vec![Schulze, RankedPairs, Minimax, Copeland],
             election: Election::named(3).with(10, &[0, 1, 2]).with(10, &[2, 0, 1]).with(15, &[1, 0, 2]),
         },
         Scenario {
             id: "borda_burying",
-            title: "Burying under Borda",
-            story: "Honestly, Ada scores 140 Borda points to Bea's 130. If Bea's 40 voters move Ada from \
-                    second place to last, below hopeless Cal, Ada falls to 100 and Bea wins with 130.",
+            title: lang.pick("Burying under Borda", "Enterrer sous Borda"),
+            story: lang.pick(
+                "Honestly, Ada scores 140 Borda points to Bea's 130. If Bea's 40 voters move Ada from \
+                        second place to last, below hopeless Cal, Ada falls to 100 and Bea wins with 130.",
+                "Sincèrement, Ada obtient 140 points de Borda contre 130 pour Bea. Si les 40 électeurs de Bea font \
+                        passer Ada de la deuxième à la dernière place, derrière Cal qui n’a aucune chance, Ada tombe à \
+                        100 et Bea gagne avec 130.",
+            ),
             methods: vec![Borda, Plurality, Schulze],
             election: Election::named(3).with(50, &[0, 1, 2]).with(40, &[1, 0, 2]),
         },
         Scenario {
             id: "borda_teaming",
-            title: "Teaming with a clone",
-            story: "Between Ada and Bea alone, Ada wins 30–20. Bea's party adds Bex, a near-copy of Bea \
-                    that everyone ranks right next to Bea. Bex wins nothing, but pushes Ada down \
-                    the ballots of Bea's supporters, and Bea now wins the Borda count 70 to 60.",
+            title: lang.pick("Teaming with a clone", "Faire équipe avec un clone"),
+            story: lang.pick(
+                "Between Ada and Bea alone, Ada wins 30–20. Bea's party adds Bex, a near-copy of Bea \
+                        that everyone ranks right next to Bea. Bex wins nothing, but pushes Ada down \
+                        the ballots of Bea's supporters, and Bea now wins the Borda count 70 to 60.",
+                "Entre Ada et Bea seules, Ada gagne 30 à 20. Le parti de Bea ajoute Bex, un quasi-clone de Bea que \
+                        tout le monde classe juste à côté de Bea. Bex ne gagne rien, mais repousse Ada vers le bas des \
+                        bulletins des partisans de Bea, et Bea remporte désormais la méthode de Borda, 70 à 60.",
+            ),
             methods: vec![Borda, Irv, Schulze],
             election: Election::new(["Ada", "Bea", "Bex"]).with(30, &[0, 1, 2]).with(20, &[1, 2, 0]),
         },
@@ -122,7 +178,11 @@ pub fn all() -> Vec<Scenario> {
 }
 
 pub fn get(id: &str) -> Option<Scenario> {
-    all().into_iter().find(|s| s.id == id)
+    get_in(id, Lang::En)
+}
+
+pub fn get_in(id: &str, lang: Lang) -> Option<Scenario> {
+    all_in(lang).into_iter().find(|s| s.id == id)
 }
 
 #[cfg(test)]

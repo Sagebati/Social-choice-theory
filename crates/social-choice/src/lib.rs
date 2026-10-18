@@ -20,6 +20,8 @@
 //!   and Yee diagrams.
 //! * [`scenarios`] and [`catalog`]: famous paradoxes and plain-language
 //!   descriptions of how every method can be gamed.
+//! * [`lang`]: every explanation exists in English and French; the functions
+//!   ending in `_in` take the [`Lang`] to write in.
 //!
 //! ```
 //! use social_choice::{Election, Method, PairwiseMatrix};
@@ -41,6 +43,7 @@ pub mod arrow;
 pub mod catalog;
 pub mod criteria;
 pub mod election;
+pub mod lang;
 pub mod manipulation;
 pub mod methods;
 pub mod outcome;
@@ -52,6 +55,7 @@ pub mod text;
 
 pub use criteria::Criterion;
 pub use election::{Ballot, CandidateId, Election, Error};
+pub use lang::Lang;
 pub use methods::{BallotKind, Method};
 pub use outcome::{Outcome, Round};
 pub use pairwise::PairwiseMatrix;

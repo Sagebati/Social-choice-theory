@@ -15,6 +15,7 @@
 //! with a concrete example of each failure.
 
 use crate::election::{all_rankings, Ballot, CandidateId, Election, DEFAULT_MAX_SCORE};
+use crate::lang::Lang;
 use crate::methods::Method;
 use crate::pairwise::PairwiseMatrix;
 use serde::{Deserialize, Serialize};
@@ -44,9 +45,13 @@ impl Rule {
     }
 
     pub fn name(self) -> &'static str {
+        self.name_in(Lang::En)
+    }
+
+    pub fn name_in(self, lang: Lang) -> &'static str {
         match self {
-            Rule::Method(m) => m.name(),
-            Rule::PairwiseMajority => "Pairwise majority",
+            Rule::Method(m) => m.name_in(lang),
+            Rule::PairwiseMajority => lang.pick("Pairwise majority", "Majorité en duels"),
         }
     }
 

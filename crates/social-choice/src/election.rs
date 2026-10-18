@@ -1,5 +1,6 @@
 //! Candidates, ballots and elections.
 
+use crate::lang::{tr, Lang};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
@@ -29,22 +30,47 @@ pub enum Error {
     ScoreTooHigh { ballot: usize },
 }
 
+impl Error {
+    /// The error as a sentence in `lang`. [`Display`](fmt::Display) writes English.
+    pub fn message_in(&self, lang: Lang) -> String {
+        match self {
+            Error::NoCandidates => lang
+                .pick("an election needs at least one candidate", "une élection a besoin d’au moins un candidat")
+                .into(),
+            Error::TooManyCandidates(n) => tr!(
+                lang,
+                "{n} candidates is more than the supported {MAX_CANDIDATES}",
+                "{n} candidats, c’est plus que le maximum de {MAX_CANDIDATES}"
+            ),
+            Error::BadMaxScore(m) => tr!(
+                lang,
+                "max_score must be between 1 and 100, got {m}",
+                "max_score doit aller de 1 à 100 (reçu : {m})"
+            ),
+            Error::InvalidRanking { ballot } => tr!(
+                lang,
+                "ballot {ballot}: the ranking must list every candidate exactly once",
+                "bulletin {ballot} : le classement doit citer chaque candidat exactement une fois"
+            ),
+            Error::WrongLength { ballot } => tr!(
+                lang,
+                "ballot {ballot}: approvals and scores need one entry per candidate",
+                "bulletin {ballot} : il faut une approbation et une note par candidat"
+            ),
+            Error::ScoreTooHigh { ballot } => {
+                tr!(
+                    lang,
+                    "ballot {ballot}: a score is above max_score",
+                    "bulletin {ballot} : une note dépasse max_score"
+                )
+            }
+        }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::NoCandidates => write!(f, "an election needs at least one candidate"),
-            Error::TooManyCandidates(n) => {
-                write!(f, "{n} candidates is more than the supported {MAX_CANDIDATES}")
-            }
-            Error::BadMaxScore(m) => write!(f, "max_score must be between 1 and 100, got {m}"),
-            Error::InvalidRanking { ballot } => {
-                write!(f, "ballot {ballot}: the ranking must list every candidate exactly once")
-            }
-            Error::WrongLength { ballot } => {
-                write!(f, "ballot {ballot}: approvals and scores need one entry per candidate")
-            }
-            Error::ScoreTooHigh { ballot } => write!(f, "ballot {ballot}: a score is above max_score"),
-        }
+        f.write_str(&self.message_in(Lang::En))
     }
 }
 

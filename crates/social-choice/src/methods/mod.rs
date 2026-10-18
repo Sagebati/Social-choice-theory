@@ -1,10 +1,12 @@
 //! The voting methods.
 //!
-//! Every method is a variant of [`Method`] and is run with [`Method::run`]. All of
-//! them are deterministic: whenever a count ties, the candidate with the lowest
+//! Every method is a variant of [`Method`] and is run with [`Method::run`] (or
+//! [`Method::run_in`] for the working in another language). All of them are
+//! deterministic: whenever a count ties, the candidate with the lowest
 //! index is favoured and the outcome records that a tie-break was needed.
 
 use crate::election::Election;
+use crate::lang::{tr, Lang};
 use crate::outcome::{Outcome, Round};
 use crate::pairwise::PairwiseMatrix;
 use serde::{Deserialize, Serialize};
@@ -121,22 +123,26 @@ impl Method {
     }
 
     pub fn name(self) -> &'static str {
+        self.name_in(Lang::En)
+    }
+
+    pub fn name_in(self, lang: Lang) -> &'static str {
         match self {
-            Method::Plurality => "Plurality",
-            Method::AntiPlurality => "Anti-plurality",
-            Method::TwoRound => "Two-round runoff",
-            Method::Irv => "Instant runoff (IRV)",
-            Method::Coombs => "Coombs",
-            Method::Borda => "Borda count",
-            Method::Agenda => "Agenda (sequential pairwise)",
-            Method::Copeland => "Copeland",
+            Method::Plurality => lang.pick("Plurality", "Scrutin à un tour"),
+            Method::AntiPlurality => lang.pick("Anti-plurality", "Vote par veto"),
+            Method::TwoRound => lang.pick("Two-round runoff", "Scrutin à deux tours"),
+            Method::Irv => lang.pick("Instant runoff (IRV)", "Vote alternatif (second tour instantané)"),
+            Method::Coombs => lang.pick("Coombs", "Méthode de Coombs"),
+            Method::Borda => lang.pick("Borda count", "Méthode de Borda"),
+            Method::Agenda => lang.pick("Agenda (sequential pairwise)", "Vote séquentiel (ordre du jour)"),
+            Method::Copeland => lang.pick("Copeland", "Méthode de Copeland"),
             Method::Minimax => "Minimax",
-            Method::Schulze => "Schulze",
-            Method::RankedPairs => "Ranked pairs",
-            Method::Approval => "Approval",
-            Method::Score => "Score (range)",
+            Method::Schulze => lang.pick("Schulze", "Méthode de Schulze"),
+            Method::RankedPairs => lang.pick("Ranked pairs", "Paires classées (Tideman)"),
+            Method::Approval => lang.pick("Approval", "Vote par approbation"),
+            Method::Score => lang.pick("Score (range)", "Vote par notes"),
             Method::Star => "STAR",
-            Method::Dictatorship => "Dictatorship",
+            Method::Dictatorship => lang.pick("Dictatorship", "Dictature"),
         }
     }
 
@@ -162,27 +168,33 @@ impl Method {
         }
     }
 
-    /// Counts the election.
+    /// Counts the election, explaining the count in English.
     ///
     /// The election must be complete (see [`Election::complete`]) and have at
     /// least one candidate.
     pub fn run(self, election: &Election) -> Outcome {
+        self.run_in(election, Lang::En)
+    }
+
+    /// Counts the election, with round titles and notes in `lang`.
+    pub fn run_in(self, election: &Election, lang: Lang) -> Outcome {
+        let e = election;
         match self {
-            Method::Plurality => positional::plurality(election),
-            Method::AntiPlurality => positional::anti_plurality(election),
-            Method::Borda => positional::borda(election),
-            Method::TwoRound => runoff::two_round(election),
-            Method::Irv => runoff::irv(election),
-            Method::Coombs => runoff::coombs(election),
-            Method::Agenda => condorcet::agenda(election, &PairwiseMatrix::new(election)),
-            Method::Copeland => condorcet::copeland(election, &PairwiseMatrix::new(election)),
-            Method::Minimax => condorcet::minimax(election, &PairwiseMatrix::new(election)),
-            Method::Schulze => condorcet::schulze(election, &PairwiseMatrix::new(election)),
-            Method::RankedPairs => condorcet::ranked_pairs(election, &PairwiseMatrix::new(election)),
-            Method::Approval => cardinal::approval(election),
-            Method::Score => cardinal::score(election),
-            Method::Star => cardinal::star(election),
-            Method::Dictatorship => dictatorship(election),
+            Method::Plurality => positional::plurality(e, lang),
+            Method::AntiPlurality => positional::anti_plurality(e, lang),
+            Method::Borda => positional::borda(e, lang),
+            Method::TwoRound => runoff::two_round(e, lang),
+            Method::Irv => runoff::irv(e, lang),
+            Method::Coombs => runoff::coombs(e, lang),
+            Method::Agenda => condorcet::agenda(e, &PairwiseMatrix::new(e), lang),
+            Method::Copeland => condorcet::copeland(e, &PairwiseMatrix::new(e), lang),
+            Method::Minimax => condorcet::minimax(e, &PairwiseMatrix::new(e), lang),
+            Method::Schulze => condorcet::schulze(e, &PairwiseMatrix::new(e), lang),
+            Method::RankedPairs => condorcet::ranked_pairs(e, &PairwiseMatrix::new(e), lang),
+            Method::Approval => cardinal::approval(e, lang),
+            Method::Score => cardinal::score(e, lang),
+            Method::Star => cardinal::star(e, lang),
+            Method::Dictatorship => dictatorship(e, lang),
         }
     }
 }
@@ -197,9 +209,15 @@ impl fmt::Display for Method {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnknownMethod(pub String);
 
+impl UnknownMethod {
+    pub fn message_in(&self, lang: Lang) -> String {
+        tr!(lang, "unknown voting method `{}`", "méthode de vote inconnue `{}`", self.0)
+    }
+}
+
 impl fmt::Display for UnknownMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "unknown voting method `{}`", self.0)
+        f.write_str(&self.message_in(Lang::En))
     }
 }
 
@@ -213,18 +231,23 @@ impl FromStr for Method {
     }
 }
 
-fn dictatorship(e: &Election) -> Outcome {
+fn dictatorship(e: &Election, lang: Lang) -> Outcome {
     let n = e.num_candidates();
     match e.ballots.iter().find(|b| b.weight > 0) {
         Some(ballot) => {
-            let round = Round::new("The dictator's ballot", vec![None; n]).note(format!(
-                "The first voter ranked {}; that ranking is the result, whatever anyone else thinks.",
-                e.describe_ranking(&ballot.ranking)
-            ));
+            let ranking = e.describe_ranking(&ballot.ranking);
+            let note = tr!(
+                lang,
+                "The first voter ranked {ranking}; that ranking is the result, whatever anyone else thinks.",
+                "Le premier électeur a voté {ranking} ; ce classement est le résultat, quoi qu’en pensent les autres."
+            );
+            let title = lang.pick("The dictator's ballot", "Le bulletin du dictateur");
+            let round = Round::new(title, vec![None; n]).note(note);
             Outcome::new(Method::Dictatorship, ballot.ranking.iter().map(|&c| vec![c]).collect(), vec![round], false)
         }
         None => {
-            let round = Round::new("No ballots", vec![None; n]).note("Nobody voted, so everyone ties.");
+            let round = Round::new(lang.pick("No ballots", "Aucun bulletin"), vec![None; n])
+                .note(lang.pick("Nobody voted, so everyone ties.", "Personne n’a voté : tout le monde est à égalité."));
             Outcome::new(Method::Dictatorship, vec![(0..n).collect()], vec![round], true)
         }
     }
@@ -254,6 +277,33 @@ mod tests {
             assert!(out.used_tiebreak, "{m} should flag the empty tie");
             assert_eq!(out.order().len(), 3, "{m}");
         }
+    }
+
+    #[test]
+    fn french_counts_are_the_same_counts_in_other_words() {
+        let elections = [
+            crate::scenarios::riverton().complete().unwrap(),
+            Election::named(3).with(4, &[0, 1, 2]).with(3, &[1, 2, 0]).with(2, &[2, 0, 1]).complete().unwrap(),
+            Election::named(3),
+        ];
+        for e in &elections {
+            for m in Method::ALL {
+                let (en, fr) = (m.run(e), m.run_in(e, Lang::Fr));
+                assert_eq!((en.winner, &en.ranking, en.used_tiebreak), (fr.winner, &fr.ranking, fr.used_tiebreak));
+                for (a, b) in en.rounds.iter().zip(&fr.rounds) {
+                    assert_eq!((&a.tallies, &a.eliminated), (&b.tallies, &b.eliminated), "{m}");
+                    assert!(a.title != b.title || m == Method::Minimax || m == Method::Star, "{m}: {}", b.title);
+                    assert_eq!(a.notes.len(), b.notes.len(), "{m}");
+                    for (x, y) in a.notes.iter().zip(&b.notes) {
+                        assert_ne!(x, y, "{m}: untranslated note");
+                    }
+                }
+            }
+        }
+        let two_round = Method::TwoRound.run_in(&elections[0], Lang::Fr);
+        assert_eq!(two_round.rounds[1].title, "Second tour");
+        assert_eq!(two_round.rounds[1].notes, ["Amira remporte le second tour face à Erik."]);
+        assert_eq!(Method::Irv.name_in(Lang::Fr), "Vote alternatif (second tour instantané)");
     }
 
     /// The spoiler election from the scenarios: every method's winner, written

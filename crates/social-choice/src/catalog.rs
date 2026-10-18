@@ -1,9 +1,13 @@
 //! Plain-language descriptions of every method: how it works, where it is used
-//! and, above all, how it can be gamed.
+//! and, above all, how it can be gamed. The French texts are in [`fr`] and
+//! follow the English ones rig for rig.
 
 use crate::criteria::{satisfies, Criterion};
+use crate::lang::Lang;
 use crate::methods::{BallotKind, Family, Method};
 use serde::Serialize;
+
+mod fr;
 
 /// One way to rig or game a method.
 #[derive(Debug, Clone, Serialize)]
@@ -42,9 +46,18 @@ pub struct CriterionInfo {
 }
 
 pub fn criteria() -> Vec<CriterionInfo> {
+    criteria_in(Lang::En)
+}
+
+pub fn criteria_in(lang: Lang) -> Vec<CriterionInfo> {
     Criterion::ALL
         .into_iter()
-        .map(|c| CriterionInfo { id: c.id(), name: c.name(), question: c.question(), description: c.description() })
+        .map(|c| CriterionInfo {
+            id: c.id(),
+            name: c.name_in(lang),
+            question: c.question_in(lang),
+            description: c.description_in(lang),
+        })
         .collect()
 }
 
@@ -52,8 +65,44 @@ fn rig(title: &'static str, how: &'static str, scenario: Option<&'static str>) -
     Rig { title, how, scenario }
 }
 
+/// A method's summary, how it works, where it is used and how to rig it.
+type Texts = (&'static str, &'static str, &'static str, Vec<Rig>);
+
 pub fn info(method: Method) -> MethodInfo {
-    let (summary, how_it_works, used_in, rigging) = match method {
+    info_in(method, Lang::En)
+}
+
+pub fn info_in(method: Method, lang: Lang) -> MethodInfo {
+    let (summary, how_it_works, used_in, rigging) = match lang {
+        Lang::En => english(method),
+        Lang::Fr => fr::texts(method),
+    };
+    MethodInfo {
+        id: method.id(),
+        name: method.name_in(lang),
+        family: method.family(),
+        ballot: method.ballot_kind(),
+        summary,
+        how_it_works,
+        used_in,
+        rigging,
+        criteria: Criterion::ALL
+            .into_iter()
+            .map(|c| Verdict { criterion: c, satisfied: satisfies(method, c) })
+            .collect(),
+    }
+}
+
+pub fn all() -> Vec<MethodInfo> {
+    all_in(Lang::En)
+}
+
+pub fn all_in(lang: Lang) -> Vec<MethodInfo> {
+    Method::ALL.into_iter().map(|m| info_in(m, lang)).collect()
+}
+
+fn english(method: Method) -> Texts {
+    match method {
         Method::Plurality => (
             "Mark one name. Most marks wins.",
             "Each voter picks a single candidate and the candidate with the most votes wins, even \
@@ -395,23 +444,43 @@ pub fn info(method: Method) -> MethodInfo {
                 None,
             )],
         ),
-    };
-    MethodInfo {
-        id: method.id(),
-        name: method.name(),
-        family: method.family(),
-        ballot: method.ballot_kind(),
-        summary,
-        how_it_works,
-        used_in,
-        rigging,
-        criteria: Criterion::ALL
-            .into_iter()
-            .map(|c| Verdict { criterion: c, satisfied: satisfies(method, c) })
-            .collect(),
     }
 }
 
-pub fn all() -> Vec<MethodInfo> {
-    Method::ALL.into_iter().map(info).collect()
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scenarios;
+
+    fn translated(en: &str, fr: &str, what: &str) {
+        assert!(!fr.trim().is_empty() && fr != en, "{what} is not translated: {fr}");
+    }
+
+    #[test]
+    fn french_catalogue_follows_the_english() {
+        for m in Method::ALL {
+            let (en, fr) = (info_in(m, Lang::En), info_in(m, Lang::Fr));
+            assert!(!fr.name.is_empty());
+            translated(en.summary, fr.summary, m.id());
+            translated(en.how_it_works, fr.how_it_works, m.id());
+            translated(en.used_in, fr.used_in, m.id());
+            assert_eq!(en.rigging.len(), fr.rigging.len(), "{}: one rig per rig", m.id());
+            for (a, b) in en.rigging.iter().zip(&fr.rigging) {
+                assert_eq!(a.scenario, b.scenario, "{}: {}", m.id(), b.title);
+                translated(a.title, b.title, m.id());
+                translated(a.how, b.how, m.id());
+            }
+        }
+        for (en, fr) in criteria_in(Lang::En).iter().zip(&criteria_in(Lang::Fr)) {
+            assert!(!fr.name.is_empty());
+            translated(en.question, fr.question, en.id);
+            translated(en.description, fr.description, en.id);
+        }
+        for (en, fr) in scenarios::all_in(Lang::En).iter().zip(&scenarios::all_in(Lang::Fr)) {
+            assert_eq!(en.id, fr.id);
+            assert_eq!(en.election, fr.election);
+            translated(en.title, fr.title, en.id);
+            translated(en.story, fr.story, en.id);
+        }
+    }
 }

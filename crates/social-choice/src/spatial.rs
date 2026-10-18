@@ -4,6 +4,7 @@
 //! Coordinates are meant to lie in the unit square, but nothing enforces it.
 
 use crate::election::{Ballot, CandidateId, Election, DEFAULT_MAX_SCORE};
+use crate::lang::Lang;
 use crate::methods::{BallotKind, Method};
 use crate::outcome::Outcome;
 use serde::{Deserialize, Serialize};
@@ -150,11 +151,11 @@ impl SpatialModel {
     }
 
     /// Runs `method` on the voters at `points`.
-    fn run_points(&self, points: &[Point], method: Method) -> SpatialResult {
+    fn run_points(&self, points: &[Point], method: Method, lang: Lang) -> SpatialResult {
         let mut e = self.empty_election();
         let honest: Vec<Ballot> = points.iter().map(|&p| self.honest_ballot(p)).collect();
         e.ballots = honest.clone();
-        let poll = method.run(&e.compress());
+        let poll = method.run_in(&e.compress(), lang);
         let n = self.candidates.len();
         if self.strategic <= 0.0 || n < 2 || method == Method::Dictatorship {
             let votes =
@@ -182,7 +183,7 @@ impl SpatialModel {
         let cast = e.compress();
         SpatialResult {
             method,
-            outcome: method.run(&cast),
+            outcome: method.run_in(&cast, lang),
             frontrunners: vec![frontrunners.0, frontrunners.1],
             votes,
             election: cast,
@@ -190,7 +191,12 @@ impl SpatialModel {
     }
 
     pub fn run(&self, method: Method) -> SpatialResult {
-        self.run_points(&self.voter_points(), method)
+        self.run_in(method, Lang::En)
+    }
+
+    /// [`SpatialModel::run`] with the count explained in `lang`.
+    pub fn run_in(&self, method: Method, lang: Lang) -> SpatialResult {
+        self.run_points(&self.voter_points(), method, lang)
     }
 }
 
@@ -259,7 +265,7 @@ pub fn yee(model: &SpatialModel, method: Method, resolution: usize, spread: f64,
             let cy = (row as f64 + 0.5) / resolution as f64;
             points.clear();
             points.extend(offsets.iter().map(|o| Point { x: cx + o.x, y: cy + o.y }));
-            cells.push(model.run_points(&points, method).outcome.winner);
+            cells.push(model.run_points(&points, method, Lang::En).outcome.winner);
         }
     }
     cells
