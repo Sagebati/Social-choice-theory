@@ -1,52 +1,45 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
+import RichText from '../../components/RichText'
 import TownFrame from '../TownFrame.vue'
 
-const SHEET = [
-  ['One mark (plurality)', 'Elects a minority favourite; spoilers', 'Run a look-alike of your rival; vote for the lesser evil'],
-  ['Two rounds', 'Gaining votes can lose; staying home can pay', 'Pick your runoff opponent (push-over)'],
-  ['Instant runoff', 'Squeezes out the consensus candidate', 'Stay home, or rank a rival first to change the eliminations'],
-  ['Borda points', 'Lower preferences are worth lying about', 'Bury the rival; field clones'],
-  ['Head to head', 'Needs a rule for cycles', 'Bury the Condorcet winner to fake a cycle'],
-  ['Approval', 'Where to draw the line', 'Bullet vote (which can backfire)'],
-  ['Score / STAR', 'Honest nuance loses to exaggeration', 'Give only 0 or 5 stars'],
-]
+// Rows of the cheat sheet, `t18.rows.<id>`.
+const SHEET = ['plurality', 'two_round', 'irv', 'borda', 'condorcet', 'approval', 'score'] as const
+const { t } = useI18n()
 </script>
 
 <template>
-  <TownFrame title="Your turn">
+  <TownFrame :title="t('journey.steps.yourTurn')">
     <template #story>
-      <p>You have seen the two great impossibility results of voting:</p>
+      <p>{{ t('t18.intro') }}</p>
       <ul>
-        <li><strong>Arrow:</strong> no ranked system is perfectly fair.</li>
-        <li><strong>Gibbard–Satterthwaite:</strong> no system is immune to strategy.</li>
+        <RichText tag="li" :text="t('t18.arrow')" />
+        <RichText tag="li" :text="t('t18.gibbard')" />
       </ul>
-      <p>
-        That doesn't make every system equally bad. Each has its own way of going wrong and its own tricks for those
-        who want to rig it. Now build your own town.
-      </p>
+      <p>{{ t('t18.outro') }}</p>
       <div class="row">
-        <RouterLink class="btn primary" to="/sandbox">Open the sandbox</RouterLink>
-        <RouterLink class="btn" to="/rigging">Read the rigging handbook</RouterLink>
-        <RouterLink class="btn" to="/lab">Visit the theorem lab</RouterLink>
+        <RouterLink class="btn primary" to="/sandbox">{{ t('t18.sandbox') }}</RouterLink>
+        <RouterLink class="btn" to="/rigging">{{ t('t18.rigging') }}</RouterLink>
+        <RouterLink class="btn" to="/lab">{{ t('t18.lab') }}</RouterLink>
       </div>
     </template>
     <template #panel>
       <div class="card">
-        <div class="eyebrow">Cheat sheet</div>
+        <div class="eyebrow">{{ t('t18.sheet') }}</div>
         <table class="sheet">
           <thead>
             <tr>
-              <th scope="col">System</th>
-              <th scope="col">Weak spot</th>
-              <th scope="col">How to rig it</th>
+              <th scope="col">{{ t('t18.system') }}</th>
+              <th scope="col">{{ t('t18.weak') }}</th>
+              <th scope="col">{{ t('t18.rig') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in SHEET" :key="row[0]">
-              <th scope="row">{{ row[0] }}</th>
-              <td>{{ row[1] }}</td>
-              <td>{{ row[2] }}</td>
+            <tr v-for="row in SHEET" :key="row">
+              <th scope="row">{{ t(`t18.rows.${row}.system`) }}</th>
+              <td>{{ t(`t18.rows.${row}.weak`) }}</td>
+              <td>{{ t(`t18.rows.${row}.rig`) }}</td>
             </tr>
           </tbody>
         </table>

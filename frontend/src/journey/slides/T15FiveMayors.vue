@@ -1,56 +1,56 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Challenge from '../../components/Challenge.vue'
 import Chip from '../../components/Chip.vue'
+import RichText from '../../components/RichText'
 import Takeaway from '../../components/Takeaway.vue'
 import { CANDIDATES, honestBallots, NAMES } from '../../cast'
 import { useProgress } from '../../composables/useProgress'
 import { useTown } from '../../composables/useTown'
+import { listOf } from '../../i18n'
 import type { MethodId } from '../../types'
 import TownFrame from '../TownFrame.vue'
 
-const ROWS: { method: MethodId; system: string; asks: string; rig: string }[] = [
-  { method: 'plurality', system: 'One mark (plurality)', asks: 'Who has the most first choices?', rig: 'Leo’s group compromises on Bruno; withdrawing Amira hands Bruno the win.' },
-  { method: 'two_round', system: 'Two rounds', asks: 'Of the top two by first choices, whom does a majority prefer?', rig: 'Four of Frank’s group switching to Amira, or staying home, make Amira lose.' },
-  { method: 'irv', system: 'Instant runoff', asks: 'Who survives when the weakest are knocked out one by one?', rig: 'Some of Frank’s or Leo’s group staying home gets them Camille.' },
-  { method: 'borda', system: 'Borda points', asks: 'Who has the best average place?', rig: 'Margaret’s group buries Camille; Bruno’s party fields a twin.' },
-  { method: 'schulze', system: 'Head to head (Condorcet)', asks: 'Who beats everyone one on one?', rig: 'Ana’s group buries Bruno and fakes a cycle.' },
-  { method: 'approval', system: 'Approval', asks: 'Whom do the most people accept?', rig: 'Nobody can, here; bullet votes backfire.' },
-  { method: 'star', system: 'STAR', asks: 'Of the two best-rated, who is rated higher on more ballots?', rig: 'Ana’s group exaggerates its stars and gets Daniel.' },
-]
+// Each system's name, question and rigging story are `t15.rows.<method>`.
+const METHODS = ['plurality', 'two_round', 'irv', 'borda', 'schulze', 'approval', 'star'] as const satisfies readonly MethodId[]
+
+const { t } = useI18n()
+const ROWS = computed(() =>
+  METHODS.map((method) => ({
+    method,
+    system: t(`t15.rows.${method}.system`),
+    asks: t(`t15.rows.${method}.asks`),
+    rig: t(`t15.rows.${method}.rig`),
+  })),
+)
 
 const { progress } = useProgress()
-const { results } = useTown(honestBallots, () => ({}), ROWS.map((r) => r.method))
-const winners = computed(() => ROWS.map((r) => results.value?.byMethod[r.method]?.winner ?? null))
+const { results } = useTown(honestBallots, () => ({}), [...METHODS])
+const winners = computed(() => METHODS.map((m) => results.value?.byMethod[m]?.winner ?? null))
 const distinct = computed(() => new Set(winners.value.filter((w) => w !== null)).size)
 const pick = computed(() => progress.pick)
-const pickWins = computed(() => (pick.value === null ? [] : ROWS.filter((_, i) => winners.value[i] === pick.value).map((r) => r.system)))
+const pickWins = computed(() => (pick.value === null ? [] : ROWS.value.filter((_, i) => winners.value[i] === pick.value).map((r) => r.system)))
 </script>
 
 <template>
-  <TownFrame title="Five systems, five mayors" :seen="ROWS.map((r) => r.method)">
+  <TownFrame :title="t('journey.steps.fiveMayors')" :seen="[...METHODS]">
     <template #story>
-      <p>
-        The same 30 voters. The same honest opinions from start to finish. And {{ distinct }} different mayors,
-        depending only on how the ballots are counted.
-      </p>
+      <p>{{ t('t15.intro', { n: distinct }) }}</p>
       <p v-if="pick !== null">
-        At the start you said <strong>{{ CANDIDATES[pick].name }}</strong> should be mayor.
-        <template v-if="pickWins.length">{{ CANDIDATES[pick].name }} wins under {{ pickWins.join(', ') }}.</template>
-        <template v-else>No system on this list elects {{ CANDIDATES[pick].name }}.</template>
+        <RichText :text="t('t15.pick', { name: CANDIDATES[pick].name })" />
+        {{
+          pickWins.length
+            ? t('t15.pickWins', { name: CANDIDATES[pick].name, systems: listOf(pickWins) })
+            : t('t15.pickNone', { name: CANDIDATES[pick].name })
+        }}
       </p>
       <Challenge id="t15" :done="true">
-        Read the table: what each system really asks.
-        <template #success>
-          Each one answers a sensible question. They are just different questions, and with five candidates and a
-          divided town, different questions have different answers.
-        </template>
+        {{ t('t15.challenge') }}
+        <template #success>{{ t('t15.success') }}</template>
       </Challenge>
       <Takeaway after="t15">
-        <p>
-          So which mayor is the right one? Every system above has a flaw, and every one of them could be gamed by
-          someone in Riverton. Is there a system without flaws? In 1951, an economist proved there is not.
-        </p>
+        <p>{{ t('t15.lesson') }}</p>
       </Takeaway>
     </template>
     <template #panel>
@@ -58,9 +58,9 @@ const pickWins = computed(() => (pick.value === null ? [] : ROWS.filter((_, i) =
         <table class="recap">
           <thead>
             <tr>
-              <th scope="col">System</th>
-              <th scope="col">Mayor</th>
-              <th scope="col">The question it asks</th>
+              <th scope="col">{{ t('t15.system') }}</th>
+              <th scope="col">{{ t('t15.mayor') }}</th>
+              <th scope="col">{{ t('t15.asks') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -75,12 +75,18 @@ const pickWins = computed(() => (pick.value === null ? [] : ROWS.filter((_, i) =
     </template>
     <template #town>
       <div class="card">
-        <div class="eyebrow">How Riverton could have been rigged</div>
+        <div class="eyebrow">{{ t('t15.rigsTitle') }}</div>
         <ul class="rigs">
-          <li v-for="(r, i) in ROWS" :key="r.method">
-            <strong>{{ r.system }}</strong>
-            <span v-if="winners[i] !== null"> (honest result: {{ NAMES[winners[i]!] }})</span>: {{ r.rig }}
-          </li>
+          <RichText
+            v-for="(r, i) in ROWS"
+            :key="r.method"
+            tag="li"
+            :text="
+              winners[i] !== null
+                ? t('t15.rigItem', { system: r.system, winner: NAMES[winners[i]!], rig: r.rig })
+                : t('t15.rigItemPending', { system: r.system, rig: r.rig })
+            "
+          />
         </ul>
       </div>
     </template>
