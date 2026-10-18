@@ -1,0 +1,14 @@
+[package]
+name = "social-choice"
+version = "0.1.0"
+description = "Voting methods, Condorcet analysis, manipulation search and Arrow's theorem, encoded in Rust."
+keywords = ["voting", "social-choice", "condorcet", "arrow", "elections"]
+categories = ["algorithms", "mathematics", "science"]
+edition.workspace = true
+repository.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1"
