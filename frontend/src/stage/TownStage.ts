@@ -40,6 +40,8 @@ export interface StageOptions {
   open: (path: string) => void
   /** What a screen reader should hear after each beat. */
   announce: (words: string) => void
+  /** Approval with the reader's own ballot added: honestly, and once Lucas's group ticks only Erik. */
+  approvalWith: (yours: boolean[]) => Promise<{ honest: Outcome; bullet: Outcome }>
 }
 
 const NAME = CANDIDATES.map((c) => c.name)
@@ -55,6 +57,8 @@ const JAR_H = 190
 const JAR_TOP = BASE - JAR_H
 const PX = JAR_H / 90
 const SYSTEMS = ['plurality', 'twoRound', 'irv', 'borda', 'duels', 'approval'] as const
+// What fades behind a panel (how it works, a tactic thought through, the lesson).
+const DIMMED = ['machine', 'notes', 'items', 'coins', 'crownLayer', 'stamps']
 type System = (typeof SYSTEMS)[number]
 
 interface Voter {
@@ -130,8 +134,9 @@ export class TownStage {
     const marker = el('marker', { id: 'stage-arrow', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs)
     el('path', { d: 'M0,0 L10,5 L0,10 z', class: 'arrowhead' }, marker)
     el('rect', { class: 'ground', x: -2000, y: 500, width: 5280, height: 1000 }, svg)
-    for (const id of ['machine', 'notes', 'cards', 'crowd', 'labels', 'items', 'coins', 'crownLayer', 'stamps', 'bubbles', 'ui']) {
-      this.layer[id] = el('g', id === 'cards' || id === 'labels' ? { class: 'fade' } : {}, svg)
+    const faded = new Set(['cards', 'labels', ...DIMMED])
+    for (const id of ['machine', 'notes', 'cards', 'crowd', 'labels', 'items', 'coins', 'crownLayer', 'stamps', 'bubbles', 'thought', 'ui']) {
+      this.layer[id] = el('g', faded.has(id) ? { class: 'fade' } : {}, svg)
     }
     const ui = this.layer.ui
     this.title = text(48, 66, '', 'title', ui, 'start')
@@ -327,6 +332,86 @@ export class TownStage {
     return { x, w }
   }
 
+  /**
+   * A panel over the dimmed scene: how a system works, a spokesperson thinking
+   * a tactic through, or what went wrong and what Riverton tries next.
+   * With `thinker`, a trail of little clouds leads to that spokesperson.
+   */
+  private panel(eyebrow: string, parts: { title?: string; body: string; numbered?: boolean; lead?: boolean }[], thinker?: number) {
+    this.clearBubbles()
+    DIMMED.forEach((id) => this.layer[id].classList.add('dim'))
+    const x = 290
+    const w = 700
+    const y = 146
+    const g = el('g', { class: 'thought pop' }, this.layer.thought)
+    const box = el('rect', { x, y, width: w, height: 0, rx: 28 }, g)
+    let cursor = y + 38
+    text(x + 34, cursor, eyebrow.toUpperCase(), 'small-caps', g, 'start')
+    parts.forEach((part, i) => {
+      if (i > 0) {
+        cursor += 14
+        el('line', { x1: x + 34, x2: x + w - 34, y1: cursor, y2: cursor, class: 'thought-rule' }, g)
+        cursor += 6
+      }
+      if (part.title) {
+        cursor += 26
+        text(x + 34, cursor, part.title.toUpperCase(), 'thought-name', g, 'start')
+      }
+      const size = part.lead ? 30 : 26
+      const steps = part.body.split('\n')
+      steps.forEach((step, n) => {
+        const indent = part.numbered ? 30 : 0
+        wrap(step, part.lead ? 60 : 70).forEach((line, j) => {
+          cursor += size
+          if (part.numbered && j === 0) text(x + 34, cursor, String(n + 1), 'thought-step', g, 'start')
+          text(x + 34 + indent, cursor, line, part.lead ? 'thought-text' : 'thought-def', g, 'start')
+        })
+      })
+    })
+    const h = cursor - y + 24
+    box.setAttribute('height', String(h))
+    if (thinker !== undefined) {
+      const v = this.spokes[thinker]
+      this.groups[thinker].card.classList.add('gone')
+      this.hiddenCards.add(thinker)
+      const from = { x: Math.max(x + 50, Math.min(x + w - 50, v.pos.x)), y: y + h + 16 }
+      const to = { x: v.pos.x, y: v.pos.y - v.r - 12 }
+      for (const [f, r] of [[0, 11], [0.45, 8], [0.8, 5]]) {
+        el('circle', { cx: from.x + (to.x - from.x) * f, cy: from.y + (to.y - from.y) * f, r, class: 'thought-dot' }, g)
+      }
+    }
+    this.o.announce([eyebrow, ...parts.map((p) => (p.title ? `${p.title}: ${p.body}` : p.body))].join(' ').replace(/\n/g, ' '))
+  }
+
+  private unpanel() {
+    this.layer.thought.replaceChildren()
+    DIMMED.forEach((id) => this.layer[id].classList.remove('dim'))
+    this.clearBubbles()
+  }
+
+  /** A spokesperson thinks a tactic through: the reasoning, then the tactic's name and definition. */
+  private think(gi: number, key: string) {
+    this.panel(this.t('deck.thinks', { name: PERSONAS[gi].name }), [
+      { body: this.t(`${key}.think`), lead: true },
+      { title: this.t(`${key}.tactic`), body: this.t(`${key}.definition`) },
+    ], gi)
+  }
+
+  /** How a system works, before the reader bets on it. */
+  private async how(key: string) {
+    this.panel(this.t('deck.panel.how'), [{ body: this.t(`${key}.how`), numbered: true, lead: true }])
+    await this.ask([{ label: this.t('deck.panel.vote'), primary: true }])
+    this.unpanel()
+  }
+
+  /** What went wrong, and what Riverton tries next. */
+  private async lesson(key: string, params: Record<string, string | number> = {}, idea = true) {
+    await this.ask([{ label: this.t('deck.panel.why'), primary: true }])
+    const parts = [{ title: this.t('deck.panel.problem'), body: this.t(`${key}.problem`, params) }]
+    if (idea) parts.push({ title: this.t('deck.panel.idea'), body: this.t(`${key}.idea`) })
+    this.panel(this.t(`${key}.title`), parts)
+  }
+
   private voice(gi: number, kind: 'best' | 'worst' | 'why') {
     return this.t(`deck.voices.${PERSONAS[gi].key}.${kind}`)
   }
@@ -435,11 +520,11 @@ export class TownStage {
     return d.honest[system].winner
   }
 
-  private settle(system: System) {
+  private settle(system: System, winner = this.winnerOf(system)) {
     const i = SYSTEMS.indexOf(system)
     memory.known[i] = true
     if (this.betMark) {
-      const right = this.betMark.c === this.winnerOf(system)
+      const right = this.betMark.c === winner
       this.betMark.ring.setAttribute('class', 'ring ' + (right ? 'good' : 'bad'))
       this.betMark.label.setAttribute('class', 'bet-label ' + (right ? 'good-text' : 'bad-text'))
       this.betMark.label.textContent = `${right ? '✓' : '✗'} ${this.t('deck.bet.yours').toUpperCase()}`
@@ -644,7 +729,8 @@ export class TownStage {
   private reset() {
     this.gen++
     this.anim.cancel()
-    for (const id of ['machine', 'notes', 'coins', 'stamps', 'buttons', 'picks']) this.layer[id].replaceChildren()
+    for (const id of ['machine', 'notes', 'coins', 'stamps', 'buttons', 'picks', 'thought']) this.layer[id].replaceChildren()
+    DIMMED.forEach((id) => this.layer[id].classList.remove('dim'))
     this.layer.items.querySelectorAll('.extra').forEach((e) => e.remove())
     this.clearBubbles()
     this.words('')
@@ -787,6 +873,7 @@ export class TownStage {
     this.buildPiles()
     const k = 'deck.plurality'
     this.words(this.t(`${k}.title`), this.t(`${k}.ask`))
+    await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
     await this.ask([{ label: this.t(`${k}.count`), primary: true }])
@@ -801,6 +888,8 @@ export class TownStage {
     const others = COLX.filter((_, c) => c !== w)
     const tops = CANDIDATES.map((_, c) => (c === w ? Infinity : this.pileTop(c)))
     this.bracket(Math.min(...others) - 40, Math.max(...others) + 40, Math.min(...tops) - 46, this.t(`${k}.others`, { n: TOTAL - votes }))
+    const last = PERSONAS.filter((p) => p.ranking[p.ranking.length - 1] === w).reduce((n, p) => n + p.voters, 0)
+    await this.lesson(k, { winner: NAME[w], votes, total: TOTAL, last }, false)
   }
 
   // ---- The lesser evil (vote utile).
@@ -813,9 +902,9 @@ export class TownStage {
     this.react(honest, false)
     const k = 'deck.compromise'
     this.words(this.t(`${k}.title`), this.t(`${k}.caption`))
-    this.say(LEO, this.t(`${k}.before`))
+    this.think(LEO, k)
     await this.ask([{ label: this.t(`${k}.button`), primary: true }])
-    this.clearBubbles()
+    this.unpanel()
     // Léo's group is the only one with Amira first, so her whole pile moves.
     const target = PERSONAS[LEO].ranking[1]
     await this.movePile(PERSONAS[LEO].ranking[0], () => target, false)
@@ -829,6 +918,7 @@ export class TownStage {
     this.stamp(this.groups[LEO].cx, 604, this.t(`${k}.stamp`))
     const totals = tallies(outcome)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: totals[w], next: runnerUp(totals, w).votes }))
+    await this.lesson(k)
   }
 
   // ---- 2. Two rounds.
@@ -837,6 +927,7 @@ export class TownStage {
     this.buildPiles()
     const k = 'deck.twoRound'
     this.words(this.t(`${k}.title`), this.t(`${k}.ask`))
+    await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
     await this.ask([{ label: this.t(`${k}.round1`), primary: true }])
@@ -857,6 +948,7 @@ export class TownStage {
     this.setCaption(
       this.t(`${k}.result`, { winner: NAME[w], votes: final[w], next: runnerUp(final, w).votes, others: this.o.list(outs.map((c) => NAME[c])) }),
     )
+    await this.lesson(k, {}, false)
   }
 
   // ---- The lesser evil in round one: help a finalist you can live with.
@@ -867,9 +959,9 @@ export class TownStage {
     const k = 'deck.twoRoundCompromise'
     const group = PERSONAS[ROBINSON]
     this.words(this.t(`${k}.title`), this.t(`${k}.caption`, { n: group.voters }))
-    this.say(ROBINSON, this.t(`${k}.before`))
+    this.think(ROBINSON, k)
     await this.ask([{ label: this.t(`${k}.button`), primary: true }])
-    this.clearBubbles()
+    this.unpanel()
     // Robinson's group is the only one with Bruno first, so his whole pile moves.
     const target = group.ranking[1]
     await this.movePile(group.ranking[0], () => target, false)
@@ -887,6 +979,7 @@ export class TownStage {
     this.stamp(this.groups[ROBINSON].cx, 604, this.t(`${k}.stamp`))
     const final = tallies(outcome, outcome.rounds.length - 1)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: final[w], next: runnerUp(final, w).votes, n: group.voters }))
+    await this.lesson(k)
   }
 
   // ---- 3. Instant runoff.
@@ -895,6 +988,7 @@ export class TownStage {
     this.buildPiles()
     const k = 'deck.irv'
     this.words(this.t(`${k}.title`), this.t(`${k}.ask`))
+    await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
     await this.ask([{ label: this.t(`${k}.count`), primary: true }])
@@ -922,6 +1016,7 @@ export class TownStage {
     this.react(w)
     const final = tallies(outcome, outcome.rounds.length - 1)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: final[w], first: NAME[order[0]] }))
+    await this.lesson(k)
   }
 
   // ---- 4. Borda points.
@@ -939,6 +1034,7 @@ export class TownStage {
       for (let j = 0; j < 4 - i; j++) el('circle', { cx: x + 44 + j * 9, cy: 156, r: 4, class: 'coin c2' }, strip)
       if (i === 4) text(x + 46, 161, '0', 'small-caps', strip, 'start')
     })
+    await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
     await this.ask([{ label: this.t(`${k}.throw`), primary: true }])
@@ -983,10 +1079,11 @@ export class TownStage {
     void this.crownJar(pts, true)
     const k = 'deck.bury'
     this.words(this.t(`${k}.title`), this.t(`${k}.caption`))
+    this.think(ROBINSON, k)
     await this.ask([{ label: this.t(`${k}.button`), primary: true }])
-    this.say(ROBINSON, this.t(`${k}.voice`))
+    this.unpanel()
     this.stamp(this.groups[ROBINSON].cx, 604, this.t(`${k}.stamp`))
-    await this.anim.sleep(800)
+    await this.anim.sleep(500)
     // The points that change hands, as the server counts them.
     const after = tallies(this.o.data.bury)
     const loser = after.findIndex((p, c) => p < before[c])
@@ -1008,6 +1105,7 @@ export class TownStage {
     await this.crownJar(pts)
     this.react(w)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: after[w], next: runnerUp(after, w).votes, n: PERSONAS[ROBINSON].voters }))
+    await this.lesson(k)
   }
 
   // ---- 5. Head to head.
@@ -1039,6 +1137,7 @@ export class TownStage {
     })
     const k = 'deck.duels'
     this.words(this.t(`${k}.title`), this.t(`${k}.ask`))
+    await this.how(k)
     await this.bet(node.map((p) => ({ ...p, r: 16, labelY: p.y + 40 })))
     this.setCaption(this.t(`${k}.rule`))
     const d = this.o.data
@@ -1110,19 +1209,62 @@ export class TownStage {
     if (lost >= 0) this.note(node[lost].x + (flip(lost) ? 34 : -34), node[lost].y + 5, this.t(`${k}.losesAll`, { n: rivals }), flip(lost) ? 'start' : 'end')
     this.stamp(640, 410, this.t(`${k}.stamp`))
     this.setCaption(this.t(`${k}.result`, { winner: NAME[champ], loser: NAME[lost] }))
+    await this.lesson(k)
   }
 
-  // ---- 6. Approval, then the bullet vote.
+  // ---- 6. Approval: the reader ticks a ballot too, then the bullet vote.
+
+  /** Tap candidates to tick or untick them; resolves with the ticks when the reader votes. */
+  private tickBallot(): Promise<boolean[]> {
+    const my = this.gen
+    const ticks = CANDIDATES.map(() => false)
+    const picks = this.layer.picks
+    picks.replaceChildren()
+    CANDIDATES.forEach((_, c) => {
+      const x = COLX[c]
+      el('circle', { cx: x, cy: TOKEN_Y, r: 23, class: 'pulse' }, picks)
+      const ring = el('circle', { cx: x, cy: TOKEN_Y, r: 27, class: 'ring' }, picks)
+      const badge = el('g', { class: 'gone' }, picks)
+      el('circle', { cx: x + 19, cy: TOKEN_Y - 19, r: 11, class: 'tick-badge' }, badge)
+      text(x + 19, TOKEN_Y - 14.5, '✓', 'tick-mark', badge)
+      const hit = el('circle', { cx: x, cy: TOKEN_Y, r: 30, class: 'hit' }, picks)
+      asButton(hit, this.t('deck.approval.tick', { name: NAME[c] }), () => {
+        if (my !== this.gen) return
+        ticks[c] = !ticks[c]
+        ring.setAttribute('class', 'ring' + (ticks[c] ? ' ticked' : ''))
+        badge.classList.toggle('gone', !ticks[c])
+        hit.setAttribute('aria-pressed', String(ticks[c]))
+      })
+      hit.setAttribute('aria-pressed', 'false')
+    })
+    return this.ask([{ label: this.t('deck.approval.vote'), primary: true }]).then(() => {
+      // The ticks stay on the tokens as the reader's ballot.
+      picks.querySelectorAll('.pulse, .hit').forEach((e) => e.remove())
+      return ticks
+    })
+  }
+
   private async sApproval() {
     this.crowdLayout()
     this.voters.forEach((v) => v.ballot.g.classList.add('gone'))
     this.buildPiles(false)
     const k = 'deck.approval'
-    this.words(this.t(`${k}.title`), this.t(`${k}.ask`))
+    this.words(this.t(`${k}.title`), this.t(`${k}.yours`))
+    await this.how(k)
+    const yours = await this.tickBallot()
+    const counted = this.o.approvalWith(yours)
     this.groups.forEach((g) => [0, 1].forEach((i) => text(g.cx - 48 + i * 23, 548, '✓', 'small-caps', this.layer.notes)))
+    this.setCaption(this.t(`${k}.ask`))
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
     await this.ask([{ label: this.t(`${k}.count`), primary: true }])
+    let results: { honest: Outcome; bullet: Outcome }
+    try {
+      results = await counted
+    } catch (e) {
+      this.setCaption(this.t('common.apiError', { error: e instanceof Error ? e.message : String(e) }))
+      return
+    }
     const ticks: [Item, number][] = []
     this.voters.forEach((v) => {
       for (const c of v.ranking.slice(0, 2)) {
@@ -1132,17 +1274,27 @@ export class TownStage {
         ticks.push([item, c])
       }
     })
+    // The reader's ticks leave from the tokens, last.
+    const reader = { g: PERSONAS.length, k: 0, r: 0, home: { x: 0, y: 0 }, ranking: [] } as unknown as Voter
+    yours.forEach((on, c) => {
+      if (!on) return
+      const item = this.makeItem({ ...reader, home: { x: COLX[c] + 19, y: TOKEN_Y - 19 } })
+      item.g.classList.add('extra', 'mine')
+      this.paint(item, c)
+      ticks.push([item, c])
+    })
     await this.dropAll(ticks, false)
-    const honest = this.o.data.honest.approval
+    const honest = results.honest
     const w = honest.winner
     await this.crownPile(w)
-    this.settle('approval')
+    this.settle('approval', w)
     this.react(w)
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: tallies(honest)[w] }))
+    this.setCaption(this.t(yours.some(Boolean) ? `${k}.resultYours` : `${k}.result`, { winner: NAME[w], votes: tallies(honest)[w] }))
+    // Lucas's group thinks about ticking its favourite alone.
+    await this.ask([{ label: this.t(`${k}.what`), primary: true }])
+    this.think(LUCAS, k)
     await this.ask([{ label: this.t(`${k}.bullet`), primary: true }])
-    this.clearBubbles()
-    this.say(LUCAS, this.t(`${k}.before`))
-    await this.anim.sleep(900)
+    this.unpanel()
     // Lucas's group takes back every tick but its favourite's; the piles settle.
     const favourite = PERSONAS[LUCAS].ranking[0]
     for (const c of CANDIDATES.keys()) {
@@ -1156,13 +1308,14 @@ export class TownStage {
       await Promise.all(this.stacks[c].map((item, i) => this.fly(item, this.slot(c, i), { dur: 360, lift: 0 })))
       this.float(COLX[c] + 40, this.pileTop(c) - 4, '−' + mine.length, 'bad-text')
     }
-    const after = this.o.data.bullet
+    const after = results.bullet
     const w2 = after.winner
     await this.crownPile(w2)
     this.react(w2, false)
     this.say(LUCAS, this.t(`${k}.after`))
     this.stamp(this.groups[LUCAS].cx, 604, this.t(`${k}.stamp`), 'bad')
     this.setCaption(this.t(`${k}.backfire`, { winner: NAME[w2], votes: tallies(after)[w2] }))
+    await this.lesson(k)
   }
 
   // ---- Same voters, six counts.

@@ -46,6 +46,14 @@ the spirit of *The Evolution of Trust*: the words sit inside the scene
 every count is something you watch happen. Before each count you bet on the
 winner; a board keeps score.
 
+Each system opens with a short panel on how it works. After each count, a
+panel names what went wrong and the idea Riverton tries next, so every flaw
+motivates the next system: one mark elects the candidate most voters rank
+last, so the town adds a runoff; the runoff brings back the lesser evil in
+round one, so it lets voters rank everyone; and so on. When a group cheats,
+its spokesperson thinks the tactic through out loud, and the panel names and
+defines it (the lesser evil, burying, bullet voting).
+
 | # | Slide | What happens | Mayor |
 | --- | --- | --- | --- |
 | 1 | Riverton elects a mayor | The five candidates walk on | |
@@ -60,7 +68,7 @@ winner; a board keeps score.
 | 10 | Borda points | Coins rain into jars | Camille |
 | 11 | Burying | Robinson's group moves Camille to last; three coins change jars | Bruno |
 | 12 | Head to head | The crowd splits for each of the ten duels; arrows build the duel map | Bruno |
-| 13 | Approval | Ticks for each group's top two, then Lucas's group ticks only Erik and it backfires | Bruno, then Daniel |
+| 13 | Approval | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Erik and it backfires | Bruno, then Daniel |
 | 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's theorem | |
 
 Who wins and by how much comes from the Worker; the stage only shows which

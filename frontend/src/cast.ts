@@ -80,14 +80,27 @@ export function defaultApprovals(ranking: number[]): boolean[] {
   return CANDIDATES.map((_, c) => ranking.indexOf(c) < 2)
 }
 
-/** The election the API counts: `ballots[i]` is the ballot persona i's whole group casts. */
-export function electionOf(ballots: CastBallot[]): ElectionInput {
+/**
+ * The election the API counts: `ballots[i]` is the ballot persona i's whole
+ * group casts; `extra` ballots (the reader's) are counted alongside.
+ */
+export function electionOf(ballots: CastBallot[], extra: BallotInput[] = []): ElectionInput {
   return {
     candidates: CANDIDATES.map((c) => c.name),
-    ballots: ballots.map(
-      (b, g): BallotInput => ({ weight: PERSONAS[g].voters, ranking: [...b.ranking], ...(b.approvals ? { approvals: [...b.approvals] } : {}) }),
-    ),
+    ballots: [
+      ...ballots.map(
+        (b, g): BallotInput => ({ weight: PERSONAS[g].voters, ranking: [...b.ranking], ...(b.approvals ? { approvals: [...b.approvals] } : {}) }),
+      ),
+      ...extra,
+    ],
   }
+}
+
+/** One voter's approval ballot; the ranking the API also needs puts the ticked candidates first. */
+export function approvalBallot(ticks: boolean[]): BallotInput {
+  const ticked = CANDIDATES.map((_, c) => c).filter((c) => ticks[c])
+  const rest = CANDIDATES.map((_, c) => c).filter((c) => !ticks[c])
+  return { weight: 1, ranking: [...ticked, ...rest], approvals: [...ticks] }
 }
 
 export const candidateRole = (c: Candidate) => i18n.global.t(`cast.candidates.${c.key}.role`)

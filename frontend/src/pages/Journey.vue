@@ -3,16 +3,17 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
-import { electionOf, type CastBallot } from '../cast'
+import { approvalBallot, electionOf, type CastBallot } from '../cast'
 import { listOf, locale } from '../i18n'
 import { bullet, bury, compromise, compromiseTwoRound, honest } from '../stage/plan'
 import { TownStage, type DeckData } from '../stage/TownStage'
 import '../stage/stage.css'
-import type { ElectResponse, MethodId } from '../types'
+import type { BallotInput, ElectResponse, MethodId } from '../types'
 
 // The journey: a full-screen slide deck played on Riverton's town square.
-// The five elections it counts are asked of the server once; the stage animates
-// them slide by slide, and the address follows the slide (/learn/1 … /learn/13).
+// The five elections it counts are asked of the server once, and approval again
+// once the reader has ticked a ballot; the stage animates them slide by slide,
+// and the address follows the slide (/learn/1 … /learn/14).
 
 const { t } = useI18n()
 const route = useRoute()
@@ -34,13 +35,14 @@ function go(i: number) {
   void router.push({ name: 'journey', params: { step: i + 1 } })
 }
 
+const count = (ballots: CastBallot[], methods: MethodId[], extra: BallotInput[] = []) => api.elect(electionOf(ballots, extra), methods)
+const outcome = (r: ElectResponse, m: MethodId) => {
+  const found = r.results.find((x) => x.outcome.method === m)
+  if (!found) throw new Error(`missing ${m}`)
+  return found.outcome
+}
+
 async function load(): Promise<DeckData> {
-  const count = (ballots: CastBallot[], methods: MethodId[]) => api.elect(electionOf(ballots), methods)
-  const outcome = (r: ElectResponse, m: MethodId) => {
-    const found = r.results.find((x) => x.outcome.method === m)
-    if (!found) throw new Error(`missing ${m}`)
-    return found.outcome
-  }
   const [h, c, c2, b, u] = await Promise.all([
     count(honest(), ['plurality', 'two_round', 'irv', 'borda', 'approval', 'schulze']),
     count(compromise(), ['plurality']),
@@ -91,6 +93,12 @@ onMounted(async () => {
     navigate: go,
     open: (path) => void router.push(path),
     announce: (words) => (live.value = words),
+    approvalWith: async (ticks) => {
+      // The reader's ballot joins the town's, honest and with Lucas's bullet vote.
+      const extra = ticks.some(Boolean) ? [approvalBallot(ticks)] : []
+      const [h, u] = await Promise.all([count(honest(), ['approval'], extra), count(bullet(), ['approval'], extra)])
+      return { honest: outcome(h, 'approval'), bullet: outcome(u, 'approval') }
+    },
   })
   ready.value = true
   stage.show(index.value)

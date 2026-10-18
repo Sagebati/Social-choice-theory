@@ -118,6 +118,23 @@
 .town-stage .dot { fill: var(--axis); cursor: pointer; }
 .town-stage .dot.here { fill: var(--ink); }
 
+/* Panels over the dimmed scene: how it works, thinking a tactic through, the lesson */
+.town-stage .dim { opacity: 0.16; }
+.town-stage .thought rect { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.town-stage .thought-dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
+.town-stage .thought-text { font-size: 21px; font-weight: 650; }
+.town-stage .thought-step { font-size: 21px; font-weight: 850; fill: var(--muted); }
+.town-stage .thought-rule { stroke: var(--axis); stroke-width: 1.5; }
+.town-stage .thought-name { font-size: 15px; font-weight: 850; letter-spacing: 0.1em; }
+.town-stage .thought-def { font-size: 18px; fill: var(--ink-2); }
+.town-stage .thought { transform-origin: 50% 0%; }
+
+/* The reader's own approval ballot */
+.town-stage .ring.ticked { stroke: var(--ink); stroke-dasharray: none; stroke-width: 3; }
+.town-stage .tick-badge { fill: var(--ink); }
+.town-stage .tick-mark { font-size: 13px; font-weight: 900; fill: var(--surface); }
+.town-stage .item.mine rect { stroke: var(--ink); stroke-width: 2; }
+
 .town-stage .gone { opacity: 0; pointer-events: none; }
 .town-stage .fade { transition: opacity 0.45s; }
 
