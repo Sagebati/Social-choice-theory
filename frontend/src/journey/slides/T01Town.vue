@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CandidateBar from '../../components/CandidateBar.vue'
 import Challenge from '../../components/Challenge.vue'
 import PersonaCard from '../../components/PersonaCard.vue'
+import RichText from '../../components/RichText'
 import Takeaway from '../../components/Takeaway.vue'
 import { CANDIDATES, honestBallots, PERSONAS, TOTAL_VOTERS } from '../../cast'
 import { useProgress } from '../../composables/useProgress'
 import { color, onColor } from '../../palette'
 import TownFrame from '../TownFrame.vue'
 
+const { t } = useI18n()
 const { progress } = useProgress()
 const ballots = honestBallots()
 const opened = ref(new Set<number>())
@@ -25,35 +28,23 @@ function toggle(i: number) {
 </script>
 
 <template>
-  <TownFrame title="Riverton elects a mayor">
+  <TownFrame :title="t('journey.steps.town')">
     <template #story>
-      <p>
-        Riverton, population small, needs a new mayor. Five candidates are standing, and {{ TOTAL_VOTERS }} people
-        will vote.
-      </p>
-      <p>
-        To keep things readable, the voters fall into five groups. Everyone in a group ranks the candidates in
-        exactly the same order, so each group has a spokesperson: Frank speaks for 9 voters, Leo for 7, and so on.
-      </p>
-      <p>
-        <strong>Nobody changes their opinion in this story.</strong> What changes, step by step, is the voting
-        system, and now and then how cleverly a group uses it. Watch who becomes mayor.
-      </p>
+      <p>{{ t('t01.intro', { voters: TOTAL_VOTERS }) }}</p>
+      <p>{{ t('t01.groups') }}</p>
+      <RichText tag="p" :text="t('t01.rules')" />
       <Challenge id="t1" :done="read.size === PERSONAS.length">
-        Get to know the voters: open each spokesperson's reasons below ({{ read.size }} of {{ PERSONAS.length }}).
-        <template #success>You know Riverton now. Keep these five faces in mind.</template>
+        {{ t('t01.challenge', { read: read.size, total: PERSONAS.length }) }}
+        <template #success>{{ t('t01.success') }}</template>
       </Challenge>
       <Takeaway after="t1">
-        <p>
-          Every honest ballot in this guide comes from these five rankings. When the mayor changes, it is because the
-          rules changed, or because someone voted tactically. Never because anyone changed their mind.
-        </p>
+        <p>{{ t('t01.lesson') }}</p>
       </Takeaway>
     </template>
     <template #panel>
       <div class="card stack">
-        <div class="eyebrow">Before we count anything</div>
-        <p class="q">Knowing what everyone wants, who <em>should</em> be mayor?</p>
+        <div class="eyebrow">{{ t('t01.pickEyebrow') }}</div>
+        <RichText tag="p" class="q" :text="t('t01.pickQuestion')" />
         <div class="row">
           <button
             v-for="(c, i) in CANDIDATES"
@@ -67,7 +58,7 @@ function toggle(i: number) {
           </button>
         </div>
         <p v-if="progress.pick !== null" class="small muted">
-          Noted: {{ CANDIDATES[progress.pick].name }}. We'll come back to your choice at the end.
+          {{ t('t01.noted', { name: CANDIDATES[progress.pick].name }) }}
         </p>
       </div>
     </template>

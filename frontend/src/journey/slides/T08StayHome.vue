@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CandidateBar from '../../components/CandidateBar.vue'
 import Challenge from '../../components/Challenge.vue'
 import PersonaCard from '../../components/PersonaCard.vue'
+import RichText from '../../components/RichText'
 import RoundsView from '../../components/RoundsView.vue'
 import Takeaway from '../../components/Takeaway.vue'
 import { betterOff, DANIEL, honestBallots, NAMES, PERSONAS, type CastBallot } from '../../cast'
 import { useTown } from '../../composables/useTown'
+import { listOf } from '../../i18n'
 import TownFrame from '../TownFrame.vue'
 import { absentGroups, verdicts } from '../town'
 
+const { t } = useI18n()
 const ballots = ref<CastBallot[]>(honestBallots())
 const { results } = useTown(() => ballots.value, () => ({}), ['irv'])
 const irv = computed(() => results.value?.byMethod.irv ?? null)
@@ -23,7 +27,12 @@ const done = computed(
     away.value.every((g) => betterOff(g, DANIEL, irv.value!.winner)),
 )
 const stayers = computed(() =>
-  away.value.map((g) => `${PERSONAS[g].voters - (ballots.value[g].voters ?? PERSONAS[g].voters)} of ${PERSONAS[g].name}'s group`).join(' and '),
+  listOf(
+    away.value.map((g) => {
+      const n = PERSONAS[g].voters - (ballots.value[g].voters ?? PERSONAS[g].voters)
+      return t('t08.stayers', { n, name: PERSONAS[g].name }, n)
+    }),
+  ),
 )
 
 function setBallot(i: number, b: CastBallot) {
@@ -33,32 +42,20 @@ function setBallot(i: number, b: CastBallot) {
 </script>
 
 <template>
-  <TownFrame title="Better off staying home" :seen="['plurality', 'two_round', 'irv']" current="irv">
+  <TownFrame :title="t('journey.steps.stayHome')" :seen="['plurality', 'two_round', 'irv']" current="irv">
     <template #story>
-      <p>
-        You would think that showing up and voting honestly can never hurt you. Under instant runoff it can. Use the
-        − and + buttons on the cards to keep some voters at home and watch the count.
-      </p>
+      <p>{{ t('t08.intro') }}</p>
       <Challenge id="t8" :done="done">
-        Find a group whose members get a better mayor, by their own honest ranking, when some of them
-        <strong>don't vote</strong>.
-        <template #success>
-          With {{ stayers }} at home, the order of eliminations changes and {{ NAMES[irv!.winner] }} wins instead of
-          Daniel. They did better by not voting at all.
-        </template>
+        <RichText :text="t('t08.challenge')" />
+        <template #success>{{ t('t08.success', { stayers, winner: NAMES[irv!.winner] }) }}</template>
       </Challenge>
       <Takeaway after="t8">
-        <p>
-          This is the <strong>no-show paradox</strong>: instant runoff fails <em>participation</em>. Two more traps
-          from the same family: if 2 of Leo's group ranked Daniel first, Daniel would <em>lose</em> (to Camille),
-          and if 3 more people like Margaret turned up, they would also hand the town to Camille, whom they like less
-          than Daniel. Both fall out of how eliminations cascade.
-        </p>
+        <RichText tag="p" :text="t('t08.lesson')" />
       </Takeaway>
     </template>
     <template #panel>
       <div class="card">
-        <RoundsView v-if="irv" v-model:step="step" :outcome="irv.view" :names="NAMES" unit="votes" />
+        <RoundsView v-if="irv" v-model:step="step" :outcome="irv.view" :names="NAMES" :unit="t('common.units.votes')" />
       </div>
     </template>
     <template #town>
