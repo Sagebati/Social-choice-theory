@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CandidateBar from '../../components/CandidateBar.vue'
 import Challenge from '../../components/Challenge.vue'
 import Chip from '../../components/Chip.vue'
@@ -7,11 +8,13 @@ import DuelGraph from '../../components/DuelGraph.vue'
 import DuelMatrix from '../../components/DuelMatrix.vue'
 import PersonaCard from '../../components/PersonaCard.vue'
 import Predict from '../../components/Predict.vue'
+import RichText from '../../components/RichText'
 import Takeaway from '../../components/Takeaway.vue'
 import { CANDIDATES, ERIK, honestBallots, NAMES, PERSONAS } from '../../cast'
 import { useTown } from '../../composables/useTown'
 import TownFrame from '../TownFrame.vue'
 
+const { t } = useI18n()
 const ballots = honestBallots()
 const { results } = useTown(() => ballots, () => ({}), ['schulze'])
 const pairwise = computed(() => results.value?.pairwise ?? null)
@@ -38,33 +41,18 @@ const seen = computed(() => (revealed.value ? ['plurality', 'two_round', 'irv', 
 </script>
 
 <template>
-  <TownFrame title="One on one" :seen="seen" current="schulze">
+  <TownFrame :title="t('journey.steps.headToHead')" :seen="seen" current="schulze">
     <template #story>
-      <p>
-        In 1785 the Marquis de Condorcet proposed the most natural test of all: pit the candidates against each other
-        <strong>two at a time</strong>. Who would a majority choose, Amira or Bruno? Bruno or Camille? There are ten
-        such duels.
-      </p>
-      <p>
-        A candidate who wins <strong>every</strong> duel is the <strong>Condorcet winner</strong>. Whoever else
-        you pick, a majority would have preferred the Condorcet winner. Methods that always elect them (Schulze,
-        ranked pairs, Copeland, minimax) are called Condorcet methods.
-      </p>
-      <Predict v-model="guess" question="Who wins every duel?" :options="NAMES" :answer="pairwise?.condorcet_winner ?? null" />
+      <RichText tag="p" :text="t('t11.intro')" />
+      <RichText tag="p" :text="t('t11.winner')" />
+      <Predict v-model="guess" :question="t('t11.question')" :options="NAMES" :answer="pairwise?.condorcet_winner ?? null" />
       <template v-if="revealed && pairwise">
         <Challenge id="t11" :done="inspected.size >= 3">
-          Pick two candidates under the diagram, or use the shortcuts, to see which groups side with whom. Inspect
-          three duels.
-          <template #success>
-            Bruno beats everyone: Amira 18–12, Camille 19–11, Daniel 19–11, Erik 16–14. Fifth system, fifth mayor. And
-            Erik, whom plurality elected, loses every single duel.
-          </template>
+          {{ t('t11.challenge') }}
+          <template #success>{{ t('t11.success') }}</template>
         </Challenge>
         <Takeaway after="t11">
-          <p>
-            Same voters, five systems, five different mayors: Erik, Amira, Daniel, Camille, Bruno. Each system is
-            "fair" by some definition, and each one asks a different question of the very same ballots.
-          </p>
+          <p>{{ t('t11.lesson') }}</p>
         </Takeaway>
       </template>
     </template>
@@ -74,12 +62,12 @@ const seen = computed(() => (revealed.value ? ['plurality', 'two_round', 'irv', 
           <DuelGraph :names="NAMES" :pairwise="pairwise" />
           <div class="duel">
             <div class="row small">
-              <span class="eyebrow">Duel</span>
-              <select v-model.number="a" aria-label="First candidate" @change="pick(a, b)">
+              <span class="eyebrow">{{ t('t11.duel') }}</span>
+              <select v-model.number="a" :aria-label="t('t11.first')" @change="pick(a, b)">
                 <option v-for="(c, i) in CANDIDATES" :key="i" :value="i" :disabled="i === b">{{ c.name }}</option>
               </select>
-              vs
-              <select v-model.number="b" aria-label="Second candidate" @change="pick(a, b)">
+              {{ t('t11.versus') }}
+              <select v-model.number="b" :aria-label="t('t11.second')" @change="pick(a, b)">
                 <option v-for="(c, i) in CANDIDATES" :key="i" :value="i" :disabled="i === a">{{ c.name }}</option>
               </select>
             </div>
@@ -93,15 +81,19 @@ const seen = computed(() => (revealed.value ? ['plurality', 'two_round', 'irv', 
                 <ul><li v-for="x in sides.forB" :key="x.g">{{ x.p.name }} ×{{ x.p.voters }}</li></ul>
               </div>
             </div>
-            <button class="btn small" @click="showTable = !showTable">{{ showTable ? 'Hide' : 'Show' }} all ten duels as a table</button>
+            <button class="btn small" @click="showTable = !showTable">
+              {{ showTable ? t('t11.hideTable') : t('t11.showTable') }}
+            </button>
             <DuelMatrix v-if="showTable" :names="NAMES" :pairwise="pairwise" />
             <div class="row quick">
-              <button v-for="c in [0, 2, 3, 4]" :key="c" class="btn small" @click="pick(1, c)">Bruno vs {{ NAMES[c] }}</button>
-              <button class="btn small" @click="pick(ERIK, 0)">Erik vs Amira</button>
+              <button v-for="c in [0, 2, 3, 4]" :key="c" class="btn small" @click="pick(1, c)">
+                {{ t('t11.quick', { a: NAMES[1], b: NAMES[c] }) }}
+              </button>
+              <button class="btn small" @click="pick(ERIK, 0)">{{ t('t11.quick', { a: NAMES[ERIK], b: NAMES[0] }) }}</button>
             </div>
           </div>
         </template>
-        <p v-else class="muted small">Make a prediction to hold the duels.</p>
+        <p v-else class="muted small">{{ t('t11.waiting') }}</p>
       </div>
     </template>
     <template #town>
