@@ -1,8 +1,8 @@
 # How to rig an election
 
-*The written companion to the explorable. Every example below is one of the
-library's scenarios (`crates/social-choice/src/scenarios.rs`), and its tests
-check each claim.*
+*The written companion to the explorable ([version française](rigging-guide.fr.md)).
+Every example below is one of the library's scenarios
+(`crates/social-choice/src/scenarios.rs`), and its tests check each claim.*
 
 You don't need to stuff ballot boxes. Every voting method has blind spots, and
 anyone who understands them can turn them into an advantage. There are four

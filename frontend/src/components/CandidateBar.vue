@@ -38,7 +38,7 @@ function toggle(i: number) {
     >
       <span class="token" :style="{ background: color(c.i), color: onColor(c.i) }" aria-hidden="true">{{ initial(c.name) }}</span>
       <div class="text">
-        <strong>{{ c.fullName }}<span v-if="winner === c.i" class="crown"> {{ t('candidateBar.mayor') }}</span></strong>
+        <strong>{{ c.fullName }}<span v-if="winner === c.i" class="crown">{{ t('candidateBar.mayor') }}</span></strong>
         <span class="role">{{ candidateRole(c) }}</span>
         <span v-if="pitch" class="pitch">{{ candidatePitch(c) }}</span>
       </div>
@@ -109,6 +109,7 @@ function toggle(i: number) {
 }
 
 .crown {
+  margin-left: 0.35em;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;

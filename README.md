@@ -16,7 +16,15 @@ of social choice theory.
   lesson appears. It comes with a sandbox, a rigging handbook and a theorem lab.
 
 Every number on the page is computed by the Worker, not looked up. The prose
-version of the guide is in [`docs/rigging-guide.md`](docs/rigging-guide.md).
+version of the guide is in [`docs/rigging-guide.md`](docs/rigging-guide.md)
+(in French: [`docs/rigging-guide.fr.md`](docs/rigging-guide.fr.md)).
+
+The site speaks **English and French** (*Qui a vraiment gagné ?*). It follows
+the browser's language, the EN/FR switch in the header changes it, and a link
+with `?lang=fr` opens it in French. The API writes its explanations in the
+same language. How the translations are organised, and how to add a language,
+is in [`frontend/src/locales/README.md`](frontend/src/locales/README.md); the
+French terms are in [`docs/glossary-fr.md`](docs/glossary-fr.md).
 
 ## The journey
 
@@ -130,6 +138,8 @@ request. On a paid plan, uncomment the `[limits]` block in `wrangler.toml`.
 
 All endpoints take and return JSON. Elections may omit approvals and scores;
 they are derived from the rankings (approve the top half, score linearly).
+Every endpoint accepts `?lang=en` (the default) or `?lang=fr` and writes all
+its text (descriptions, round notes, explanations, errors) in that language.
 
 | Endpoint | Body | Returns |
 | --- | --- | --- |
@@ -164,5 +174,7 @@ frontend/               Vue 3 + Vite + TypeScript
   src/journey/          the eighteen steps, cast in src/cast.ts
   src/pages/            sandbox, rigging handbook, theorem lab
   src/components/       persona ballots, tallies, duel diagram, opinion map, Arrow lab, …
+  src/locales/          English and French messages
 docs/rigging-guide.md   the written guide
+docs/glossary-fr.md     the French terms
 ```

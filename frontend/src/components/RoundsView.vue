@@ -50,12 +50,16 @@ watch(
     </ul>
     <p v-if="last" class="result">
       <RichText :text="t('rounds.winner', { name: winnerName(names, outcome) })" />
-      <span v-if="outcome.used_tiebreak" class="muted small"> {{ t('rounds.tiebreak') }}</span>
+      <span v-if="outcome.used_tiebreak" class="tiebreak muted small">{{ t('rounds.tiebreak') }}</span>
     </p>
   </div>
 </template>
 
 <style scoped>
+.tiebreak {
+  margin-left: 0.3em;
+}
+
 .head {
   display: flex;
   align-items: center;
