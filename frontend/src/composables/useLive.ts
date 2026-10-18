@@ -1,4 +1,5 @@
 import { ref, shallowRef, watch, type Ref, type ShallowRef } from 'vue'
+import { locale } from '../i18n'
 
 export interface Live<O> {
   data: ShallowRef<O | null>
@@ -13,7 +14,8 @@ export interface Live<O> {
  * input, so the display never lags behind by more than one round trip and never
  * shows a stale answer after a newer one.
  *
- * Return `null` from `input` to pause.
+ * Return `null` from `input` to pause. A change of language fetches again, since
+ * the answers carry text.
  */
 export function useLive<I, O>(input: () => I | null, fetcher: (input: I) => Promise<O>): Live<O> {
   const data = shallowRef<O | null>(null)
@@ -30,7 +32,7 @@ export function useLive<I, O>(input: () => I | null, fetcher: (input: I) => Prom
     inFlight = true
     loading.value = true
     try {
-      const result = await fetcher(JSON.parse(key) as I)
+      const result = await fetcher((JSON.parse(key) as { input: I }).input)
       // A newer input is already queued: skip this answer and fetch that one.
       if (pending === null) {
         data.value = result
@@ -52,7 +54,7 @@ export function useLive<I, O>(input: () => I | null, fetcher: (input: I) => Prom
   watch(
     () => {
       const value = input()
-      return value === null ? null : JSON.stringify(value)
+      return value === null ? null : JSON.stringify({ lang: locale.value, input: value })
     },
     (key) => {
       if (key !== null) void run(key)

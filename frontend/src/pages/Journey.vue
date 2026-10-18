@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useProgress } from '../composables/useProgress'
 import { CHAPTERS, SLIDES } from '../journey/slides'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const { reach } = useProgress()
@@ -13,13 +15,17 @@ const index = computed(() => {
   return Number.isInteger(n) && n >= 1 && n <= SLIDES.length ? n - 1 : 0
 })
 const slide = computed(() => SLIDES[index.value])
+const title = (i: number) => t(`journey.steps.${SLIDES[i].id}`)
 const toolbox = computed(() =>
-  SLIDES.slice(0, index.value + 1).flatMap((s, i) => s.unlocks.map((tool) => ({ ...tool, fresh: i === index.value }))),
+  SLIDES.slice(0, index.value + 1).flatMap((s, i) =>
+    s.unlocks.map((tool) => ({ ...tool, label: t(`journey.tools.${tool.id}`), fresh: i === index.value })),
+  ),
 )
 const chapters = computed(() =>
-  CHAPTERS.map((name) => ({
-    name,
-    steps: SLIDES.map((s, i) => ({ i, title: s.title })).filter((_, i) => SLIDES[i].chapter === name),
+  CHAPTERS.map((id, c) => ({
+    id,
+    name: t(`journey.chapters.${id}`),
+    steps: SLIDES.map((_, i) => ({ i, title: title(i) })).filter((_, i) => SLIDES[i].chapter === c),
   })),
 )
 
@@ -50,8 +56,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="journey">
-    <nav class="progress" aria-label="Journey steps">
-      <div v-for="(chapter, c) in chapters" :key="chapter.name" class="chapter" :class="{ current: slide.chapter === chapter.name }">
+    <nav class="progress" :aria-label="t('journey.stepsAria')">
+      <div v-for="(chapter, c) in chapters" :key="chapter.id" class="chapter" :class="{ current: slide.chapter === c }">
         <span class="chapter-name">{{ c + 1 }}. {{ chapter.name }}</span>
         <span class="dots">
           <button
@@ -59,7 +65,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             :key="step.i"
             class="dot"
             :class="{ done: step.i < index, here: step.i === index }"
-            :aria-label="`Step ${step.i + 1}: ${step.title}`"
+            :aria-label="t('journey.stepLabel', { n: step.i + 1, title: step.title })"
             :aria-current="step.i === index ? 'step' : undefined"
             :title="step.title"
             @click="go(step.i)"
@@ -68,25 +74,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </div>
     </nav>
 
-    <div class="eyebrow">Chapter {{ CHAPTERS.indexOf(slide.chapter) + 1 }} · {{ slide.chapter }} · step {{ index + 1 }} of {{ SLIDES.length }}</div>
+    <div class="eyebrow">
+      {{
+        t('journey.eyebrow', {
+          chapter: slide.chapter + 1,
+          name: chapters[slide.chapter].name,
+          step: index + 1,
+          total: SLIDES.length,
+        })
+      }}
+    </div>
     <component :is="slide.component" :key="slide.id" />
 
     <footer class="nav">
-      <button class="btn" :disabled="index === 0" @click="go(index - 1)">← Back</button>
-      <div class="toolbox" aria-label="Your toolbox">
-        <span class="eyebrow">Toolbox</span>
+      <button class="btn" :disabled="index === 0" @click="go(index - 1)">{{ t('journey.back') }}</button>
+      <div class="toolbox" :aria-label="t('journey.toolboxAria')">
+        <span class="eyebrow">{{ t('journey.toolbox') }}</span>
         <span
           v-for="tool in toolbox"
-          :key="tool.label"
+          :key="tool.id"
           class="tool"
           :class="{ fresh: tool.fresh }"
-          :title="tool.fresh ? `New: ${tool.label}` : tool.label"
+          :title="tool.fresh ? t('journey.newTool', { tool: tool.label }) : tool.label"
         >
-          <span aria-hidden="true">{{ tool.icon }}</span> {{ tool.label }}<span v-if="tool.fresh" class="new">new</span>
+          <span aria-hidden="true">{{ tool.icon }}</span> {{ tool.label
+          }}<span v-if="tool.fresh" class="new">{{ t('journey.new') }}</span>
         </span>
       </div>
       <button v-if="index < SLIDES.length - 1" class="btn primary" @click="go(index + 1)">
-        Next: {{ SLIDES[index + 1].title }} →
+        {{ t('journey.next', { title: title(index + 1) }) }}
       </button>
     </footer>
   </div>

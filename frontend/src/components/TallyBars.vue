@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { color } from '../palette'
 
 // One horizontal bar per candidate, value at the tip. Candidates out of the
@@ -26,22 +27,23 @@ const rows = computed(() => {
   return rows
 })
 
-const format = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1))
+const { t, n } = useI18n()
+const format = (v: number) => n(v, { maximumFractionDigits: 1 })
 </script>
 
 <template>
-  <div class="bars" role="table" :aria-label="`Tally${unit ? ' (' + unit + ')' : ''}`">
+  <div class="bars" role="table" :aria-label="unit ? t('tally.ariaUnit', { unit }) : t('tally.aria')">
     <div
       v-for="row in rows"
       :key="row.i"
       class="row"
       role="row"
       :class="{ out: row.value === null, eliminated: eliminated.includes(row.i), winner: winner === row.i }"
-      :title="`${row.name}: ${row.value === null ? 'out of the race' : format(row.value) + (unit ? ' ' + unit : '')}`"
+      :title="t('tally.rowTitle', { name: row.name, value: row.value === null ? t('tally.outOfRace') : format(row.value) + (unit ? ' ' + unit : '') })"
     >
       <span class="label" role="rowheader">
         <span class="swatch" :style="{ background: color(row.i) }" aria-hidden="true" />
-        {{ row.name }}<span v-if="winner === row.i" class="star" aria-label="winner"> ★</span>
+        {{ row.name }}<span v-if="winner === row.i" class="star" :aria-label="t('tally.winner')"> ★</span>
       </span>
       <span class="track" role="cell">
         <span
@@ -50,8 +52,8 @@ const format = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1))
           :style="{ width: `${(Math.max(0, row.value) / max) * 100}%`, background: color(row.i) }"
         />
         <span class="value">
-          {{ row.value === null ? 'out' : format(row.value) }}
-          <span v-if="eliminated.includes(row.i)" class="tag">eliminated</span>
+          {{ row.value === null ? t('tally.out') : format(row.value) }}
+          <span v-if="eliminated.includes(row.i)" class="tag">{{ t('tally.eliminated') }}</span>
         </span>
       </span>
     </div>

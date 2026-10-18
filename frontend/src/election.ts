@@ -1,26 +1,28 @@
 // Small helpers over the API's data shapes.
 
+import { i18n } from './i18n'
 import type { Ballot, BallotInput, BallotKind, Election, ElectionInput, MethodId, Outcome, Tactic } from './types'
 
-export const METHOD_NAMES: Record<MethodId, string> = {
-  plurality: 'Plurality',
-  anti_plurality: 'Anti-plurality',
-  two_round: 'Two-round runoff',
-  irv: 'Instant runoff',
-  coombs: 'Coombs',
-  borda: 'Borda count',
-  agenda: 'Agenda',
-  copeland: 'Copeland',
-  minimax: 'Minimax',
-  schulze: 'Schulze',
-  ranked_pairs: 'Ranked pairs',
-  approval: 'Approval',
-  score: 'Score',
-  star: 'STAR',
-  dictatorship: 'Dictatorship',
-}
+export const ALL_METHODS: MethodId[] = [
+  'plurality',
+  'anti_plurality',
+  'two_round',
+  'irv',
+  'coombs',
+  'borda',
+  'agenda',
+  'copeland',
+  'minimax',
+  'schulze',
+  'ranked_pairs',
+  'approval',
+  'score',
+  'star',
+  'dictatorship',
+]
 
-export const ALL_METHODS = Object.keys(METHOD_NAMES) as MethodId[]
+/** A method's name in the current language. */
+export const methodName = (m: MethodId) => i18n.global.t(`methods.${m}`)
 
 export const BALLOT_KIND: Record<MethodId, BallotKind> = {
   plurality: 'choose_one',
@@ -40,27 +42,23 @@ export const BALLOT_KIND: Record<MethodId, BallotKind> = {
   dictatorship: 'ranked',
 }
 
-export const TACTIC_NAMES: Record<Tactic, string> = {
-  compromising: 'Compromising',
-  burying: 'Burying',
-  compromising_and_burying: 'Compromising + burying',
-  push_over: 'Push-over',
-  bullet_voting: 'Bullet voting',
-  exaggeration: 'Exaggeration',
-}
+export const tacticName = (t: Tactic) => i18n.global.t(`tactics.${t}`)
 
 export const NAMES = ['Ada', 'Bea', 'Cal', 'Dee', 'Eli', 'Fay', 'Gus', 'Hal']
 
 /** One line describing a ballot, showing only what `kind` of method reads. */
 export function describeBallot(names: string[], b: BallotInput, kind: BallotKind): string {
+  const { t } = i18n.global
   switch (kind) {
     case 'choose_one':
-      return `votes ${names[b.ranking[0]]}`
+      return t('ballot.votes', { name: names[b.ranking[0]] })
     case 'veto':
-      return `vetoes ${names[b.ranking[b.ranking.length - 1]]}`
+      return t('ballot.vetoes', { name: names[b.ranking[b.ranking.length - 1]] })
     case 'approval': {
       const approved = b.ranking.filter((c) => b.approvals?.[c])
-      return approved.length ? `approves ${approved.map((c) => names[c]).join(', ')}` : 'approves nobody'
+      return approved.length
+        ? t('ballot.approves', { names: approved.map((c) => names[c]).join(', ') })
+        : t('ballot.approvesNobody')
     }
     case 'score':
       return b.ranking.map((c) => `${names[c]} ${b.scores?.[c] ?? '?'}`).join(' · ')
@@ -130,7 +128,9 @@ export function eliminatedBefore(outcome: Outcome, step: number): Set<number> {
 
 export function winnerName(names: string[], outcome: Outcome | undefined | null): string {
   if (!outcome) return '…'
-  return outcome.tied.length > 1 ? `tie: ${outcome.tied.map((c) => names[c]).join(', ')}` : names[outcome.winner]
+  return outcome.tied.length > 1
+    ? i18n.global.t('common.tieBetween', { names: outcome.tied.map((c) => names[c]).join(', ') })
+    : names[outcome.winner]
 }
 
 export function totalWeight(e: { ballots: { weight: number }[] }): number {

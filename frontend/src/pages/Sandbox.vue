@@ -5,7 +5,7 @@ import ManipulationFinder from '../components/ManipulationFinder.vue'
 import RoundsView from '../components/RoundsView.vue'
 import SpatialMap from '../components/SpatialMap.vue'
 import { favourites, changed, model, resultFor, useSpatial, useYee } from '../composables/useApi'
-import { activeChoice, ALL_METHODS, BALLOT_KIND, eliminatedBefore, METHOD_NAMES, NAMES, simplifyFor } from '../election'
+import { activeChoice, ALL_METHODS, BALLOT_KIND, eliminatedBefore, methodName, NAMES, simplifyFor } from '../election'
 import { color } from '../palette'
 import type { Crowd, Election, MethodId, SpatialCandidate } from '../types'
 
@@ -130,7 +130,7 @@ function updateCrowd(patch: Partial<Crowd>) {
           <button class="btn small" :disabled="candidates.length >= 8" @click="addCandidate">+ Candidate</button>
           <button class="btn small" :disabled="candidates.length <= 2" @click="removeCandidate">− {{ candidates[candidates.length - 1].name }}</button>
           <button class="btn small" :disabled="crowds.length >= 6" @click="addCrowd">+ Crowd</button>
-          <label class="row small"><input v-model="showYee" type="checkbox" /> Yee map ({{ METHOD_NAMES[primary] }})</label>
+          <label class="row small"><input v-model="showYee" type="checkbox" /> Yee map ({{ methodName(primary) }})</label>
         </div>
         <div v-if="selectedCrowd" class="card crowd-edit">
           <div class="row">
@@ -171,7 +171,7 @@ function updateCrowd(patch: Partial<Crowd>) {
                 :aria-pressed="methods.includes(m)"
                 @click="toggleMethod(m)"
               >
-                {{ METHOD_NAMES[m] }}
+                {{ methodName(m) }}
               </button>
             </div>
           </div>
@@ -187,7 +187,7 @@ function updateCrowd(patch: Partial<Crowd>) {
             :aria-pressed="r.method === primary"
             @click="primary = r.method"
           >
-            <span class="m">{{ METHOD_NAMES[r.method] }}</span>
+            <span class="m">{{ methodName(r.method) }}</span>
             <span class="w">
               <span class="sw" :style="{ background: color(r.outcome.winner) }" />
               {{ r.outcome.tied.length > 1 ? 'tie' : names[r.outcome.winner] }}
@@ -205,7 +205,7 @@ function updateCrowd(patch: Partial<Crowd>) {
           <DuelGraph :names="names" :pairwise="data.pairwise" />
         </div>
         <div v-if="finderElection" class="card">
-          <div class="eyebrow">Can anyone win by lying under {{ METHOD_NAMES[primary] }}?</div>
+          <div class="eyebrow">Can anyone win by lying under {{ methodName(primary) }}?</div>
           <ManipulationFinder :election="finderElection" :method="primary" :applicable="false" />
         </div>
       </div>

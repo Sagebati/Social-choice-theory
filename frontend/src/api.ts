@@ -16,29 +16,37 @@ import type {
   SpatialResponse,
   YeeResponse,
 } from './types'
+import { locale, type Locale } from './i18n'
 
 const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? ''
 
-async function request<T>(path: string, body?: unknown): Promise<T> {
+// The API writes its explanations (round notes, method descriptions, errors)
+// in the language asked for.
+async function request<T>(path: string, body?: unknown, lang: Locale = locale.value): Promise<T> {
   const init: RequestInit | undefined =
     body === undefined
       ? undefined
       : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
-  const response = await fetch(`${BASE}/api${path}`, init)
+  const response = await fetch(`${BASE}/api${path}?lang=${lang}`, init)
   const data = await response.json().catch(() => ({ error: response.statusText }))
   if (!response.ok) throw new Error((data as { error?: string }).error ?? response.statusText)
   return data as T
 }
 
-// The catalogue never changes while the page is open, so fetch it once.
+// The catalogue never changes while the page is open, so fetch it once per language.
 const once = <T>(path: string) => {
-  let cached: Promise<T> | null = null
+  const cached = new Map<Locale, Promise<T>>()
   return () => {
-    cached ??= request<T>(path).catch((e) => {
-      cached = null
-      throw e
-    })
-    return cached
+    const lang = locale.value
+    let hit = cached.get(lang)
+    if (!hit) {
+      hit = request<T>(path, undefined, lang).catch((e) => {
+        cached.delete(lang)
+        throw e
+      })
+      cached.set(lang, hit)
+    }
+    return hit
   }
 }
 

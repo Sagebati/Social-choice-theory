@@ -12,7 +12,7 @@ const shown = computed(() => !props.after || isOpen(props.after))
 <template>
   <Transition name="reveal">
     <aside v-if="shown" class="takeaway">
-      <div class="eyebrow">The lesson</div>
+      <div class="eyebrow">{{ $t('takeaway.lesson') }}</div>
       <slot />
     </aside>
   </Transition>

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { api } from '../api'
 import { useLive } from '../composables/useLive'
-import { METHOD_NAMES } from '../election'
+import { methodName } from '../election'
 import type { ArrowProfile, RuleId } from '../types'
 import ArrowProfileView from './ArrowProfile.vue'
 
@@ -16,7 +16,7 @@ const rule = ref<RuleId>(props.rules[0])
 const voters = ref(3)
 const { data: report, loading, error } = useLive(() => ({ rule: rule.value, voters: voters.value }), (q) => api.arrow(q.rule, q.voters))
 
-const ruleName = (r: RuleId) => (r === 'pairwise_majority' ? 'Pairwise majority' : METHOD_NAMES[r])
+const ruleName = (r: RuleId) => (r === 'pairwise_majority' ? 'Pairwise majority' : methodName(r))
 
 const conditions = computed(() => {
   const r = report.value

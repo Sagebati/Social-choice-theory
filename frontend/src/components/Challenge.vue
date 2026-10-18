@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useProgress } from '../composables/useProgress'
 
 // A small goal for the reader. Turns green while the goal holds, and remembers
 // that it was reached once.
 const props = defineProps<{ id: string; done: boolean; title?: string }>()
+const { t } = useI18n()
 const { solve, isSolved, isOpen, reveal } = useProgress()
 
 watch(
@@ -23,11 +25,11 @@ const skippable = computed(() => !props.done && !isOpen(props.id))
   <div class="challenge" :class="{ done }" role="status" :aria-live="done ? 'polite' : 'off'">
     <span class="box" aria-hidden="true">{{ done ? '✓' : '' }}</span>
     <div>
-      <div class="eyebrow">{{ done ? 'Done!' : title ?? 'Your turn' }}</div>
+      <div class="eyebrow">{{ done ? t('challenge.done') : (title ?? t('challenge.yourTurn')) }}</div>
       <slot />
       <div v-if="done && $slots.success" class="success"><slot name="success" /></div>
-      <div v-else-if="everSolved && !done" class="small muted">You solved this one before.</div>
-      <button v-if="skippable" class="skip small" @click="reveal(id)">Stuck? Skip ahead to the lesson</button>
+      <div v-else-if="everSolved && !done" class="small muted">{{ t('challenge.solvedBefore') }}</div>
+      <button v-if="skippable" class="skip small" @click="reveal(id)">{{ t('challenge.skip') }}</button>
     </div>
   </div>
 </template>

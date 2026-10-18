@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useElect } from '../composables/useApi'
-import { METHOD_NAMES, rankingsOnly } from '../election'
+import { methodName, rankingsOnly } from '../election'
 import type { Election, ElectionInput, MethodId, Scenario } from '../types'
 import DuelGraph from './DuelGraph.vue'
 import ManipulationFinder from './ManipulationFinder.vue'
@@ -45,7 +45,7 @@ function apply(e: Election) {
           <div class="row small">
             Rig it under
             <select v-model="method" aria-label="Method to manipulate">
-              <option v-for="m in scenario.methods" :key="m" :value="m">{{ METHOD_NAMES[m] }}</option>
+              <option v-for="m in scenario.methods" :key="m" :value="m">{{ methodName(m) }}</option>
             </select>
           </div>
           <ManipulationFinder :election="election" :method="method" @apply="apply" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { METHOD_NAMES } from '../election'
+import { methodName } from '../election'
 import type { Outcome } from '../types'
 import Chip from './Chip.vue'
 
@@ -11,21 +11,21 @@ defineProps<{ outcomes: Outcome[]; names: string[]; condorcet?: number | null; s
 <template>
   <div class="strip">
     <div v-for="o in outcomes" :key="o.method" class="cell">
-      <div class="method">{{ METHOD_NAMES[o.method] }}</div>
+      <div class="method">{{ methodName(o.method) }}</div>
       <Chip v-if="o.tied.length === 1" :index="o.winner" :name="names[o.winner]" strong />
-      <span v-else class="small">tie</span>
+      <span v-else class="small">{{ $t('common.tie') }}</span>
       <span
         v-if="showCondorcet && condorcet !== null && condorcet !== undefined"
         class="pill"
         :class="o.winner === condorcet && o.tied.length === 1 ? 'good' : 'bad'"
       >
-        {{ o.winner === condorcet && o.tied.length === 1 ? '✓ Condorcet' : '✗ not Condorcet' }}
+        {{ o.winner === condorcet && o.tied.length === 1 ? $t('winnerStrip.condorcet') : $t('winnerStrip.notCondorcet') }}
       </span>
     </div>
     <div v-if="showCondorcet" class="cell cw">
-      <div class="method">Head-to-head champion</div>
+      <div class="method">{{ $t('winnerStrip.champion') }}</div>
       <Chip v-if="condorcet !== null && condorcet !== undefined" :index="condorcet" :name="names[condorcet]" strong />
-      <span v-else class="small">nobody: a cycle</span>
+      <span v-else class="small">{{ $t('winnerStrip.cycle') }}</span>
     </div>
   </div>
 </template>

@@ -1,25 +1,25 @@
 // The town of Riverton: the five candidates and five voter groups the journey
 // follows from the first step to the last. The numbers match
 // `scenarios::riverton` in the Rust library, whose tests check every claim the
-// journey makes about them.
+// journey makes about them. What they say lives in the locale files, under
+// `cast.candidates.<key>` and `cast.personas.<key>`.
 
+import { i18n } from './i18n'
 import type { BallotInput, ElectionInput } from './types'
 
 export interface Candidate {
+  key: 'amira' | 'bruno' | 'camille' | 'daniel' | 'erik' | 'gina'
   name: string
   fullName: string
-  role: string
-  pitch: string
 }
 
 export interface Persona {
+  key: 'frank' | 'leo' | 'ana' | 'fatou' | 'margaret'
   name: string
-  role: string
   /** How many voters in town think exactly like this persona. */
   voters: number
   /** Honest ranking, best first, as candidate indices. */
   ranking: number[]
-  why: string
 }
 
 export const AMIRA = 0
@@ -29,58 +29,48 @@ export const DANIEL = 3
 export const ERIK = 4
 
 export const CANDIDATES: Candidate[] = [
-  { name: 'Amira', fullName: 'Amira Haddad', role: 'Green councillor', pitch: 'Bike lanes, parks and a climate plan.' },
-  { name: 'Bruno', fullName: 'Bruno Costa', role: 'Deputy mayor', pitch: 'Eight years at city hall. Steady, pragmatic, a little grey.' },
-  { name: 'Camille', fullName: 'Camille Laurent', role: 'Former school principal', pitch: 'Schools, childcare and affordable housing.' },
-  { name: 'Daniel', fullName: 'Daniel Okafor', role: 'Transport engineer', pitch: 'Night buses now, a tram by 2030.' },
-  { name: 'Erik', fullName: 'Erik Brandt', role: 'Businessman, outsider', pitch: 'Cut taxes and shake up city hall.' },
+  { key: 'amira', name: 'Amira', fullName: 'Amira Haddad' },
+  { key: 'bruno', name: 'Bruno', fullName: 'Bruno Costa' },
+  { key: 'camille', name: 'Camille', fullName: 'Camille Laurent' },
+  { key: 'daniel', name: 'Daniel', fullName: 'Daniel Okafor' },
+  { key: 'erik', name: 'Erik', fullName: 'Erik Brandt' },
 ]
 
 export const NAMES = CANDIDATES.map((c) => c.name)
 
 // Bruno's party can field a near-copy of Bruno (the teaming trick).
-export const CLONE: Candidate = {
-  name: 'Gina',
-  fullName: 'Gina Costa',
-  role: 'Bruno’s running mate',
-  pitch: 'Same party, same programme as Bruno.',
-}
+export const CLONE: Candidate = { key: 'gina', name: 'Gina', fullName: 'Gina Costa' }
 
 export const PERSONAS: Persona[] = [
   {
+    key: 'frank',
     name: 'Frank',
-    role: 'Runs the hardware store on Main Street',
     voters: 9,
     ranking: [ERIK, BRUNO, CAMILLE, DANIEL, AMIRA],
-    why: 'Taxes are strangling small shops, and Erik gets it. Bruno at least knows how city hall works. Amira wants to turn the parking outside the shop into a bike lane.',
   },
   {
+    key: 'leo',
     name: 'Leo',
-    role: 'Bike courier',
     voters: 7,
     ranking: [AMIRA, BRUNO, CAMILLE, DANIEL, ERIK],
-    why: 'Climate first. Bruno backed the first bike lanes; Erik has promised to rip them out.',
   },
   {
+    key: 'ana',
     name: 'Ana',
-    role: 'Parent of two, part-time at the clinic',
     voters: 6,
     ranking: [CAMILLE, DANIEL, BRUNO, AMIRA, ERIK],
-    why: 'The schools are overcrowded and Camille ran one. Daniel’s buses would get the kids there. Erik’s tax cuts mean bigger classes.',
   },
   {
+    key: 'fatou',
     name: 'Fatou',
-    role: 'Night-shift nurse, commutes by bus',
     voters: 5,
     ranking: [DANIEL, CAMILLE, ERIK, AMIRA, BRUNO],
-    why: 'The last bus leaves before the shift ends. Bruno cut the night buses, so Bruno comes last; even Erik would be a change.',
   },
   {
+    key: 'margaret',
     name: 'Margaret',
-    role: 'Retired city clerk',
     voters: 3,
     ranking: [BRUNO, DANIEL, AMIRA, CAMILLE, ERIK],
-    why: 'Forty years at city hall: Bruno knows the job. Daniel’s plans are sensible. Erik is frightening.',
   },
 ]
 
@@ -143,4 +133,8 @@ export const placeOf = (p: number, c: number) => PERSONAS[p].ranking.indexOf(c)
 /** Is persona `p` better off with `now` than with `before`? */
 export const betterOff = (p: number, before: number, now: number) => placeOf(p, now) < placeOf(p, before)
 
-export const ordinal = (n: number) => ['first', 'second', 'third', 'fourth', 'fifth'][n] ?? `${n + 1}th`
+const { t } = i18n.global
+export const candidateRole = (c: Candidate) => t(`cast.candidates.${c.key}.role`)
+export const candidatePitch = (c: Candidate) => t(`cast.candidates.${c.key}.pitch`)
+export const personaRole = (p: Persona) => t(`cast.personas.${p.key}.role`)
+export const personaWhy = (p: Persona) => t(`cast.personas.${p.key}.why`)

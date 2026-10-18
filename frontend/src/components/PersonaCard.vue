@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CANDIDATES, CLONE, defaultApprovals, defaultScores, PERSONAS, type CastBallot } from '../cast'
+import { useI18n } from 'vue-i18n'
+import { CANDIDATES, CLONE, defaultApprovals, defaultScores, personaRole, personaWhy, PERSONAS, type CastBallot } from '../cast'
+import RichText from './RichText'
 import { color } from '../palette'
 
 export type BallotStyle = 'reasons' | 'mark' | 'runoff' | 'ranked' | 'points' | 'approval' | 'stars'
@@ -29,6 +31,7 @@ const props = withDefaults(
   { editable: false, canStayHome: false, counting: null, out: () => [], finalists: () => [], verdict: null, open: false },
 )
 const emit = defineEmits<{ 'update:ballot': [CastBallot]; toggle: [] }>()
+const { t } = useI18n()
 
 const persona = computed(() => PERSONAS[props.index])
 const voting = computed(() => props.ballot.voters ?? persona.value.voters)
@@ -87,20 +90,20 @@ function stayHome(n: number) {
       <span class="avatar" aria-hidden="true">{{ persona.name.slice(0, 1) }}</span>
       <div class="who">
         <strong>{{ persona.name }}</strong>
-        <span class="role">{{ persona.role }}</span>
+        <span class="role">{{ personaRole(persona) }}</span>
       </div>
-      <span class="voters" :title="`${persona.voters} voters in town think like ${persona.name}`">×{{ persona.voters }}</span>
+      <span class="voters" :title="t('persona.votersTitle', { n: persona.voters, name: persona.name })">×{{ persona.voters }}</span>
     </header>
 
     <p v-if="styleOf === 'reasons'" class="why">
       <button class="why-toggle" :aria-expanded="open" @click="emit('toggle')">
-        {{ open ? 'Hide reasons' : `Why does ${persona.name} vote this way?` }}
+        {{ open ? t('persona.hideReasons') : t('persona.showReasons', { name: persona.name }) }}
       </button>
-      <span v-if="open">{{ persona.why }}</span>
+      <span v-if="open">{{ personaWhy(persona) }}</span>
     </p>
 
     <!-- A single mark. -->
-    <ul v-if="styleOf === 'mark'" class="ballot" :aria-label="`${persona.name}'s ballot`">
+    <ul v-if="styleOf === 'mark'" class="ballot" :aria-label="t('persona.ballotAria', { name: persona.name })">
       <li v-for="(cand, c) in CANDIDATES" :key="c" :class="{ on: marked === c, gone: out.includes(c) }">
         <button class="row-btn" :disabled="!editable || out.includes(c)" @click="mark(c)">
           <span class="box">{{ marked === c ? '✗' : '' }}</span>
@@ -110,15 +113,19 @@ function stayHome(n: number) {
     </ul>
 
     <!-- Two rounds: a mark in each. -->
-    <table v-else-if="styleOf === 'runoff'" class="ballot runoff" :aria-label="`${persona.name}'s two ballots`">
+    <table v-else-if="styleOf === 'runoff'" class="ballot runoff" :aria-label="t('persona.twoBallotsAria', { name: persona.name })">
       <thead>
-        <tr><th /><th scope="col">Round 1</th><th scope="col">Round 2</th></tr>
+        <tr>
+          <th />
+          <th scope="col">{{ t('persona.round1') }}</th>
+          <th scope="col">{{ t('persona.round2') }}</th>
+        </tr>
       </thead>
       <tbody>
         <tr v-for="(cand, c) in CANDIDATES" :key="c" :class="{ on: ballot.ranking[0] === c || runoffChoice === c }">
           <th scope="row"><span class="sw" :style="{ background: color(c) }" />{{ cand.name }}</th>
           <td>
-            <button class="box" :disabled="!editable" :aria-label="`Round 1: vote ${cand.name}`" @click="mark(c)">
+            <button class="box" :disabled="!editable" :aria-label="t('persona.round1Vote', { candidate: cand.name })" @click="mark(c)">
               {{ ballot.ranking[0] === c ? '✗' : '' }}
             </button>
           </td>
@@ -131,7 +138,7 @@ function stayHome(n: number) {
     </table>
 
     <!-- A ranking, possibly with Borda points. -->
-    <ol v-else-if="styleOf === 'ranked' || styleOf === 'points' || styleOf === 'reasons'" class="ballot ranked" :aria-label="`${persona.name}'s ranking`">
+    <ol v-else-if="styleOf === 'ranked' || styleOf === 'points' || styleOf === 'reasons'" class="ballot ranked" :aria-label="t('persona.rankingAria', { name: persona.name })">
       <li
         v-for="(c, pos) in ballot.ranking"
         :key="c"
@@ -141,13 +148,20 @@ function stayHome(n: number) {
         <span class="sw" :style="{ background: color(c) }" />
         <span class="nm">{{ nameOf(c) }}</span>
         <span v-if="styleOf === 'points'" class="pts">+{{ ballot.ranking.length - 1 - pos }}</span>
-        <span v-if="counting === c" class="tag">counts here</span>
-        <button v-if="editable && pos > 0" class="up" :aria-label="`Move ${nameOf(c)} up ${persona.name}'s ballot`" @click="raise(pos)">↑</button>
+        <span v-if="counting === c" class="tag">{{ t('persona.countsHere') }}</span>
+        <button
+          v-if="editable && pos > 0"
+          class="up"
+          :aria-label="t('persona.moveUp', { candidate: nameOf(c), name: persona.name })"
+          @click="raise(pos)"
+        >
+          ↑
+        </button>
       </li>
     </ol>
 
     <!-- Ticks. -->
-    <ul v-else-if="styleOf === 'approval'" class="ballot" :aria-label="`${persona.name}'s approvals`">
+    <ul v-else-if="styleOf === 'approval'" class="ballot" :aria-label="t('persona.approvalsAria', { name: persona.name })">
       <li v-for="(cand, c) in CANDIDATES" :key="c" :class="{ on: approvals[c] }">
         <button class="row-btn" :disabled="!editable" :aria-pressed="approvals[c]" @click="toggleApproval(c)">
           <span class="box">{{ approvals[c] ? '✓' : '' }}</span>
@@ -157,18 +171,18 @@ function stayHome(n: number) {
     </ul>
 
     <!-- Stars. -->
-    <ul v-else-if="styleOf === 'stars'" class="ballot" :aria-label="`${persona.name}'s scores`">
+    <ul v-else-if="styleOf === 'stars'" class="ballot" :aria-label="t('persona.scoresAria', { name: persona.name })">
       <li v-for="(cand, c) in CANDIDATES" :key="c" class="on">
         <span class="sw" :style="{ background: color(c) }" />
         <span class="nm">{{ cand.name }}</span>
-        <span class="stars" :aria-label="`${scores[c]} of 5`">
+        <span class="stars" :aria-label="t('persona.starsOf', { n: scores[c] })">
           <button
             v-for="k in 5"
             :key="k"
             class="star"
             :class="{ lit: k <= scores[c] }"
             :disabled="!editable"
-            :aria-label="`Give ${cand.name} ${k} stars`"
+            :aria-label="t('persona.giveStars', { candidate: cand.name }, k)"
             @click="setScore(c, k)"
           >★</button>
         </span>
@@ -176,16 +190,25 @@ function stayHome(n: number) {
     </ul>
 
     <div v-if="canStayHome" class="home">
-      <span class="small">Voting: <strong>{{ voting }}</strong> of {{ persona.voters }}</span>
-      <button class="step" :disabled="voting === 0" :aria-label="`One more of ${persona.name}'s group stays home`" @click="stayHome(voting - 1)">−</button>
-      <button class="step" :disabled="voting === persona.voters" :aria-label="`One more of ${persona.name}'s group votes`" @click="stayHome(voting + 1)">+</button>
+      <RichText class="small" :text="t('persona.voting', { n: voting, total: persona.voters })" />
+      <button class="step" :disabled="voting === 0" :aria-label="t('persona.stayHome', { name: persona.name })" @click="stayHome(voting - 1)">
+        −
+      </button>
+      <button
+        class="step"
+        :disabled="voting === persona.voters"
+        :aria-label="t('persona.goVote', { name: persona.name })"
+        @click="stayHome(voting + 1)"
+      >
+        +
+      </button>
     </div>
 
     <footer v-if="editable || verdict" class="foot">
-      <span v-if="verdict === 'better'" class="pill good">Better mayor for {{ persona.name }}</span>
-      <span v-else-if="verdict === 'worse'" class="pill bad">Worse for {{ persona.name }}</span>
-      <span v-else-if="verdict === 'same'" class="pill">No change for {{ persona.name }}</span>
-      <button v-if="editable && changed" class="btn small" @click="reset">Honest ballot</button>
+      <span v-if="verdict === 'better'" class="pill good">{{ t('persona.better', { name: persona.name }) }}</span>
+      <span v-else-if="verdict === 'worse'" class="pill bad">{{ t('persona.worse', { name: persona.name }) }}</span>
+      <span v-else-if="verdict === 'same'" class="pill">{{ t('persona.same', { name: persona.name }) }}</span>
+      <button v-if="editable && changed" class="btn small" @click="reset">{{ t('persona.honest') }}</button>
     </footer>
   </article>
 </template>

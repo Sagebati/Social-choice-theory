@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { winnerName } from '../election'
 import type { Outcome } from '../types'
+import RichText from './RichText'
 import TallyBars from './TallyBars.vue'
 
 // Steps through a count round by round. The current round is a v-model so the
 // map can recolour voters as their ballots transfer.
 const props = defineProps<{ outcome: Outcome; names: string[]; unit?: string }>()
 const step = defineModel<number>('step', { default: 0 })
+const { t } = useI18n()
 
 const count = computed(() => props.outcome.rounds.length)
 const round = computed(() => props.outcome.rounds[Math.min(step.value, count.value - 1)])
@@ -28,11 +31,11 @@ watch(
   <div class="rounds">
     <div class="head">
       <strong>{{ round.title }}</strong>
-      <span v-if="count > 1" class="muted small">round {{ Math.min(step, count - 1) + 1 }} of {{ count }}</span>
+      <span v-if="count > 1" class="muted small">{{ t('rounds.of', { n: Math.min(step, count - 1) + 1, total: count }) }}</span>
       <span class="spacer" />
       <template v-if="count > 1">
-        <button class="btn small" :disabled="step === 0" @click="step--">← Back</button>
-        <button class="btn small primary" :disabled="last" @click="step++">Next round →</button>
+        <button class="btn small" :disabled="step === 0" @click="step--">{{ t('rounds.back') }}</button>
+        <button class="btn small primary" :disabled="last" @click="step++">{{ t('rounds.next') }}</button>
       </template>
     </div>
     <TallyBars
@@ -46,8 +49,8 @@ watch(
       <li v-for="(note, i) in round.notes" :key="i">{{ note }}</li>
     </ul>
     <p v-if="last" class="result">
-      Winner: <strong>{{ winnerName(names, outcome) }}</strong>
-      <span v-if="outcome.used_tiebreak" class="muted small"> (a tie was broken by candidate order)</span>
+      <RichText :text="t('rounds.winner', { name: winnerName(names, outcome) })" />
+      <span v-if="outcome.used_tiebreak" class="muted small"> {{ t('rounds.tiebreak') }}</span>
     </p>
   </div>
 </template>

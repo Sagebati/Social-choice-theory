@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, shallowRef } from 'vue'
 import { api } from '../api'
-import { METHOD_NAMES } from '../election'
+import { methodName } from '../election'
 import type { CounterexampleResponse, CriterionId, CriterionInfo, MethodId, MethodInfo } from '../types'
 import CounterexampleView from './CounterexampleView.vue'
 
@@ -82,7 +82,7 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
     </div>
     <p class="small muted">✓ always satisfied · ✗ can fail: tap it and the server will search for a concrete election.</p>
     <div v-if="open" class="card panel" aria-live="polite">
-      <div class="eyebrow">{{ METHOD_NAMES[open.method] }} vs {{ criterionName(open.criterion) }}</div>
+      <div class="eyebrow">{{ methodName(open.method) }} vs {{ criterionName(open.criterion) }}</div>
       <p class="small">{{ criteria.find((c) => c.id === open!.criterion)?.description }}</p>
       <p v-if="loading" class="small">Searching random elections…</p>
       <CounterexampleView v-else-if="result?.counterexample" :example="result.counterexample" />

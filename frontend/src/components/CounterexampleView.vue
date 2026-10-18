@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BALLOT_KIND, METHOD_NAMES, winnerName } from '../election'
+import { BALLOT_KIND, methodName, winnerName } from '../election'
 import type { Counterexample } from '../types'
 import BallotList from './BallotList.vue'
 
@@ -17,7 +17,7 @@ const kind = computed(() => BALLOT_KIND[props.example.method])
         <div class="eyebrow">{{ example.after ? 'Before' : 'The election' }}</div>
         <BallotList :names="example.before.candidates" :ballots="example.before.ballots" :kind="kind" />
         <p class="small">
-          {{ METHOD_NAMES[example.method] }} elects
+          {{ methodName(example.method) }} elects
           <strong>{{ winnerName(example.before.candidates, example.before_outcome) }}</strong>
         </p>
       </div>
@@ -25,7 +25,7 @@ const kind = computed(() => BALLOT_KIND[props.example.method])
         <div class="eyebrow">After</div>
         <BallotList :names="example.after.candidates" :ballots="example.after.ballots" :kind="kind" />
         <p class="small">
-          {{ METHOD_NAMES[example.method] }} elects
+          {{ methodName(example.method) }} elects
           <strong>{{ winnerName(example.after.candidates, example.after_outcome) }}</strong>
         </p>
       </div>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { METHOD_NAMES } from '../election'
+import { methodName } from '../election'
 import type { Manipulability } from '../types'
 
 // Share of random elections in which some bloc of voters can profit from lying,
@@ -25,9 +25,9 @@ const pct = (r: number) => `${Math.round(r * 100)}%`
         role="row"
         :class="{ hl: highlight === r.method }"
         tabindex="0"
-        :title="`${METHOD_NAMES[r.method]}: ${r.manipulable} of ${r.samples} elections manipulable (${pct(r.rate)})`"
+        :title="`${methodName(r.method)}: ${r.manipulable} of ${r.samples} elections manipulable (${pct(r.rate)})`"
       >
-        <span class="label" role="rowheader">{{ METHOD_NAMES[r.method] }}</span>
+        <span class="label" role="rowheader">{{ methodName(r.method) }}</span>
         <span class="track" role="cell">
           <span class="fill" :style="{ width: `${r.rate * 100}%` }" />
           <span class="value">{{ pct(r.rate) }}</span>

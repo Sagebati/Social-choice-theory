@@ -1,17 +1,19 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { color, onColor } from '../palette'
 
 // "Before we count: who do you think wins?" The reader commits to a guess
 // before the answer is shown, which is half the fun and most of the learning.
 const props = defineProps<{ question: string; options: string[]; answer: number | null }>()
 const guess = defineModel<number | null>({ default: null })
+const { t } = useI18n()
 
 const right = () => guess.value !== null && guess.value === props.answer
 </script>
 
 <template>
   <div class="predict">
-    <div class="eyebrow">Make a prediction</div>
+    <div class="eyebrow">{{ t('predict.eyebrow') }}</div>
     <p class="q">{{ question }}</p>
     <div class="row">
       <button
@@ -27,8 +29,7 @@ const right = () => guess.value !== null && guess.value === props.answer
       </button>
     </div>
     <p v-if="guess !== null && answer !== null" class="verdict" :class="{ right: right() }">
-      <template v-if="right()">Right: it's {{ options[answer] }}.</template>
-      <template v-else>Not quite: it's {{ options[answer] }}. Let's see why.</template>
+      {{ t(right() ? 'predict.right' : 'predict.wrong', { answer: options[answer] }) }}
     </p>
   </div>
 </template>

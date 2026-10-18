@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { honestBallots, NAMES } from '../cast'
 import { useTown } from '../composables/useTown'
 import { color } from '../palette'
@@ -7,30 +8,24 @@ import type { MethodId } from '../types'
 
 // The scoreboard that fills up along the journey: the same voters, one more
 // voting system, (usually) one more mayor.
-const SYSTEMS: { method: MethodId; label: string }[] = [
-  { method: 'plurality', label: 'One mark' },
-  { method: 'two_round', label: 'Two rounds' },
-  { method: 'irv', label: 'Instant runoff' },
-  { method: 'borda', label: 'Borda points' },
-  { method: 'schulze', label: 'Head to head' },
-  { method: 'approval', label: 'Approval' },
-  { method: 'star', label: 'STAR' },
-]
+const SYSTEMS = ['plurality', 'two_round', 'irv', 'borda', 'schulze', 'approval', 'star'] as const
 
 const props = defineProps<{ seen: MethodId[]; current?: MethodId | null }>()
-const { results } = useTown(honestBallots, () => ({}), SYSTEMS.map((s) => s.method))
+const { t } = useI18n()
+const { results } = useTown(honestBallots, () => ({}), [...SYSTEMS])
 const rows = computed(() =>
-  SYSTEMS.map((s) => ({
-    ...s,
-    seen: props.seen.includes(s.method),
-    winner: results.value?.byMethod[s.method]?.winner ?? null,
+  SYSTEMS.map((method) => ({
+    method,
+    label: t(`ledger.systems.${method}`),
+    seen: props.seen.includes(method),
+    winner: results.value?.byMethod[method]?.winner ?? null,
   })),
 )
 </script>
 
 <template>
-  <nav class="ledger" aria-label="Who wins under each system so far">
-    <span class="eyebrow">Same voters, mayor by system</span>
+  <nav class="ledger" :aria-label="t('ledger.aria')">
+    <span class="eyebrow">{{ t('ledger.title') }}</span>
     <ol>
       <li v-for="r in rows" :key="r.method" :class="{ seen: r.seen, current: current === r.method }">
         <span class="system">{{ r.label }}</span>

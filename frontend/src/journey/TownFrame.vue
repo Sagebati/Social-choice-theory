@@ -19,7 +19,7 @@ defineProps<{ title: string; seen?: MethodId[]; current?: MethodId | null }>()
         <slot name="panel" />
       </div>
     </div>
-    <section class="town" aria-label="Riverton">
+    <section class="town" :aria-label="$t('journey.town')">
       <slot name="town" />
     </section>
   </article>

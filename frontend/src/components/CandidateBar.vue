@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CANDIDATES, CLONE } from '../cast'
+import { useI18n } from 'vue-i18n'
+import { candidatePitch, candidateRole, CANDIDATES, CLONE } from '../cast'
 import { color, initial, onColor } from '../palette'
 
 // The candidates on the ballot. Optionally lets the reader withdraw one.
@@ -15,6 +16,7 @@ const props = withDefaults(
   { winner: null, out: () => [], withdrawable: false, clone: false, pitch: false },
 )
 const withdrawn = defineModel<number[]>('withdrawn', { default: () => [] })
+const { t } = useI18n()
 
 const list = computed(() => {
   const base = CANDIDATES.map((c, i) => ({ ...c, i }))
@@ -27,7 +29,7 @@ function toggle(i: number) {
 </script>
 
 <template>
-  <ul class="candidates" aria-label="Candidates">
+  <ul class="candidates" :aria-label="t('candidateBar.aria')">
     <li
       v-for="c in list"
       :key="c.i"
@@ -36,12 +38,12 @@ function toggle(i: number) {
     >
       <span class="token" :style="{ background: color(c.i), color: onColor(c.i) }" aria-hidden="true">{{ initial(c.name) }}</span>
       <div class="text">
-        <strong>{{ c.fullName }}<span v-if="winner === c.i" class="crown"> ★ mayor</span></strong>
-        <span class="role">{{ c.role }}</span>
-        <span v-if="pitch" class="pitch">{{ c.pitch }}</span>
+        <strong>{{ c.fullName }}<span v-if="winner === c.i" class="crown"> {{ t('candidateBar.mayor') }}</span></strong>
+        <span class="role">{{ candidateRole(c) }}</span>
+        <span v-if="pitch" class="pitch">{{ candidatePitch(c) }}</span>
       </div>
       <button v-if="withdrawable && c.i < 5" class="btn small" :aria-pressed="withdrawn.includes(c.i)" @click="toggle(c.i)">
-        {{ withdrawn.includes(c.i) ? 'Re-enter' : 'Withdraw' }}
+        {{ withdrawn.includes(c.i) ? t('candidateBar.reenter') : t('candidateBar.withdraw') }}
       </button>
     </li>
   </ul>

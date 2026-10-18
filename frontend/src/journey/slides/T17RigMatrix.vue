@@ -7,7 +7,7 @@ import Chip from '../../components/Chip.vue'
 import Takeaway from '../../components/Takeaway.vue'
 import { electionOf, honestBallots, NAMES, PERSONAS } from '../../cast'
 import { useLive } from '../../composables/useLive'
-import { METHOD_NAMES, TACTIC_NAMES } from '../../election'
+import { methodName, tacticName } from '../../election'
 import type { Manipulation, MethodId } from '../../types'
 import TownFrame from '../TownFrame.vue'
 
@@ -29,9 +29,9 @@ const grid = computed(() =>
     : null,
 )
 const riggable = computed(() => grid.value?.filter((row) => row.some((x) => x !== null)).length ?? 0)
-const safe = computed(() => (grid.value ? METHODS.filter((_, k) => grid.value![k].every((x) => x === null)).map((m) => METHOD_NAMES[m]) : []))
+const safe = computed(() => (grid.value ? METHODS.filter((_, k) => grid.value![k].every((x) => x === null)).map((m) => methodName(m)) : []))
 const tip = (m: Manipulation) =>
-  `${m.voters} of ${PERSONAS[m.group].name}'s ${PERSONAS[m.group].voters} voters, by ${TACTIC_NAMES[m.tactic].toLowerCase()}, get ${NAMES[m.new_winner]} instead of ${NAMES[m.honest_winner]}.`
+  `${m.voters} of ${PERSONAS[m.group].name}'s ${PERSONAS[m.group].voters} voters, by ${tacticName(m.tactic).toLowerCase()}, get ${NAMES[m.new_winner]} instead of ${NAMES[m.honest_winner]}.`
 </script>
 
 <template>
@@ -80,7 +80,7 @@ const tip = (m: Manipulation) =>
           </thead>
           <tbody>
             <tr v-for="(row, k) in grid" :key="METHODS[k]">
-              <th scope="row">{{ METHOD_NAMES[METHODS[k]] }}</th>
+              <th scope="row">{{ methodName(METHODS[k]) }}</th>
               <td v-for="(cell, g) in row" :key="g" :title="cell ? tip(cell) : 'No profitable lie'">
                 <Chip v-if="cell" :index="cell.new_winner" :name="NAMES[cell.new_winner]" />
                 <span v-else class="muted">·</span>

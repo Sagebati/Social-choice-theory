@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { api } from '../api'
-import { BALLOT_KIND, METHOD_NAMES, TACTIC_NAMES } from '../election'
+import { BALLOT_KIND, methodName, tacticName } from '../election'
 import type { Election, ElectionInput, Manipulation, MethodId } from '../types'
 import Chip from './Chip.vue'
 
@@ -42,7 +42,7 @@ async function search() {
   <div class="finder">
     <div class="row">
       <button class="btn primary" :disabled="loading" @click="search">
-        {{ loading ? 'Searching every possible lie…' : `Find a profitable lie (${METHOD_NAMES[method]})` }}
+        {{ loading ? 'Searching every possible lie…' : `Find a profitable lie (${methodName(method)})` }}
       </button>
     </div>
     <p v-if="error" class="notice">{{ error }}</p>
@@ -53,7 +53,7 @@ async function search() {
     <ul v-else-if="results" class="list">
       <li v-for="(m, i) in results" :key="i" class="item">
         <div class="row">
-          <span class="pill">{{ TACTIC_NAMES[m.tactic] }}</span>
+          <span class="pill">{{ tacticName(m.tactic) }}</span>
           <span class="small">
             <Chip :index="m.honest_winner" :name="election.candidates[m.honest_winner]" /> →
             <Chip :index="m.new_winner" :name="election.candidates[m.new_winner]" strong />
