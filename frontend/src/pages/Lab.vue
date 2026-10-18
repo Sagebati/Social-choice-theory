@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 import ArrowLab from '../components/ArrowLab.vue'
 import CriteriaTable from '../components/CriteriaTable.vue'
 import DuelGraph from '../components/DuelGraph.vue'
 import ManipulabilityChart from '../components/ManipulabilityChart.vue'
 import ProfileEditor from '../components/ProfileEditor.vue'
+import RichText from '../components/RichText'
 import WinnerStrip from '../components/WinnerStrip.vue'
 import { useElect } from '../composables/useApi'
 import { useLive } from '../composables/useLive'
 import { ALL_METHODS, rankingsOnly } from '../election'
 import type { ElectionInput, RuleId } from '../types'
 
+const { t } = useI18n()
 const allRules: RuleId[] = [...ALL_METHODS, 'pairwise_majority']
 
 // Manipulability sweep: only runs when asked, it is the heaviest request.
@@ -47,23 +50,17 @@ async function shuffle() {
 <template>
   <div class="lab">
     <header>
-      <h1>Theorem lab</h1>
-      <p class="muted">
-        The machinery behind the journey, with every knob exposed. Everything here is computed on the server by the
-        Rust library, by brute force where possible.
-      </p>
+      <h1>{{ t('lab.title') }}</h1>
+      <p class="muted">{{ t('lab.intro') }}</p>
     </header>
 
     <section class="card">
-      <h2>Same ballots, many winners</h2>
-      <p>
-        Edit the ballots, or shuffle in a random election. This one currently has
-        <strong>{{ distinct }}</strong> different outcomes across the {{ ALL_METHODS.length }} methods.
-      </p>
+      <h2>{{ t('lab.winners.title') }}</h2>
+      <RichText tag="p" :text="t('lab.winners.text', { distinct, methods: ALL_METHODS.length }, distinct)" />
       <div class="split">
         <div class="stack">
           <div class="row">
-            <button class="btn small" @click="shuffle">Random election</button>
+            <button class="btn small" @click="shuffle">{{ t('lab.winners.random') }}</button>
           </div>
           <ProfileEditor v-model="election" structural />
         </div>
@@ -73,39 +70,30 @@ async function shuffle() {
     </section>
 
     <section class="card">
-      <h2>Arrow's theorem, by brute force</h2>
-      <p>
-        Pick a rule. The server builds every possible election with three candidates and the chosen number of voters,
-        and checks Arrow's four conditions on each. If a condition fails, you get the most telling counterexample.
-      </p>
+      <h2>{{ t('lab.arrow.title') }}</h2>
+      <p>{{ t('lab.arrow.text') }}</p>
       <ArrowLab :rules="allRules" />
     </section>
 
     <section class="card">
-      <h2>Fairness criteria</h2>
-      <p>
-        Which method guarantees what. Every ✗ is backed by a real counterexample: click one and the server searches
-        random elections until it finds an election that breaks the rule, then shrinks it.
-      </p>
+      <h2>{{ t('lab.criteria.title') }}</h2>
+      <p>{{ t('lab.criteria.text') }}</p>
       <CriteriaTable />
     </section>
 
     <section class="card">
-      <h2>How manipulable is each method?</h2>
-      <p>
-        For each random election, the server tries every possible insincere ballot for every bloc of voters and
-        checks whether any of them would get a result the bloc prefers.
-      </p>
+      <h2>{{ t('lab.manipulability.title') }}</h2>
+      <p>{{ t('lab.manipulability.text') }}</p>
       <div class="row">
         <label class="row small">
-          Candidates
+          {{ t('lab.manipulability.candidates') }}
           <select v-model.number="sweepCandidates">
             <option :value="3">3</option>
             <option :value="4">4</option>
           </select>
         </label>
         <button class="btn primary small" :disabled="sweeping" @click="sweep = { candidates: sweepCandidates }">
-          {{ sweeping ? 'Running…' : 'Run the experiment' }}
+          {{ sweeping ? t('lab.manipulability.running') : t('lab.manipulability.run') }}
         </button>
       </div>
       <p v-if="sweepError" class="notice">{{ sweepError }}</p>

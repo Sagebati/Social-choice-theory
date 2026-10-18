@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, shallowRef } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 import { methodName } from '../election'
+import { locale } from '../i18n'
 import type { CounterexampleResponse, CriterionId, CriterionInfo, MethodId, MethodInfo } from '../types'
 import CounterexampleView from './CounterexampleView.vue'
 
@@ -13,25 +15,24 @@ const error = ref<string | null>(null)
 const open = ref<{ method: MethodId; criterion: CriterionId } | null>(null)
 const result = shallowRef<CounterexampleResponse | null>(null)
 const loading = ref(false)
+const { t } = useI18n()
+const short = (id: CriterionId) => t(`criteriaTable.short.${id}`)
 
-const SHORT: Record<CriterionId, string> = {
-  majority: 'Majority',
-  condorcet_winner: 'Condorcet winner',
-  condorcet_loser: 'Condorcet loser',
-  pareto: 'Unanimity',
-  monotonicity: 'Monotonic',
-  participation: 'Participation',
-  iia: 'No spoilers (IIA)',
-  clones: 'Clone-proof',
-}
-
-onMounted(async () => {
-  try {
-    ;[methods.value, criteria.value] = await Promise.all([api.methods(), api.criteria()])
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
-  }
-})
+// Names, questions and explanations come from the API in the reader's language:
+// fetch them again (and any counterexample on show) when it changes.
+watch(
+  locale,
+  async () => {
+    try {
+      ;[methods.value, criteria.value] = await Promise.all([api.methods(), api.criteria()])
+      error.value = null
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : String(e)
+    }
+    if (open.value) void show(open.value.method, open.value.criterion)
+  },
+  { immediate: true },
+)
 
 async function show(method: MethodId, criterion: CriterionId) {
   open.value = { method, criterion }
@@ -56,21 +57,27 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
       <table v-if="methods.length">
         <thead>
           <tr>
-            <th scope="col">Method</th>
-            <th v-for="c in criteria" :key="c.id" scope="col" :title="c.question">{{ SHORT[c.id] }}</th>
+            <th scope="col">{{ t('criteriaTable.method') }}</th>
+            <th v-for="c in criteria" :key="c.id" scope="col" :title="c.question">{{ short(c.id) }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="m in methods" :key="m.id">
             <th scope="row">{{ m.name }}</th>
             <td v-for="v in m.criteria" :key="v.criterion">
-              <span v-if="v.satisfied" class="yes" :title="`${m.name} always satisfies ${criterionName(v.criterion)}`">✓</span>
+              <span
+                v-if="v.satisfied"
+                class="yes"
+                :title="t('criteriaTable.always', { method: m.name, criterion: criterionName(v.criterion) })"
+              >
+                ✓
+              </span>
               <button
                 v-else
                 class="no"
                 :class="{ active: open?.method === m.id && open?.criterion === v.criterion }"
-                :title="`Show an election where ${m.name} breaks ${criterionName(v.criterion)}`"
-                :aria-label="`${m.name} fails ${criterionName(v.criterion)}: show an example`"
+                :title="t('criteriaTable.show', { method: m.name, criterion: criterionName(v.criterion) })"
+                :aria-label="t('criteriaTable.failsAria', { method: m.name, criterion: criterionName(v.criterion) })"
                 @click="show(m.id, v.criterion)"
               >
                 ✗
@@ -80,13 +87,15 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
         </tbody>
       </table>
     </div>
-    <p class="small muted">✓ always satisfied · ✗ can fail: tap it and the server will search for a concrete election.</p>
+    <p class="small muted">{{ t('criteriaTable.legend') }}</p>
     <div v-if="open" class="card panel" aria-live="polite">
-      <div class="eyebrow">{{ methodName(open.method) }} vs {{ criterionName(open.criterion) }}</div>
+      <div class="eyebrow">
+        {{ t('criteriaTable.versus', { method: methodName(open.method), criterion: criterionName(open.criterion) }) }}
+      </div>
       <p class="small">{{ criteria.find((c) => c.id === open!.criterion)?.description }}</p>
-      <p v-if="loading" class="small">Searching random elections…</p>
+      <p v-if="loading" class="small">{{ t('criteriaTable.searching') }}</p>
       <CounterexampleView v-else-if="result?.counterexample" :example="result.counterexample" />
-      <p v-else-if="result" class="small">The search came back empty this time.</p>
+      <p v-else-if="result" class="small">{{ t('criteriaTable.empty') }}</p>
     </div>
   </div>
 </template>

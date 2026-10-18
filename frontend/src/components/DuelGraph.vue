@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { color, initial, onColor } from '../palette'
 import type { Pairwise } from '../types'
 
@@ -7,6 +8,7 @@ import type { Pairwise } from '../types'
 // vote. Arrows in a majority cycle are drawn heavier.
 const props = defineProps<{ names: string[]; pairwise: Pairwise }>()
 const arrowId = `arrow-${useId()}`
+const { t } = useI18n()
 
 const W = 300
 const R = 105
@@ -61,16 +63,19 @@ const edges = computed(() => {
 
 const summary = computed(() => {
   const cw = props.pairwise.condorcet_winner
-  if (cw !== null) return `${props.names[cw]} beats everyone head to head.`
+  if (cw !== null) return t('duelGraph.beatsEveryone', { name: props.names[cw] })
   const cycle = props.pairwise.cycle
-  if (cycle) return `No Condorcet winner: ${[...cycle, cycle[0]].map((c) => props.names[c]).join(' beats ')}.`
-  return 'No Condorcet winner (some contests are tied).'
+  if (cycle) {
+    const chain = [...cycle, cycle[0]].map((c) => props.names[c]).join(` ${t('duelGraph.beats')} `)
+    return t('duelGraph.cycle', { cycle: chain })
+  }
+  return t('duelGraph.ties')
 })
 </script>
 
 <template>
   <figure class="duels">
-    <svg :viewBox="`0 0 ${W} ${W}`" role="img" :aria-label="`Head-to-head results. ${summary}`">
+    <svg :viewBox="`0 0 ${W} ${W}`" role="img" :aria-label="t('duelGraph.aria', { summary })">
       <defs>
         <marker :id="arrowId" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" class="head" />
@@ -78,7 +83,7 @@ const summary = computed(() => {
       </defs>
       <g v-for="(e, k) in edges" :key="k" class="edge" :class="{ cycle: e.cycle, tie: e.tie }">
         <line :x1="e.x1" :y1="e.y1" :x2="e.x2" :y2="e.y2" :marker-end="e.tie ? undefined : `url(#${arrowId})`" />
-        <text :x="e.lx" :y="e.ly" dy="0.35em">{{ e.tie ? 'tie ' : '' }}{{ e.text }}</text>
+        <text :x="e.lx" :y="e.ly" dy="0.35em">{{ e.tie ? `${t('common.tie')} ` : '' }}{{ e.text }}</text>
       </g>
       <g v-for="node in nodes" :key="node.i" :transform="`translate(${node.x} ${node.y})`">
         <circle

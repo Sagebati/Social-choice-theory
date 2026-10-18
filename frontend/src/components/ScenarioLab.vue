@@ -12,11 +12,13 @@ import WinnerStrip from './WinnerStrip.vue'
 const props = defineProps<{ scenario: Scenario }>()
 const election = ref<ElectionInput>(rankingsOnly(props.scenario.election))
 const method = ref<MethodId>(props.scenario.methods[0])
+// A new scenario starts afresh; the same scenario in another language keeps the
+// reader's edits.
 watch(
-  () => props.scenario,
-  (s) => {
-    election.value = rankingsOnly(s.election)
-    method.value = s.methods[0]
+  () => props.scenario.id,
+  () => {
+    election.value = rankingsOnly(props.scenario.election)
+    method.value = props.scenario.methods[0]
   },
 )
 const { data } = useElect(() => election.value, () => props.scenario.methods)
@@ -33,8 +35,8 @@ function apply(e: Election) {
     <div class="grid">
       <div class="stack">
         <div class="row">
-          <span class="eyebrow">The ballot box</span>
-          <button class="btn small" @click="election = rankingsOnly(scenario.election)">Reset</button>
+          <span class="eyebrow">{{ $t('scenarioLab.ballotBox') }}</span>
+          <button class="btn small" @click="election = rankingsOnly(scenario.election)">{{ $t('scenarioLab.reset') }}</button>
         </div>
         <ProfileEditor v-model="election" structural />
         <WinnerStrip v-if="data" :outcomes="data.results.map((r) => r.outcome)" :names="names" :condorcet="data.pairwise.condorcet_winner" show-condorcet />
@@ -43,8 +45,8 @@ function apply(e: Election) {
         <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" />
         <div>
           <div class="row small">
-            Rig it under
-            <select v-model="method" aria-label="Method to manipulate">
+            {{ $t('scenarioLab.rigUnder') }}
+            <select v-model="method" :aria-label="$t('scenarioLab.methodAria')">
               <option v-for="m in scenario.methods" :key="m" :value="m">{{ methodName(m) }}</option>
             </select>
           </div>

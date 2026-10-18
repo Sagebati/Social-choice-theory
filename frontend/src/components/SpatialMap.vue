@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { color, initial, onColor } from '../palette'
 import type { Crowd, Point, SpatialCandidate } from '../types'
 
@@ -48,9 +49,10 @@ const props = withDefaults(
     radius: null,
     voterLabels: () => [],
     selected: null,
-    label: 'Opinion map',
+    label: undefined,
   },
 )
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:candidates': [SpatialCandidate[]]
@@ -152,8 +154,10 @@ function nearest(p: Point): number {
 }
 
 const describe = computed(() => {
-  const cs = props.candidates.map((c) => `${c.name} at ${Math.round(c.x * 100)}, ${Math.round(c.y * 100)}`).join('; ')
-  return `${props.label}. Candidates: ${cs}. Use the arrow keys on a focused token to move it.`
+  const cs = props.candidates
+    .map((c) => t('spatialMap.candidateAt', { name: c.name, x: Math.round(c.x * 100), y: Math.round(c.y * 100) }))
+    .join('; ')
+  return t('spatialMap.describe', { label: props.label ?? t('spatialMap.label'), candidates: cs })
 })
 </script>
 
@@ -192,7 +196,7 @@ const describe = computed(() => {
       class="crowd"
       :class="{ movable: crowdsMovable, selected: selected?.kind === 'crowd' && selected.index === i }"
       :tabindex="crowdsMovable ? 0 : -1"
-      :aria-label="`Crowd of ${crowd.count} voters`"
+      :aria-label="t('spatialMap.crowd', crowd.count)"
       @pointerdown="start($event, 'crowd', i)"
       @keydown="nudge($event, 'crowd', i)"
     >
@@ -240,7 +244,7 @@ const describe = computed(() => {
       :transform="`translate(${c.x * SIZE} ${c.y * SIZE})`"
       :tabindex="canMove('candidate', i) ? 0 : -1"
       role="button"
-      :aria-label="`${c.name}${winner === i ? ', winning' : ''}`"
+      :aria-label="winner === i ? t('spatialMap.winning', { name: c.name }) : c.name"
       @pointerdown="start($event, 'candidate', i)"
       @keydown="nudge($event, 'candidate', i)"
     >
@@ -259,13 +263,13 @@ const describe = computed(() => {
       :transform="`translate(${v.x * SIZE} ${v.y * SIZE})`"
       :tabindex="votersMovable ? 0 : -1"
       role="button"
-      :aria-label="voterLabels[i] ?? 'You'"
+      :aria-label="voterLabels[i] ?? t('spatialMap.you')"
       @pointerdown="start($event, 'voter', i)"
       @keydown="nudge($event, 'voter', i)"
     >
       <circle class="hit" r="22" />
       <circle class="dot" r="9" :fill="color(nearest(v))" />
-      <text class="name" y="25">{{ voterLabels[i] ?? 'You' }}</text>
+      <text class="name" y="25">{{ voterLabels[i] ?? t('spatialMap.you') }}</text>
     </g>
   </svg>
 </template>
