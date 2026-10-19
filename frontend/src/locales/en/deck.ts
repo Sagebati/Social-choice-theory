@@ -27,7 +27,7 @@ export default {
       board: 'your bets',
     },
     systems: {
-      plurality: 'One mark',
+      plurality: 'First past the post',
       twoRound: 'Two rounds',
       irv: 'Instant runoff',
       borda: 'Borda points',
@@ -79,15 +79,15 @@ export default {
       caption: 'Six ways to count the same {n} ballots. Before each count, bet on the winner.',
     },
     plurality: {
-      title: '1 · One mark',
-      how: 'Each voter marks one name.\nThe candidate with the most marks wins.\nNo majority is needed.',
-      ask: 'Each voter marks one name. Who wins? Tap a candidate to bet.',
-      rule: 'Each voter marks one name.',
+      title: '1 · First past the post',
+      how: 'A single round: each voter votes for one candidate.\nThe candidate with the most votes is elected.\nA plurality is enough: the winner may have less than half the votes.',
+      ask: 'Each voter votes for one candidate. Who wins? Tap a candidate to bet.',
+      rule: 'Each voter votes for one candidate; the most votes wins.',
       count: 'Count ▶',
-      result: '{winner} wins with {votes} votes out of {total}.',
+      result: '{winner} wins with {votes} votes out of {total}: a plurality, far short of a majority ({majority}).',
       others: '{n} voted for someone else',
       problem:
-        '{winner} wins with {votes} votes out of {total}. Yet a majority prefers each of the other four: {winner} would lose every one-on-one vote, and {last} voters rank {winner} last.',
+        '{winner} wins although {split} voters chose someone else, splitting their votes four ways. A majority prefers each of the other four to {winner}, and {last} of the {total} voters rank {winner} last: first past the post can elect the Condorcet loser, the candidate who loses every duel.',
     },
     compromise: {
       title: 'The lesser evil (vote utile)',
@@ -99,12 +99,13 @@ export default {
       after: 'Not our favourite. But not Duck.',
       stamp: 'lesser evil',
       result: '{winner} wins, {votes} to {next}. Nobody changed their mind; one group changed its mark.',
-      problem: "One mark punishes honesty: Léo's group had to give up its favourite to stop Duck. Over time, support drains towards two big camps.",
-      idea: 'Two rounds. If nobody has a majority, the top two meet in a runoff, so a candidate most voters reject can no longer win.',
+      problem:
+        "First past the post punishes honesty: Léo's group had to give up its favourite to stop Duck. Over time, support tends to drain towards two big parties (Duverger's law).",
+      idea: 'Two rounds. If nobody wins a majority, the top two meet in a runoff, so a candidate who loses to every rival one on one can no longer win.',
     },
     twoRound: {
       title: '2 · Two rounds',
-      how: 'Round one: each voter marks one name.\nA candidate with a majority wins outright.\nOtherwise the top two meet in a runoff, two weeks later.',
+      how: 'Round one: each voter votes for one candidate.\nA candidate with a majority wins outright.\nOtherwise the top two meet in a runoff, two weeks later.',
       ask: 'The top two meet in a runoff. Who wins? Tap a candidate to bet.',
       rule: 'The top two meet in a runoff.',
       round1: 'Round 1 ▶',
@@ -112,7 +113,7 @@ export default {
       round2: 'Round 2 ▶',
       result: '{winner} wins the runoff, {votes} to {next}. {others} never got a second look.',
       problem:
-        'As hoped, Duck can no longer win: the majority beats him in any runoff. But round one still decides who gets a second look, with all the flaws of a single mark.',
+        'As hoped, Duck can no longer win: the majority beats him in any runoff. But round one still decides who gets a second look, with all the flaws of first past the post.',
     },
     twoRoundCompromise: {
       title: 'The lesser evil, in round one',
@@ -172,7 +173,7 @@ export default {
       beatsAll: 'beats all {n}',
       losesAll: 'loses all {n}',
       stamp: 'Condorcet winner',
-      result: '{winner} beats every rival one on one. {loser}, the one-mark winner, loses every duel.',
+      result: '{winner} beats every rival one on one. {loser}, the first-past-the-post winner, loses every duel.',
       problem:
         "Here it works: Manu beats everyone. But such a winner doesn't always exist; majorities can go round in circles, like rock, paper, scissors. And ranking everyone is a lot to ask.",
       idea: 'Simpler ballots: tick every candidate you accept. That is approval voting.',

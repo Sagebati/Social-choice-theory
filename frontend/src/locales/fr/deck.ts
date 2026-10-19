@@ -9,7 +9,7 @@ const deck: typeof source = {
     next: 'Suite →',
     startOver: '↺ Recommencer',
     voters: 'électeurs',
-    majority: 'majorité · {n}',
+    majority: 'majorité absolue · {n}',
     out: 'hors course',
     thinks: '{name} se dit…',
     panel: {
@@ -25,7 +25,7 @@ const deck: typeof source = {
       board: 'vos paris',
     },
     systems: {
-      plurality: 'Une croix',
+      plurality: 'Un tour',
       twoRound: 'Deux tours',
       irv: 'Vote alternatif',
       borda: 'Points de Borda',
@@ -77,15 +77,15 @@ const deck: typeof source = {
       caption: 'Six façons de compter les mêmes {n} bulletins. Avant chaque dépouillement, pariez sur le vainqueur.',
     },
     plurality: {
-      title: '1 · Une seule croix',
-      how: 'Chaque électeur coche un seul nom.\nLe candidat qui a le plus de croix l’emporte.\nPas besoin de majorité.',
-      ask: 'Chaque électeur coche un seul nom. Qui gagne ? Touchez un candidat pour parier.',
-      rule: 'Chaque électeur coche un seul nom.',
+      title: '1 · Scrutin uninominal majoritaire à un tour',
+      how: 'Un seul tour : chaque électeur vote pour un seul candidat.\nLe candidat arrivé en tête est élu.\nUne majorité relative suffit : l’élu peut avoir moins de la moitié des voix.',
+      ask: 'Chaque électeur vote pour un seul candidat. Qui gagne ? Touchez un candidat pour parier.',
+      rule: 'Chaque électeur vote pour un seul candidat ; le premier l’emporte.',
       count: 'Dépouiller ▶',
-      result: '{winner} l’emporte avec {votes} voix sur {total}.',
+      result: '{winner} l’emporte avec {votes} voix sur {total} : une majorité relative, loin de la majorité absolue ({majority}).',
       others: '{n} ont voté pour quelqu’un d’autre',
       problem:
-        '{winner} l’emporte avec {votes} voix sur {total}. Pourtant, une majorité préfère chacun des quatre autres candidats : {winner} perdrait tous ses face-à-face, et {last} électeurs placent {winner} en dernier.',
+        '{winner} l’emporte alors que {split} électeurs ont voté pour quelqu’un d’autre, en dispersant leurs voix entre quatre candidats. Une majorité préfère chacun des quatre autres à {winner}, et {last} électeurs sur {total} placent {winner} en dernier : le scrutin à un tour peut élire le perdant de Condorcet, celui qui perd tous ses duels.',
     },
     compromise: {
       title: 'Le vote utile',
@@ -98,12 +98,12 @@ const deck: typeof source = {
       stamp: 'vote utile',
       result: '{winner} l’emporte, {votes} à {next}. Personne n’a changé d’avis ; un groupe a changé de croix.',
       problem:
-        'Le scrutin à un tour punit la sincérité : le groupe de Léo a dû abandonner son favori pour barrer la route à Duck. À la longue, les voix se concentrent sur deux grands camps.',
-      idea: 'Deux tours. Si personne n’a la majorité, les deux premiers s’affrontent au second tour : un candidat rejeté par la majorité ne peut plus gagner.',
+        'Le scrutin à un tour punit la sincérité : le groupe de Léo a dû abandonner son favori pour barrer la route à Duck. À la longue, les voix tendent à se concentrer sur deux grands partis (loi de Duverger).',
+      idea: 'Deux tours. Si personne n’a la majorité absolue, les deux premiers s’affrontent au second tour : un candidat battu en duel par tous les autres ne peut plus gagner.',
     },
     twoRound: {
       title: '2 · Deux tours',
-      how: 'Premier tour : chaque électeur coche un seul nom.\nUn candidat qui a la majorité est élu d’emblée.\nSinon, les deux premiers s’affrontent au second tour, deux semaines plus tard.',
+      how: 'Premier tour : chaque électeur vote pour un seul candidat.\nUn candidat qui obtient la majorité absolue est élu dès le premier tour.\nSinon, les deux premiers s’affrontent au second tour, deux semaines plus tard.',
       ask: 'Les deux premiers s’affrontent au second tour. Qui gagne ? Touchez un candidat pour parier.',
       rule: 'Les deux premiers s’affrontent au second tour.',
       round1: '1er tour ▶',
@@ -111,7 +111,7 @@ const deck: typeof source = {
       round2: '2d tour ▶',
       result: '{winner} remporte le second tour, {votes} à {next}. {others} n’ont jamais eu leur chance.',
       problem:
-        'Comme espéré, Duck ne peut plus gagner : au second tour, la majorité le bat. Mais c’est toujours le premier tour, avec les défauts du scrutin à une croix, qui décide qui aura une seconde chance.',
+        'Comme espéré, Duck ne peut plus gagner : au second tour, la majorité le bat. Mais c’est toujours le premier tour, avec les défauts du scrutin à un tour, qui décide qui aura une seconde chance.',
     },
     twoRoundCompromise: {
       title: 'Le vote utile au premier tour',
@@ -173,7 +173,7 @@ const deck: typeof source = {
       beatsAll: '{n} duels gagnés sur {n}',
       losesAll: '{n} duels perdus sur {n}',
       stamp: 'vainqueur de Condorcet',
-      result: '{winner} bat chaque rival en face-à-face. {loser}, vainqueur du scrutin à une croix, perd tous ses duels.',
+      result: '{winner} bat chaque rival en face-à-face. {loser}, vainqueur du scrutin à un tour, perd tous ses duels.',
       problem:
         'Ici, ça marche : Manu bat tout le monde. Mais un tel vainqueur n’existe pas toujours ; les majorités peuvent tourner en rond, comme pierre-feuille-ciseaux. Et classer tout le monde, c’est beaucoup demander.',
       idea: 'Des bulletins plus simples : cocher tous les candidats qu’on accepte. C’est le vote par approbation.',

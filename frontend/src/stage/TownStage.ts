@@ -866,14 +866,20 @@ export class TownStage {
       g.style.animationDelay = i * 0.1 + 's'
       const x = 70 + i * 194
       el('rect', { x, y: 190, width: 174, height: 190, rx: 16, class: 'card' }, g)
-      text(x + 87, 228, this.t(`deck.systems.${s}`), 'cand-name', g)
+      this.cardTitle(x + 87, 228, this.t(`deck.systems.${s}`), g)
       el('circle', { cx: x + 87, cy: 300, r: 36, class: 'slot-ring' }, g)
       text(x + 87, 314, '?', 'big muted', g)
       text(x + 87, 362, this.t('deck.bet.yours').toUpperCase(), 'small-caps', g)
     })
   }
 
-  // ---- 1. One mark.
+  /** A system's name on a card, on two lines when it is too wide for one. */
+  private cardTitle(x: number, y: number, name: string, parent: SVGGElement) {
+    const lines = textWidth(name, 18) > 160 ? wrap(name, Math.ceil(name.length / 2)) : [name]
+    lines.forEach((line, i) => text(x, y + (i - (lines.length - 1) / 2) * 22, line, 'cand-name', parent))
+  }
+
+  // ---- 1. First past the post.
   private async sPlurality() {
     this.crowdLayout()
     this.buildPiles()
@@ -890,12 +896,12 @@ export class TownStage {
     await this.crownPile(w)
     this.settle('plurality')
     this.react(w)
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes, total: TOTAL }))
+    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes, total: TOTAL, majority: MAJORITY }))
     const others = COLX.filter((_, c) => c !== w)
     const tops = CANDIDATES.map((_, c) => (c === w ? Infinity : this.pileTop(c)))
     this.bracket(Math.min(...others) - 40, Math.max(...others) + 40, Math.min(...tops) - 46, this.t(`${k}.others`, { n: TOTAL - votes }))
     const last = PERSONAS.filter((p) => p.ranking[p.ranking.length - 1] === w).reduce((n, p) => n + p.voters, 0)
-    await this.lesson(k, { winner: NAME[w], votes, total: TOTAL, last }, false)
+    await this.lesson(k, { winner: NAME[w], split: TOTAL - votes, total: TOTAL, last }, false)
   }
 
   // ---- The lesser evil (vote utile).
@@ -1339,7 +1345,7 @@ export class TownStage {
       g.style.animationDelay = i * 0.18 + 's'
       const x = 70 + i * 194
       el('rect', { x, y: 170, width: 174, height: 250, rx: 16, class: 'card' }, g)
-      text(x + 87, 208, this.t(`deck.systems.${s}`), 'cand-name', g)
+      this.cardTitle(x + 87, 208, this.t(`deck.systems.${s}`), g)
       el('path', { class: 'crown', d: CROWN, transform: `translate(${x + 87},250)` }, g)
       token(x + 87, 310, 38, winners[i], g, 30)
       text(x + 87, 380, NAME[winners[i]], 'cand-name big-name', g)
