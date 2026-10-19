@@ -39,7 +39,7 @@ export function runnerUp(totals: number[], winner: number) {
 const withApprovals = (ranking: number[]): CastBallot => ({ ranking: [...ranking], approvals: defaultApprovals(ranking) })
 export const honest = (): CastBallot[] => PERSONAS.map((p) => withApprovals(p.ranking))
 
-/** Léo's group marks Bruno, its second choice, instead of Amira. */
+/** Léo's group marks Manu, its second choice, instead of Cuauhtémoc. */
 export function compromise(): CastBallot[] {
   const ballots = honest()
   const r = PERSONAS[LEO].ranking
@@ -47,7 +47,7 @@ export function compromise(): CastBallot[] {
   return ballots
 }
 
-/** In round one of two, Robinson's group marks Daniel, its second choice, instead of Bruno. */
+/** In round one of two, Robinson's group marks Poutine, its second choice, instead of Manu. */
 export function compromiseTwoRound(): CastBallot[] {
   const ballots = honest()
   const r = PERSONAS[ROBINSON].ranking
@@ -55,7 +55,7 @@ export function compromiseTwoRound(): CastBallot[] {
   return ballots
 }
 
-/** Robinson's group moves Camille, its fourth choice, below Erik. */
+/** Robinson's group moves Melon, its fourth choice, below Duck. */
 export function bury(): CastBallot[] {
   const ballots = honest()
   const r = PERSONAS[ROBINSON].ranking
@@ -63,7 +63,7 @@ export function bury(): CastBallot[] {
   return ballots
 }
 
-/** Lucas's group ticks only its favourite, Erik. */
+/** Lucas's group ticks only its favourite, Duck. */
 export function bullet(): CastBallot[] {
   const ballots = honest()
   const r = PERSONAS[LUCAS].ranking

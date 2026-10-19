@@ -87,7 +87,7 @@ export function setLocale(next: Locale) {
   }
 }
 
-/** "Amira, Bruno and Camille" in the current language (British English: no serial comma). */
+/** "Cuauhtémoc, Manu and Melon" in the current language (British English: no serial comma). */
 export const listOf = (items: string[]) =>
   new Intl.ListFormat(locale.value === 'en' ? 'en-GB' : locale.value, { type: 'conjunction' }).format(items)
 

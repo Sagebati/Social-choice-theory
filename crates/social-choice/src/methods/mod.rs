@@ -302,7 +302,7 @@ mod tests {
         }
         let two_round = Method::TwoRound.run_in(&elections[0], Lang::Fr);
         assert_eq!(two_round.rounds[1].title, "Second tour");
-        assert_eq!(two_round.rounds[1].notes, ["Amira remporte le second tour face à Erik."]);
+        assert_eq!(two_round.rounds[1].notes, ["Cuauhtémoc remporte le second tour face à Duck."]);
         assert_eq!(Method::Irv.name_in(Lang::Fr), "Vote alternatif (second tour instantané)");
     }
 

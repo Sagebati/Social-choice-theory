@@ -25,8 +25,8 @@ that don't need one, above all in messages where a name is a parameter:
 * *{name} l’emporte*, *{name} gagne*, *{name} devient maire*, *{name} arrive en
   tête*, *{name} sort de la course* (not *est élu·e*, *est éliminé·e*).
 
-When a fixed sentence about one person can't avoid it: Amira, Camille, Aïda
-and Clélia take the feminine; Bruno, Daniel, Erik, Lucas, Léo and Robinson the
+When a fixed sentence about one person can't avoid it: Melon, Aïda and Clélia
+take the feminine; Cuauhtémoc, Manu, Poutine, Duck, Lucas, Léo and Robinson the
 masculine. *Maire* and *parent* are epicene. Generic voters are
 *électeurs*.
 

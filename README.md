@@ -34,11 +34,11 @@ changes, and with it the mayor.
 
 | Group | Voters | Ranking |
 | --- | --- | --- |
-| Lucas, hardware store | 9 | Erik > Bruno > Camille > Daniel > Amira |
-| Léo, bike courier | 7 | Amira > Bruno > Camille > Daniel > Erik |
-| Aïda, parent of two | 6 | Camille > Daniel > Bruno > Amira > Erik |
-| Clélia, night-shift nurse | 5 | Daniel > Camille > Erik > Amira > Bruno |
-| Robinson, retired city clerk | 3 | Bruno > Daniel > Amira > Camille > Erik |
+| Lucas, hardware store | 9 | Duck > Manu > Melon > Poutine > Cuauhtémoc |
+| Léo, bike courier | 7 | Cuauhtémoc > Manu > Melon > Poutine > Duck |
+| Aïda, parent of two | 6 | Melon > Poutine > Manu > Cuauhtémoc > Duck |
+| Clélia, night-shift nurse | 5 | Poutine > Melon > Duck > Cuauhtémoc > Manu |
+| Robinson, retired city clerk | 3 | Manu > Poutine > Cuauhtémoc > Melon > Duck |
 
 The journey is a full-screen slide deck played on Riverton's town square, in
 the spirit of *The Evolution of Trust*: the words sit inside the scene
@@ -60,15 +60,15 @@ defines it (the lesser evil, burying, bullet voting).
 | 2 | Five neighbours, five opinions | The spokespeople and their rankings; tap a face to hear why | |
 | 3 | Each one speaks for a group | Each spokesperson's group fills in: 30 voters | |
 | 4 | The game | Six counts to bet on | |
-| 5 | One mark | Ballots fly into piles under the majority line | Erik |
-| 6 | The lesser evil (vote utile) | Léo's group marks Bruno instead of Amira | Bruno |
-| 7 | Two rounds | The top two meet; the other ballots move to the finalist each voter prefers | Amira |
-| 8 | The lesser evil, in round one | Robinson's group marks Daniel in round one and puts him in the runoff | Daniel |
-| 9 | Instant runoff | The smallest pile is knocked out, round after round | Daniel |
-| 10 | Borda points | Coins rain into jars | Camille |
-| 11 | Burying | Robinson's group moves Camille to last; three coins change jars | Bruno |
-| 12 | Head to head | The crowd splits for each of the ten duels; arrows build the duel map | Bruno |
-| 13 | Approval | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Erik and it backfires | Bruno, then Daniel |
+| 5 | One mark | Ballots fly into piles under the majority line | Duck |
+| 6 | The lesser evil (vote utile) | Léo's group marks Manu instead of Cuauhtémoc | Manu |
+| 7 | Two rounds | The top two meet; the other ballots move to the finalist each voter prefers | Cuauhtémoc |
+| 8 | The lesser evil, in round one | Robinson's group marks Poutine in round one and puts him in the runoff | Poutine |
+| 9 | Instant runoff | The smallest pile is knocked out, round after round | Poutine |
+| 10 | Borda points | Coins rain into jars | Melon |
+| 11 | Burying | Robinson's group moves Melon to last; three coins change jars | Manu |
+| 12 | Head to head | The crowd splits for each of the ten duels; arrows build the duel map | Manu |
+| 13 | Approval | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Duck and it backfires | Manu, then Poutine |
 | 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's theorem | |
 
 Who wins and by how much comes from the Worker; the stage only shows which

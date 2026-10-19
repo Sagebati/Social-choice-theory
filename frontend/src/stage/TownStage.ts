@@ -5,6 +5,7 @@
 // goes where follows from the rankings (plan.ts). Every word is a message.
 
 import { candidateRole, CANDIDATES, PERSONAS } from '../cast'
+import { initial } from '../palette'
 import type { Outcome } from '../types'
 import { Animator, arc, back, ease, easeOut, type Point } from './engine'
 import { bordaCoins, eliminations, finalists, nextChoice, prefers, runnerUp, tallies, LUCAS, LEO, ROBINSON } from './plan'
@@ -18,19 +19,19 @@ export interface DeckData {
   matrix: number[][]
   condorcetWinner: number
   condorcetLoser: number
-  /** Plurality once Léo's group marks Bruno. */
+  /** Plurality once Léo's group marks Manu. */
   compromise: Outcome
-  /** Two rounds once Robinson's group marks Daniel in round one. */
+  /** Two rounds once Robinson's group marks Poutine in round one. */
   compromiseTwoRound: Outcome
-  /** Borda once Robinson's group puts Camille last. */
+  /** Borda once Robinson's group puts Melon last. */
   bury: Outcome
-  /** Approval once Lucas's group ticks only Erik. */
+  /** Approval once Lucas's group ticks only Duck. */
   bullet: Outcome
 }
 
 export interface StageOptions {
   t: Translate
-  /** "Amira, Bruno and Camille" in the reader's language. */
+  /** "Cuauhtémoc, Manu and Melon" in the reader's language. */
   list: (items: string[]) => string
   data: DeckData
   reducedMotion: boolean
@@ -40,11 +41,12 @@ export interface StageOptions {
   open: (path: string) => void
   /** What a screen reader should hear after each beat. */
   announce: (words: string) => void
-  /** Approval with the reader's own ballot added: honestly, and once Lucas's group ticks only Erik. */
+  /** Approval with the reader's own ballot added: honestly, and once Lucas's group ticks only Duck. */
   approvalWith: (yours: boolean[]) => Promise<{ honest: Outcome; bullet: Outcome }>
 }
 
 const NAME = CANDIDATES.map((c) => c.name)
+const LETTER = NAME.map((n) => initial(n, NAME))
 const ON_DARK = [true, true, false, false, false]
 const TOTAL = PERSONAS.reduce((n, p) => n + p.voters, 0)
 const MAJORITY = Math.floor(TOTAL / 2) + 1
@@ -212,7 +214,7 @@ export class TownStage {
       p.ranking.forEach((c, i) => {
         const cx = g.cx - 58 + i * 23
         el('rect', { x: cx, y: 510, width: 20, height: 20, rx: 4, class: 'card-sq c' + c }, g.card)
-        text(cx + 10, 524, NAME[c][0], 'letter tiny ' + onClass(c), g.card)
+        text(cx + 10, 524, LETTER[c], 'letter tiny ' + onClass(c), g.card).style.fontSize = LETTER[c].length > 1 ? '9.5px' : ''
       })
     })
   }
@@ -775,8 +777,11 @@ export class TownStage {
       const g = el('g', { class: 'pop' }, this.layer.machine)
       g.style.animationDelay = c * 0.12 + 's'
       token(COLX[c], 290, 48, c, g, 38)
-      text(COLX[c], 376, cand.fullName, 'cand-name big-name', g)
-      wrap(candidateRole(cand), 24).forEach((line, i) => text(COLX[c], 402 + i * 20, line, 'muted role', g))
+      // First name over surname: the full names are too wide for one line each.
+      const [first, ...rest] = cand.fullName.split(' ')
+      text(COLX[c], 376, first, 'cand-name big-name', g)
+      text(COLX[c], 402, rest.join(' '), 'cand-name big-name', g)
+      wrap(candidateRole(cand), 24).forEach((line, i) => text(COLX[c], 430 + i * 20, line, 'muted role', g))
     })
   }
 
@@ -906,7 +911,7 @@ export class TownStage {
     this.think(LEO, k)
     await this.ask([{ label: this.t(`${k}.button`), primary: true }])
     this.unpanel()
-    // Léo's group is the only one with Amira first, so her whole pile moves.
+    // Léo's group is the only one with Cuauhtémoc first, so his whole pile moves.
     const target = PERSONAS[LEO].ranking[1]
     await this.movePile(PERSONAS[LEO].ranking[0], () => target, false)
     const outcome = this.o.data.compromise
@@ -963,7 +968,7 @@ export class TownStage {
     this.think(ROBINSON, k)
     await this.ask([{ label: this.t(`${k}.button`), primary: true }])
     this.unpanel()
-    // Robinson's group is the only one with Bruno first, so his whole pile moves.
+    // Robinson's group is the only one with Manu first, so his whole pile moves.
     const target = group.ranking[1]
     await this.movePile(group.ranking[0], () => target, false)
     const outcome = this.o.data.compromiseTwoRound
@@ -1158,7 +1163,7 @@ export class TownStage {
       for (const [s, cand] of [[left, a], [right, c]] as const) {
         s.g.classList.remove('gone')
         s.disc.setAttribute('class', 'c' + cand)
-        s.letter.textContent = NAME[cand][0]
+        s.letter.textContent = LETTER[cand]
         s.letter.setAttribute('class', 'letter duel-letter ' + onClass(cand))
         s.name.textContent = NAME[cand]
         s.score.textContent = '0'
@@ -1369,7 +1374,9 @@ function mouthPath(r: number, mood: number) {
 function token(x: number, y: number, r: number, c: number, parent: Element, size: number) {
   const g = el('g', {}, parent)
   el('circle', { cx: x, cy: y, r, class: 'c' + c }, g)
-  const t = text(x, y + size * 0.36, NAME[c][0], 'letter ' + onClass(c), g)
-  t.style.fontSize = size + 'px'
+  // Two letters (Ma, Me) set a little smaller than one, to stay inside the disc.
+  const fit = LETTER[c].length > 1 ? size * 0.8 : size
+  const t = text(x, y + fit * 0.36, LETTER[c], 'letter ' + onClass(c), g)
+  t.style.fontSize = fit + 'px'
   return g
 }

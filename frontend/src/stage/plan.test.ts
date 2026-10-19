@@ -57,11 +57,11 @@ describe('the stage counts Riverton like the server', () => {
     expect(twoRound(compromiseTwoRound())).toEqual({ finalists: [3, 4], runoff: [0, 0, 0, 21, 9] })
   })
 
-  it('instant runoff knocks out Bruno, Camille, then Amira', () => {
+  it('instant runoff knocks out Manu, Melon, then Cuauhtémoc', () => {
     expect(irv(honest())).toEqual({ order: [1, 2, 0], totals: [0, 0, 0, 21, 9] })
   })
 
-  it('Borda points, and burying Camille', () => {
+  it('Borda points, and burying Melon', () => {
     expect(borda(honest())).toEqual([45, 72, 74, 63, 46])
     expect(borda(bury())).toEqual([45, 72, 71, 63, 49])
   })
@@ -71,7 +71,7 @@ describe('the stage counts Riverton like the server', () => {
     expect(approvals(bullet())).toEqual([7, 10, 11, 14, 9])
   })
 
-  it('head to head: Bruno beats everyone, Erik loses to everyone', () => {
+  it('head to head: Manu beats everyone, Duck loses to everyone', () => {
     const beats = (a: number, b: number) => count(honest(), (bal) => (prefers(bal.ranking, a, b) ? [a] : [b]))[a] > 15
     expect([0, 2, 3, 4].every((c) => beats(1, c))).toBe(true)
     expect([0, 1, 2, 3].every((c) => beats(c, 4))).toBe(true)

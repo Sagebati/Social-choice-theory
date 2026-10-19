@@ -85,7 +85,7 @@ function removeBloc(g: number) {
             @click="raise(g, pos)"
           >
             <span v-if="!lockRankings && pos > 0" class="arrow" aria-hidden="true">‹</span>
-            <span class="init" aria-hidden="true">{{ initial(election.candidates[c]) }}</span>
+            <span class="init" aria-hidden="true">{{ initial(election.candidates[c], election.candidates) }}</span>
             <span class="nm">{{ election.candidates[c] }}</span>
           </button>
           <span v-if="pos < b.ranking.length - 1" class="gt" aria-hidden="true">›</span>

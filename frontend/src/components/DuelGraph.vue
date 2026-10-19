@@ -92,7 +92,7 @@ const summary = computed(() => {
           :r="NODE + 5"
         />
         <circle :r="NODE" :fill="color(node.i)" class="node" />
-        <text class="initial" dy="0.35em" :fill="onColor(node.i)">{{ initial(node.name) }}</text>
+        <text class="initial" dy="0.35em" :fill="onColor(node.i)">{{ initial(node.name, names) }}</text>
       </g>
     </svg>
     <figcaption>{{ summary }}</figcaption>

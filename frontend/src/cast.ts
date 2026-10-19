@@ -8,7 +8,7 @@ import { i18n } from './i18n'
 import type { BallotInput, ElectionInput } from './types'
 
 export interface Candidate {
-  key: 'amira' | 'bruno' | 'camille' | 'daniel' | 'erik'
+  key: 'cuauhtemoc' | 'manu' | 'melon' | 'poutine' | 'duck'
   name: string
   fullName: string
 }
@@ -22,18 +22,18 @@ export interface Persona {
   ranking: number[]
 }
 
-export const AMIRA = 0
-export const BRUNO = 1
-export const CAMILLE = 2
-export const DANIEL = 3
-export const ERIK = 4
+export const CUAUHTEMOC = 0
+export const MANU = 1
+export const MELON = 2
+export const POUTINE = 3
+export const DUCK = 4
 
 export const CANDIDATES: Candidate[] = [
-  { key: 'amira', name: 'Amira', fullName: 'Amira Haddad' },
-  { key: 'bruno', name: 'Bruno', fullName: 'Bruno Costa' },
-  { key: 'camille', name: 'Camille', fullName: 'Camille Laurent' },
-  { key: 'daniel', name: 'Daniel', fullName: 'Daniel Okafor' },
-  { key: 'erik', name: 'Erik', fullName: 'Erik Brandt' },
+  { key: 'cuauhtemoc', name: 'Cuauhtémoc', fullName: 'Cuauhtémoc Feusoulier' },
+  { key: 'manu', name: 'Manu', fullName: 'Manu Macaroni' },
+  { key: 'melon', name: 'Melon', fullName: 'Melon Meloni' },
+  { key: 'poutine', name: 'Poutine', fullName: 'Poutine Light' },
+  { key: 'duck', name: 'Duck', fullName: 'Duck Trompe' },
 ]
 
 export const PERSONAS: Persona[] = [
@@ -41,31 +41,31 @@ export const PERSONAS: Persona[] = [
     key: 'lucas',
     name: 'Lucas',
     voters: 9,
-    ranking: [ERIK, BRUNO, CAMILLE, DANIEL, AMIRA],
+    ranking: [DUCK, MANU, MELON, POUTINE, CUAUHTEMOC],
   },
   {
     key: 'leo',
     name: 'Léo',
     voters: 7,
-    ranking: [AMIRA, BRUNO, CAMILLE, DANIEL, ERIK],
+    ranking: [CUAUHTEMOC, MANU, MELON, POUTINE, DUCK],
   },
   {
     key: 'aida',
     name: 'Aïda',
     voters: 6,
-    ranking: [CAMILLE, DANIEL, BRUNO, AMIRA, ERIK],
+    ranking: [MELON, POUTINE, MANU, CUAUHTEMOC, DUCK],
   },
   {
     key: 'clelia',
     name: 'Clélia',
     voters: 5,
-    ranking: [DANIEL, CAMILLE, ERIK, AMIRA, BRUNO],
+    ranking: [POUTINE, MELON, DUCK, CUAUHTEMOC, MANU],
   },
   {
     key: 'robinson',
     name: 'Robinson',
     voters: 3,
-    ranking: [BRUNO, DANIEL, AMIRA, CAMILLE, ERIK],
+    ranking: [MANU, POUTINE, CUAUHTEMOC, MELON, DUCK],
   },
 ]
 

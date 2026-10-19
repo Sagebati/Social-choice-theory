@@ -2,11 +2,11 @@ import type source from '../en/cast'
 
 const cast: typeof source = {
   candidates: {
-    amira: { role: 'Conseillère municipale écologiste' },
-    bruno: { role: 'Premier adjoint au maire' },
-    camille: { role: 'Ancienne directrice d’école' },
-    daniel: { role: 'Ingénieur des transports' },
-    erik: { role: 'Chef d’entreprise, hors du sérail' },
+    cuauhtemoc: { role: 'Conseiller municipal écologiste' },
+    manu: { role: 'Premier adjoint au maire' },
+    melon: { role: 'Ancienne directrice d’école' },
+    poutine: { role: 'Ingénieur des transports' },
+    duck: { role: 'Chef d’entreprise, hors du sérail' },
   },
   personas: {
     lucas: { role: 'Tient la quincaillerie de la Grand-Rue' },

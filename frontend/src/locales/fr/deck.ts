@@ -34,29 +34,29 @@ const deck: typeof source = {
     },
     voices: {
       lucas: {
-        why: 'Les impôts tuent les petits commerces. Erik a compris. Amira veut mon parking pour ses pistes cyclables !',
+        why: 'Les impôts tuent les petits commerces. Duck a compris. Cuauhtémoc veut mon parking pour ses pistes cyclables !',
         best: 'Enfin quelqu’un qui comprend.',
-        worst: 'Amira ? Adieu mon parking.',
+        worst: 'Cuauhtémoc ? Adieu mon parking.',
       },
       leo: {
-        why: 'Le climat d’abord. Bruno a créé les premières pistes cyclables. Erik veut les supprimer.',
+        why: 'Le climat d’abord. Manu a créé les premières pistes cyclables. Duck veut les supprimer.',
         best: 'Des pistes cyclables pour tous !',
-        worst: 'Erik va supprimer les pistes cyclables !',
+        worst: 'Duck va supprimer les pistes cyclables !',
       },
       aida: {
-        why: 'Les écoles débordent et Camille en a dirigé une. Les bus de Daniel y emmènent les enfants. Erik, ce sont des classes plus chargées.',
+        why: 'Les écoles débordent et Melon en a dirigé une. Les bus de Poutine y emmènent les enfants. Duck, ce sont des classes plus chargées.',
         best: 'Les écoles d’abord. Enfin.',
         worst: 'Des classes plus chargées, alors.',
       },
       clelia: {
-        why: 'Le dernier bus part avant la fin de ma garde. Bruno a supprimé les bus de nuit. Même Erik, ce serait du changement.',
+        why: 'Le dernier bus part avant la fin de ma garde. Manu a supprimé les bus de nuit. Même Duck, ce serait du changement.',
         best: 'Des bus de nuit !',
-        worst: 'Bruno ? Il a supprimé les bus de nuit.',
+        worst: 'Manu ? Il a supprimé les bus de nuit.',
       },
       robinson: {
-        why: 'Quarante ans à la mairie : Bruno connaît le métier. Erik fait peur.',
+        why: 'Quarante ans à la mairie : Manu connaît le métier. Duck fait peur.',
         best: 'Quelqu’un de solide.',
-        worst: 'Erik. Quelle horreur.',
+        worst: 'Duck. Quelle horreur.',
       },
     },
     town: {
@@ -89,16 +89,16 @@ const deck: typeof source = {
     },
     compromise: {
       title: 'Le vote utile',
-      caption: 'Le groupe de Léo adore Amira, mais Amira ne peut pas gagner.',
-      think: 'Tiens… Amira ne peut pas gagner. Si je ne vote pas pour ma favorite, je peux encore faire élire quelqu’un de mieux qu’Erik : Bruno !',
+      caption: 'Le groupe de Léo adore Cuauhtémoc, mais Cuauhtémoc ne peut pas gagner.',
+      think: 'Tiens… Cuauhtémoc ne peut pas gagner. Si je ne vote pas pour mon favori, je peux encore faire élire quelqu’un de mieux que Duck : Manu !',
       tactic: 'Le vote utile',
       definition: 'Voter pour un candidat qui peut gagner plutôt que pour son favori, afin d’écarter le pire.',
-      button: 'Léo vote Bruno ▶',
-      after: 'Pas notre favori. Mais pas Erik.',
+      button: 'Léo vote Manu ▶',
+      after: 'Pas notre favori. Mais pas Duck.',
       stamp: 'vote utile',
       result: '{winner} l’emporte, {votes} à {next}. Personne n’a changé d’avis ; un groupe a changé de croix.',
       problem:
-        'Le scrutin à un tour punit la sincérité : le groupe de Léo a dû abandonner sa favorite pour barrer la route à Erik. À la longue, les voix se concentrent sur deux grands camps.',
+        'Le scrutin à un tour punit la sincérité : le groupe de Léo a dû abandonner son favori pour barrer la route à Duck. À la longue, les voix se concentrent sur deux grands camps.',
       idea: 'Deux tours. Si personne n’a la majorité, les deux premiers s’affrontent au second tour : un candidat rejeté par la majorité ne peut plus gagner.',
     },
     twoRound: {
@@ -111,16 +111,16 @@ const deck: typeof source = {
       round2: '2d tour ▶',
       result: '{winner} remporte le second tour, {votes} à {next}. {others} n’ont jamais eu leur chance.',
       problem:
-        'Comme espéré, Erik ne peut plus gagner : au second tour, la majorité le bat. Mais c’est toujours le premier tour, avec les défauts du scrutin à une croix, qui décide qui aura une seconde chance.',
+        'Comme espéré, Duck ne peut plus gagner : au second tour, la majorité le bat. Mais c’est toujours le premier tour, avec les défauts du scrutin à une croix, qui décide qui aura une seconde chance.',
     },
     twoRoundCompromise: {
       title: 'Le vote utile au premier tour',
-      caption: 'Le groupe de Robinson adore Bruno, mais {n} voix ne passeront jamais le premier tour.',
-      think: 'Tiens… Bruno ne passera jamais le premier tour. Si je ne vote pas pour mon favori au premier tour, je qualifie Daniel pour le second, et Daniel bat Erik !',
+      caption: 'Le groupe de Robinson adore Manu, mais {n} voix ne passeront jamais le premier tour.',
+      think: 'Tiens… Manu ne passera jamais le premier tour. Si je ne vote pas pour mon favori au premier tour, je qualifie Poutine pour le second, et Poutine bat Duck !',
       tactic: 'Le vote utile au premier tour',
       definition: 'Au premier tour, voter pour un candidat capable de se qualifier et de gagner, plutôt que pour son favori.',
-      button: 'Robinson vote Daniel ▶',
-      after: 'Pas Bruno. Mais mieux qu’Amira.',
+      button: 'Robinson vote Poutine ▶',
+      after: 'Pas Manu. Mais mieux que Cuauhtémoc.',
       stamp: 'vote utile',
       result: '{winner} remporte le second tour, {votes} à {next}. {n} électeurs ont déplacé leur croix du premier tour, et le maire a changé.',
       problem: 'Et le vote utile revient, au premier tour : soutenir un candidat capable de se qualifier peut rapporter plus que voter pour son favori.',
@@ -137,7 +137,7 @@ const deck: typeof source = {
       next: 'Tour suivant ▶',
       result: '{winner} l’emporte avec {votes} voix. {first} a quitté la course en premier.',
       problem:
-        'Bruno, deuxième choix de beaucoup, sort le premier, alors qu’il battrait chacun de ses rivaux en face-à-face. Chaque tour ne regarde encore que les premiers choix.',
+        'Manu, deuxième choix de beaucoup, sort le premier, alors qu’il battrait chacun de ses rivaux en face-à-face. Chaque tour ne regarde encore que les premiers choix.',
       idea: 'Compter chaque place du bulletin, pas seulement la première : la méthode de Borda.',
     },
     borda: {
@@ -151,15 +151,15 @@ const deck: typeof source = {
     },
     bury: {
       title: 'L’enterrement',
-      caption: 'Le groupe de Robinson classe Camille quatrième. Et s’il la mettait dernière ?',
-      think: 'Tiens… Camille devance Bruno de peu. Si je la classe dernière au lieu de quatrième, elle perd des points et Bruno passe devant !',
+      caption: 'Le groupe de Robinson classe Melon quatrième. Et s’il la mettait dernière ?',
+      think: 'Tiens… Melon devance Manu de peu. Si je la classe dernière au lieu de quatrième, elle perd des points et Manu passe devant !',
       tactic: 'L’enterrement',
       definition: 'Classer un rival dangereux plus bas qu’on ne le pense vraiment, pour lui faire perdre des points ou des duels.',
-      button: 'Robinson enterre Camille ▶',
+      button: 'Robinson enterre Melon ▶',
       stamp: 'enterrement',
       result: '{winner} l’emporte, {votes} à {next}. {n} bulletins ont menti sur leur dernière place.',
       problem:
-        'Les points récompensent le mensonge en bas du bulletin : trois électeurs ont fait descendre Camille et changé le maire, sans que personne ne change d’avis.',
+        'Les points récompensent le mensonge en bas du bulletin : trois électeurs ont fait descendre Melon et changé le maire, sans que personne ne change d’avis.',
       idea: 'Comparer les candidats deux à deux. Celui qui gagne tous ses duels devrait l’emporter : le vainqueur de Condorcet.',
     },
     duels: {
@@ -175,7 +175,7 @@ const deck: typeof source = {
       stamp: 'vainqueur de Condorcet',
       result: '{winner} bat chaque rival en face-à-face. {loser}, vainqueur du scrutin à une croix, perd tous ses duels.',
       problem:
-        'Ici, ça marche : Bruno bat tout le monde. Mais un tel vainqueur n’existe pas toujours ; les majorités peuvent tourner en rond, comme pierre-feuille-ciseaux. Et classer tout le monde, c’est beaucoup demander.',
+        'Ici, ça marche : Manu bat tout le monde. Mais un tel vainqueur n’existe pas toujours ; les majorités peuvent tourner en rond, comme pierre-feuille-ciseaux. Et classer tout le monde, c’est beaucoup demander.',
       idea: 'Des bulletins plus simples : cocher tous les candidats qu’on accepte. C’est le vote par approbation.',
     },
     approval: {
@@ -189,12 +189,12 @@ const deck: typeof source = {
       count: 'Dépouiller ▶',
       result: '{winner} l’emporte avec {votes} coches.',
       resultYours: '{winner} l’emporte avec {votes} coches, les vôtres comprises.',
-      what: 'Et si Lucas ne cochait qu’Erik ? ▶',
-      think: 'Tiens… chaque coche pour Bruno l’aide à battre Erik. Si je ne coche qu’Erik, Erik a plus de chances !',
+      what: 'Et si Lucas ne cochait que Duck ? ▶',
+      think: 'Tiens… chaque coche pour Manu l’aide à battre Duck. Si je ne coche que Duck, Duck a plus de chances !',
       tactic: 'Le vote exclusif',
       definition: 'Ne soutenir que son favori, pour que ses autres choix ne puissent pas le battre. Ça peut se retourner contre vous.',
-      bullet: 'Lucas ne coche qu’Erik ▶',
-      after: 'Daniel ?! On aurait dû cocher Bruno.',
+      bullet: 'Lucas ne coche que Duck ▶',
+      after: 'Poutine ?! On aurait dû cocher Manu.',
       stamp: 'retour de bâton',
       backfire: '{winner} l’emporte avec {votes} coches. Le vote exclusif du groupe de Lucas s’est retourné contre lui.',
       problem:

@@ -251,7 +251,7 @@ const describe = computed(() => {
       <circle class="hit" r="24" />
       <circle v-if="winner === i" class="win-ring" r="21" />
       <circle class="token" r="15" :fill="color(i)" />
-      <text class="initial" dy="0.35em" :fill="onColor(i)">{{ initial(c.name) }}</text>
+      <text class="initial" dy="0.35em" :fill="onColor(i)">{{ initial(c.name, candidates.map((x) => x.name)) }}</text>
       <text class="name" :y="winner === i ? -28 : -23">{{ winner === i ? '★ ' : '' }}{{ c.name }}</text>
     </g>
 

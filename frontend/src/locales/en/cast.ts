@@ -3,11 +3,11 @@
 
 export default {
   candidates: {
-    amira: { role: 'Green councillor' },
-    bruno: { role: 'Deputy mayor' },
-    camille: { role: 'Former school principal' },
-    daniel: { role: 'Transport engineer' },
-    erik: { role: 'Businessman, outsider' },
+    cuauhtemoc: { role: 'Green councillor' },
+    manu: { role: 'Deputy mayor' },
+    melon: { role: 'Former school principal' },
+    poutine: { role: 'Transport engineer' },
+    duck: { role: 'Businessman, outsider' },
   },
   personas: {
     lucas: { role: 'Runs the hardware store on Main Street' },
