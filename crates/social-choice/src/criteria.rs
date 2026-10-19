@@ -347,7 +347,7 @@ fn subject(method: Method, lang: Lang) -> &'static str {
             TwoRound => "le scrutin à deux tours",
             Irv => "le vote alternatif",
             Coombs => "la méthode de Coombs",
-            Borda => "la méthode de Borda",
+            Borda => "la méthode Borda",
             Agenda => "le vote séquentiel",
             Copeland => "la méthode de Copeland",
             Minimax => "le minimax",

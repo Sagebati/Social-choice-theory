@@ -37,7 +37,7 @@ pourtant le scrutin à un tour élit Ada, avec 40 premiers choix. Les méthodes 
 élisent toujours le vainqueur de Condorcet quand il existe s’appellent des
 **méthodes de Condorcet** (Copeland, minimax, Schulze, paires classées, vote
 séquentiel). Le scrutin à un tour, le scrutin à deux tours, le vote alternatif,
-la méthode de Borda, le vote par approbation, le vote par notes et STAR peuvent
+la méthode Borda, le vote par approbation, le vote par notes et STAR peuvent
 tous le manquer.
 
 Il peut aussi n’y avoir aucun vainqueur de Condorcet. Avec 4 électeurs qui
@@ -164,7 +164,7 @@ la monotonie, la participation et l’indépendance des options non pertinentes.
 y est dévastateur : un bloc qui classe un rival en dernier peut l’éliminer
 presque à volonté.
 
-### Méthode de Borda
+### Méthode Borda
 
 *n−1 points pour un premier choix, jusqu’à 0 pour le dernier.* Utilisée pour les
 sièges des minorités en Slovénie, des trophées sportifs et des concours de

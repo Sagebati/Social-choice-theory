@@ -19,16 +19,17 @@ pub struct Scenario {
 /// The town of Riverton, which the journey follows from start to finish: five
 /// groups of voters, five candidates, and a different mayor under each of
 /// plurality, two-round runoff, instant runoff, Borda and the Condorcet methods.
+/// Found with tools/riverton, which states every story as a constraint.
 ///
 /// Candidates: Cuauhtémoc, Manu, Melon, Poutine, Duck. Ballots, one per group:
-/// Lucas's 9, Léo's 7, Aïda's 6, Clélia's 5 and Robinson's 3.
+/// Lucas's 10, Léo's 7, Aïda's 6, Clélia's 4 and Robinson's 5.
 pub fn riverton() -> Election {
     Election::new(["Cuauhtémoc", "Manu", "Melon", "Poutine", "Duck"])
-        .with(9, &[4, 1, 2, 3, 0])
-        .with(7, &[0, 1, 2, 3, 4])
-        .with(6, &[2, 3, 1, 0, 4])
-        .with(5, &[3, 2, 4, 0, 1])
-        .with(3, &[1, 3, 0, 2, 4])
+        .with(10, &[4, 1, 3, 2, 0])
+        .with(7, &[0, 3, 1, 4, 2])
+        .with(6, &[2, 1, 3, 0, 4])
+        .with(4, &[3, 0, 4, 2, 1])
+        .with(5, &[1, 3, 2, 0, 4])
 }
 
 pub fn all() -> Vec<Scenario> {
@@ -43,14 +44,16 @@ pub fn all_in(lang: Lang) -> Vec<Scenario> {
             id: "riverton",
             title: lang.pick("Riverton elects a mayor", "Riverton élit son maire"),
             story: lang.pick(
-                "Thirty voters in five groups, five candidates. Plurality elects Duck, two rounds elect \
-                        Cuauhtémoc, instant runoff elects Poutine, the Borda count elects Melon, and every Condorcet \
-                        method elects Manu, who beats each rival one on one. Duck, the plurality winner, loses \
-                        every one-on-one contest.",
-                "Trente électeurs répartis en cinq groupes, cinq candidats. Le scrutin à un tour élit Duck, le scrutin \
-                        à deux tours élit Cuauhtémoc, le vote alternatif Poutine, la méthode de Borda Melon, et toutes les \
-                        méthodes de Condorcet élisent Manu, qui bat chaque rival en duel. Duck, vainqueur du scrutin \
-                        à un tour, perd tous ses duels.",
+                "Thirty-two voters in five groups, five candidates. Plurality elects Duck, two rounds elect \
+                        Cuauhtémoc, instant runoff elects Melon, the Borda count elects Poutine, and every Condorcet \
+                        method elects Manu, who beats each rival one on one. Below him, Melon beats Cuauhtémoc, \
+                        Cuauhtémoc beats Duck and Duck beats Melon: so if two of Duck's voters back Melon in round \
+                        one, Melon knocks Cuauhtémoc out and Duck wins the runoff.",
+                "Trente-deux électeurs répartis en cinq groupes, cinq candidats. Le scrutin à un tour élit Duck, le \
+                        scrutin à deux tours Cuauhtémoc, le vote alternatif Melon, la méthode Borda Poutine, et toutes \
+                        les méthodes de Condorcet élisent Manu, qui bat chaque rival en duel. Derrière lui, Melon bat \
+                        Cuauhtémoc, Cuauhtémoc bat Duck et Duck bat Melon : si deux électeurs de Duck votent Melon au \
+                        premier tour, Melon élimine Cuauhtémoc et Duck remporte le second tour.",
             ),
             methods: vec![Plurality, TwoRound, Irv, Borda, Schulze, Approval, Star],
             election: riverton(),
@@ -169,7 +172,7 @@ pub fn all_in(lang: Lang) -> Vec<Scenario> {
                         the ballots of Bea's supporters, and Bea now wins the Borda count 70 to 60.",
                 "Entre Ada et Bea seules, Ada gagne 30 à 20. Le parti de Bea ajoute Bex, un quasi-clone de Bea que \
                         tout le monde classe juste à côté de Bea. Bex ne gagne rien, mais repousse Ada vers le bas des \
-                        bulletins des partisans de Bea, et Bea remporte désormais la méthode de Borda, 70 à 60.",
+                        bulletins des partisans de Bea, et Bea remporte désormais la méthode Borda, 70 à 60.",
             ),
             methods: vec![Borda, Irv, Schulze],
             election: Election::new(["Ada", "Bea", "Bex"]).with(30, &[0, 1, 2]).with(20, &[1, 2, 0]),
@@ -236,137 +239,124 @@ mod tests {
             switch_voters(e, group, voters, &Ballot::from_ranking(ranking.to_vec(), e.max_score))
         }
 
-        fn staying_home(e: &Election, group: usize, voters: u32) -> Election {
-            let mut a = e.clone();
-            a.ballots[group].weight -= voters;
-            a
-        }
-
         #[test]
         fn five_systems_five_mayors() {
             let e = e();
-            assert_eq!(e.total_weight(), 30);
+            assert_eq!(e.total_weight(), 32);
             assert_eq!(winner(Plurality, &e), "Duck");
             assert_eq!(winner(TwoRound, &e), "Cuauhtémoc");
-            assert_eq!(winner(Irv, &e), "Poutine");
-            assert_eq!(winner(Borda, &e), "Melon");
-            for m in [Schulze, RankedPairs, Minimax, Copeland, Agenda] {
+            assert_eq!(winner(Irv, &e), "Melon");
+            assert_eq!(winner(Borda, &e), "Poutine");
+            for m in [Schulze, Minimax, Copeland, Agenda] {
                 assert_eq!(winner(m, &e), "Manu", "{m}");
             }
+            assert_eq!(e.name(RankedPairs.run(&e).winner), "Manu");
             assert_eq!(winner(Approval, &e), "Manu");
-            assert_eq!(winner(Score, &e), "Melon");
+            assert_eq!(winner(Score, &e), "Poutine");
             assert_eq!(winner(Star, &e), "Manu");
         }
 
         #[test]
         fn counts() {
             let e = e();
-            assert_eq!(Plurality.run(&e).rounds[0].tallies, [7.0, 3.0, 6.0, 5.0, 9.0].map(Some));
-            assert_eq!(TwoRound.run(&e).rounds[1].tallies, [Some(16.0), None, None, None, Some(14.0)]);
+            assert_eq!(Plurality.run(&e).rounds[0].tallies, [7.0, 5.0, 6.0, 4.0, 10.0].map(Some));
+            assert_eq!(TwoRound.run(&e).rounds[1].tallies, [Some(22.0), None, None, None, Some(10.0)]);
             let irv = Irv.run(&e);
             let out: Vec<usize> = irv.rounds.iter().flat_map(|r| r.eliminated.clone()).collect();
-            assert_eq!(out, vec![MANU, MELON, CUAUHTEMOC]);
-            assert_eq!(irv.rounds.last().unwrap().tallies[POUTINE], Some(21.0));
-            assert_eq!(Borda.run(&e).rounds[0].tallies, [45.0, 72.0, 74.0, 63.0, 46.0].map(Some));
-            assert_eq!(Approval.run(&e).rounds[0].tallies, [7.0, 19.0, 11.0, 14.0, 9.0].map(Some));
+            assert_eq!(out, vec![POUTINE, MANU, DUCK]);
+            assert_eq!(irv.rounds.last().unwrap().tallies[MELON], Some(21.0));
+            assert_eq!(Borda.run(&e).rounds[0].tallies, [51.0, 82.0, 48.0, 84.0, 55.0].map(Some));
+            assert_eq!(Approval.run(&e).rounds[0].tallies, [11.0, 21.0, 6.0, 16.0, 10.0].map(Some));
             let star = Star.run(&e);
-            assert_eq!(star.rounds[0].tallies, [55.0, 97.0, 101.0, 77.0, 60.0].map(Some));
-            assert_eq!(star.rounds[1].tallies[MANU], Some(19.0));
+            assert_eq!(star.rounds[0].tallies, [62.0, 110.0, 59.0, 116.0, 69.0].map(Some));
+            assert_eq!(star.rounds[1].tallies[MANU], Some(21.0));
         }
 
         #[test]
         fn head_to_head() {
             let pm = PairwiseMatrix::new(&e());
             assert_eq!(pm.condorcet_winner(), Some(MANU));
-            assert_eq!(pm.condorcet_loser(), Some(DUCK));
+            assert_eq!(pm.condorcet_loser(), None);
             assert_eq!(
                 [CUAUHTEMOC, MELON, POUTINE, DUCK].map(|c| (pm.prefer(MANU, c), pm.prefer(c, MANU))),
-                [(18, 12), (19, 11), (19, 11), (16, 14)]
+                [(21, 11), (22, 10), (21, 11), (18, 14)]
             );
-            // Duck is last on 16 of the 30 ballots.
-            assert_eq!(e().ballots.iter().filter(|b| b.ranking[4] == DUCK).map(|b| b.weight).sum::<u32>(), 16);
+            // Below Manu, rock, paper, scissors: Melon beats Cuauhtémoc, who beats Duck, who beats Melon.
+            assert_eq!(
+                (pm.prefer(MELON, CUAUHTEMOC), pm.prefer(CUAUHTEMOC, DUCK), pm.prefer(DUCK, MELON)),
+                (21, 22, 21)
+            );
+            // Duck is last on 11 of the 32 ballots.
+            assert_eq!(e().ballots.iter().filter(|b| b.ranking[4] == DUCK).map(|b| b.weight).sum::<u32>(), 11);
         }
 
         #[test]
         fn plurality_pitfalls() {
             let e = e();
-            // Compromise: Léo's group votes Manu, or Robinson's votes Cuauhtémoc.
-            assert_eq!(winner(Plurality, &with_ballot(&e, 1, 7, &[1, 0, 2, 3, 4])), "Manu");
-            assert_eq!(winner(Plurality, &with_ballot(&e, 4, 3, &[0, 1, 3, 2, 4])), "Cuauhtémoc");
+            // Compromise: Aïda's group votes Manu, its second choice, instead of Melon.
+            assert_eq!(winner(Plurality, &with_ballot(&e, 2, 6, &[MANU, MELON, POUTINE, CUAUHTEMOC, DUCK])), "Manu");
             // Spoilers.
             let without = |c: usize| {
                 let keep: Vec<usize> = (0..5).filter(|&x| x != c).collect();
                 let r = e.restrict(&keep);
                 keep[Plurality.run(&r).winner]
             };
-            assert_eq!(without(CUAUHTEMOC), MANU);
-            assert_eq!(without(MELON), POUTINE);
-            assert_eq!(without(POUTINE), MELON);
+            assert_eq!(without(CUAUHTEMOC), POUTINE);
+            assert_eq!(without(MELON), MANU);
+            assert_eq!(without(POUTINE), CUAUHTEMOC);
             assert_eq!(without(MANU), DUCK);
         }
 
         #[test]
         fn two_round_pitfalls() {
             let e = e();
-            // Four of Lucas's group put Cuauhtémoc first, and Cuauhtémoc loses to Melon.
-            let converts = with_ballot(&e, 0, 4, &[CUAUHTEMOC, DUCK, MANU, MELON, POUTINE]);
-            assert_eq!(winner(TwoRound, &converts), "Melon");
-            // Four of Lucas's group stay home: Melon, whom Lucas prefers to Cuauhtémoc.
-            assert_eq!(winner(TwoRound, &staying_home(&e, 0, 4)), "Melon");
-            // Robinson's group backs Poutine in round one: Poutine, whom they prefer to Cuauhtémoc.
-            assert_eq!(winner(TwoRound, &with_ballot(&e, 4, 3, &[POUTINE, CUAUHTEMOC, MANU, MELON, DUCK])), "Poutine");
+            // The push-over: two of Lucas's group mark Melon in round one. Duck and Melon
+            // go through, 8 each, ahead of Cuauhtémoc's 7, and Duck beats Melon in the runoff.
+            let pushed = with_ballot(&e, 0, 2, &[MELON, DUCK, MANU, POUTINE, CUAUHTEMOC]);
+            let two = TwoRound.run(&pushed);
+            assert_eq!(two.rounds[0].tallies, [7.0, 5.0, 8.0, 4.0, 8.0].map(Some));
+            assert_eq!(winner(TwoRound, &pushed), "Duck");
+            // Back with Duck in the runoff, as they would be, the two make it 21 to 11.
+            assert_eq!(PairwiseMatrix::new(&e).prefer(DUCK, MELON), 21);
+            let found = find_manipulations(&e, TwoRound, 50);
+            assert!(found.iter().any(|m| m.group == 0 && m.voters == 2 && m.new_winner == DUCK));
         }
 
         #[test]
         fn instant_runoff_pitfalls() {
             let e = e();
-            // Two of Léo's group put Poutine first, and Poutine loses to Melon.
-            assert_eq!(winner(Irv, &with_ballot(&e, 1, 2, &[POUTINE, CUAUHTEMOC, MANU, MELON, DUCK])), "Melon");
-            // Staying home: Lucas's and Léo's groups both prefer Melon to Poutine.
-            assert_eq!(winner(Irv, &staying_home(&e, 0, 4)), "Melon");
-            assert_eq!(winner(Irv, &staying_home(&e, 1, 2)), "Melon");
-            // Three more people like Robinson turn up and get Melon, whom they like less than Poutine.
-            let mut more = e.clone();
-            more.ballots[4].weight += 3;
-            assert_eq!(winner(Irv, &more), "Melon");
+            // Manu, who beats everyone, goes out in round two: the centre squeezed.
+            assert_eq!(Irv.run(&e).rounds[1].eliminated, vec![MANU]);
+            // One of Robinson's group puts Poutine first and Poutine wins: a lesser evil again.
+            assert_eq!(winner(Irv, &with_ballot(&e, 4, 1, &[POUTINE, CUAUHTEMOC, MELON, MANU, DUCK])), "Poutine");
         }
 
         #[test]
         fn borda_pitfalls() {
             let e = e();
-            // Robinson's group buries Melon.
-            assert_eq!(winner(Borda, &with_ballot(&e, 4, 3, &[MANU, CUAUHTEMOC, POUTINE, DUCK, MELON])), "Manu");
-            // Teaming: Manu's party fields a near-copy that every voter ranks just below
-            // Manu. The copy wins nothing, but Manu now wins the Borda count.
-            let teamed = crate::criteria::with_clones(&e, MANU, 1, 1);
-            assert_eq!(winner(Borda, &teamed), "Manu");
-            assert_eq!(winner(Irv, &teamed), "Poutine", "instant runoff is not fooled");
+            // Robinson's group buries Poutine.
+            let buried = with_ballot(&e, 4, 5, &[MANU, MELON, CUAUHTEMOC, DUCK, POUTINE]);
+            assert_eq!(Borda.run(&buried).rounds[0].tallies, [56.0, 82.0, 53.0, 69.0, 60.0].map(Some));
+            assert_eq!(winner(Borda, &buried), "Manu");
         }
 
         #[test]
-        fn condorcet_pitfalls() {
-            let e = e();
-            // Aïda's group buries Manu, fakes a cycle and wins.
-            let buried = with_ballot(&e, 2, 6, &[MELON, CUAUHTEMOC, POUTINE, DUCK, MANU]);
-            assert!(PairwiseMatrix::new(&buried).condorcet_winner().is_none());
-            for m in [Schulze, RankedPairs, Minimax] {
-                assert_eq!(winner(m, &buried), "Melon", "{m}");
-            }
+        fn condorcet_holds() {
+            // No group can change the Condorcet winner by lying, here.
+            assert!(find_manipulations(&e(), Schulze, 50).is_empty());
         }
 
         #[test]
         fn rated_pitfalls() {
             let e = e();
-            // A bullet vote by Lucas's or Léo's group backfires: Poutine, ranked fourth by both.
-            for g in [0, 1] {
-                let mut bullet = e.clone();
-                let top = bullet.ballots[g].ranking[0];
-                bullet.ballots[g].approvals = (0..5).map(|c| c == top).collect();
-                assert_eq!(winner(Approval, &bullet), "Poutine");
-            }
-            // Under STAR, Aïda's group exaggerates and gets Poutine, whom they prefer to Manu.
+            // A bullet vote by Lucas's group backfires: Poutine, ranked third by them.
+            let mut bullet = e.clone();
+            bullet.ballots[0].approvals = (0..5).map(|c| c == DUCK).collect();
+            assert_eq!(Approval.run(&bullet).rounds[0].tallies, [11.0, 11.0, 6.0, 16.0, 10.0].map(Some));
+            assert_eq!(winner(Approval, &bullet), "Poutine");
+            // Under STAR, Léo's group exaggerates and gets Poutine, whom they prefer to Manu.
             let star = find_manipulations(&e, Star, 50);
-            assert!(star.iter().any(|m| m.group == 2 && m.voters == 6 && m.new_winner == POUTINE));
+            assert!(star.iter().any(|m| m.group == 1 && m.voters == 6 && m.new_winner == POUTINE));
             // Approval cannot be manipulated by any group here.
             assert!(find_manipulations(&e, Approval, 50).is_empty());
         }

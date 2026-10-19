@@ -46,7 +46,7 @@ const app: typeof source = {
     two_round: 'Scrutin à deux tours',
     irv: 'Vote alternatif',
     coombs: 'Coombs',
-    borda: 'Méthode de Borda',
+    borda: 'Méthode Borda',
     agenda: 'Vote séquentiel',
     copeland: 'Copeland',
     minimax: 'Minimax',

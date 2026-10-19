@@ -32,14 +32,17 @@ masculine. *Maire* and *parent* are epicene. Generic voters are
 
 ## Voting methods
 
+The journey titles each system with its full name, as Wikipedia gives it;
+tables and short labels use the short one.
+
 | English | Français |
 | --- | --- |
-| Plurality (one mark) | Scrutin à un tour (une seule croix) |
+| Plurality, first past the post | Scrutin (uninominal majoritaire) à un tour |
 | Anti-plurality | Vote par veto |
-| Two-round runoff | Scrutin à deux tours |
+| Two-round runoff, two-round system | Scrutin (uninominal majoritaire) à deux tours |
 | Instant runoff (IRV) | Vote alternatif (second tour instantané) |
 | Coombs | Méthode de Coombs |
-| Borda count | Méthode de Borda |
+| Borda count | Méthode Borda |
 | Agenda | Vote séquentiel (ordre du jour) |
 | Copeland | Méthode de Copeland |
 | Minimax | Minimax |
@@ -105,7 +108,7 @@ masculine. *Maire* and *parent* are epicene. Generic voters are
 | Compromising (lesser evil) | Vote utile (le moindre mal) |
 | Burying | Enterrement |
 | Compromising + burying | Vote utile + enterrement |
-| Push-over | Push-over (pousser un adversaire facile) |
+| Push-over | Vote stratégique inversé (push-over) |
 | Bullet voting | Vote exclusif |
 | Exaggeration | Exagération |
 | Spoiler | trouble-fête (candidat trouble-fête) |

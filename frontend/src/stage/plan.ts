@@ -1,12 +1,15 @@
 // What each ballot does in each count: pure functions of the rankings, so the
 // stage can show every ballot move while the server decides the results.
 
-import { CANDIDATES, defaultApprovals, PERSONAS, type CastBallot } from '../cast'
+import { CANDIDATES, defaultApprovals, MELON, PERSONAS, type CastBallot } from '../cast'
 import type { Outcome } from '../types'
 
 export const LUCAS = 0
-export const LEO = 1
+export const AIDA = 2
 export const ROBINSON = 4
+
+/** The push-over: two of Lucas's group mark Melon in round one, to face her in the runoff. */
+export const PUSH = { group: LUCAS, voters: 2, mark: MELON }
 
 /** The candidate a ballot counts for among those still in the race. */
 export const nextChoice = (ranking: number[], active: boolean[]) => ranking.find((c) => active[c]) ?? -1
@@ -34,32 +37,36 @@ export function runnerUp(totals: number[], winner: number) {
   return { c, votes: totals[c] }
 }
 
-// The four elections the journey counts. Every group ticks its top two for
-// approval; three stories change one group's ballot.
+// The elections the journey counts. Every group ticks its top two for approval;
+// each story changes one group's ballot, or part of a group's.
 const withApprovals = (ranking: number[]): CastBallot => ({ ranking: [...ranking], approvals: defaultApprovals(ranking) })
 export const honest = (): CastBallot[] => PERSONAS.map((p) => withApprovals(p.ranking))
 
-/** Léo's group marks Manu, its second choice, instead of Cuauhtémoc. */
+/** Aïda's group marks Manu, its second choice, instead of Melon. */
 export function compromise(): CastBallot[] {
   const ballots = honest()
-  const r = PERSONAS[LEO].ranking
-  ballots[LEO] = withApprovals([r[1], r[0], ...r.slice(2)])
+  const r = PERSONAS[AIDA].ranking
+  ballots[AIDA] = withApprovals([r[1], r[0], ...r.slice(2)])
   return ballots
 }
 
-/** In round one of two, Robinson's group marks Poutine, its second choice, instead of Manu. */
-export function compromiseTwoRound(): CastBallot[] {
+/**
+ * Round one of the push-over: two of Lucas's group mark Melon, the rest Duck.
+ * Only round one is counted this way: in the runoff the two vote Duck again.
+ */
+export function pushOver(): CastBallot[] {
   const ballots = honest()
-  const r = PERSONAS[ROBINSON].ranking
-  ballots[ROBINSON] = withApprovals([r[1], r[0], ...r.slice(2)])
+  const r = PERSONAS[PUSH.group].ranking
+  ballots[PUSH.group] = { ...ballots[PUSH.group], voters: PERSONAS[PUSH.group].voters - PUSH.voters }
+  ballots.push({ ...withApprovals([PUSH.mark, ...r.filter((c) => c !== PUSH.mark)]), voters: PUSH.voters })
   return ballots
 }
 
-/** Robinson's group moves Melon, its fourth choice, below Duck. */
+/** Robinson's group moves Poutine, its second choice, to last. */
 export function bury(): CastBallot[] {
   const ballots = honest()
   const r = PERSONAS[ROBINSON].ranking
-  ballots[ROBINSON] = withApprovals([...r.slice(0, 3), r[4], r[3]])
+  ballots[ROBINSON] = withApprovals([r[0], ...r.slice(2), r[1]])
   return ballots
 }
 

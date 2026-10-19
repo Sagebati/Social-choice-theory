@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
 import { approvalBallot, electionOf, type CastBallot } from '../cast'
 import { listOf, locale } from '../i18n'
-import { bullet, bury, compromise, compromiseTwoRound, honest } from '../stage/plan'
+import { bullet, bury, compromise, honest, pushOver } from '../stage/plan'
 import { TownStage, type DeckData } from '../stage/TownStage'
 import '../stage/stage.css'
 import type { BallotInput, ElectResponse, MethodId } from '../types'
@@ -43,10 +43,10 @@ const outcome = (r: ElectResponse, m: MethodId) => {
 }
 
 async function load(): Promise<DeckData> {
-  const [h, c, c2, b, u] = await Promise.all([
+  const [h, c, p, b, u] = await Promise.all([
     count(honest(), ['plurality', 'two_round', 'irv', 'borda', 'approval', 'schulze']),
     count(compromise(), ['plurality']),
-    count(compromiseTwoRound(), ['two_round']),
+    count(pushOver(), ['two_round']),
     count(bury(), ['borda']),
     count(bullet(), ['approval']),
   ])
@@ -61,17 +61,25 @@ async function load(): Promise<DeckData> {
     matrix: h.pairwise.matrix,
     condorcetWinner: h.pairwise.condorcet_winner ?? outcome(h, 'schulze').winner,
     condorcetLoser: h.pairwise.condorcet_loser ?? -1,
+    cycle: h.pairwise.cycle ?? [],
     compromise: outcome(c, 'plurality'),
-    compromiseTwoRound: outcome(c2, 'two_round'),
+    pushOver: outcome(p, 'two_round'),
     bury: outcome(b, 'borda'),
     bullet: outcome(u, 'approval'),
   }
 }
 
+// Like a slide deck: →, Space or Enter go on (to the next beat, then the next
+// slide), ← goes back a slide, Page Down skips to the next one.
 function onKey(event: KeyboardEvent) {
   const target = event.target as HTMLElement | null
   if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
-  if (event.key === 'ArrowRight' || event.key === 'PageDown') go(index.value + 1)
+  const onControl = !!target?.closest('a, button, [role="button"]')
+  if (event.key === 'ArrowRight' || (!onControl && (event.key === ' ' || event.key === 'Enter'))) {
+    event.preventDefault()
+    stage?.advance()
+  }
+  if (event.key === 'PageDown') go(index.value + 1)
   if (event.key === 'ArrowLeft' || event.key === 'PageUp') go(index.value - 1)
 }
 

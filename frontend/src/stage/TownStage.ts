@@ -8,7 +8,7 @@ import { candidateRole, CANDIDATES, PERSONAS } from '../cast'
 import { initial } from '../palette'
 import type { Outcome } from '../types'
 import { Animator, arc, back, ease, easeOut, type Point } from './engine'
-import { bordaCoins, eliminations, finalists, nextChoice, prefers, runnerUp, tallies, LUCAS, LEO, ROBINSON } from './plan'
+import { bordaCoins, eliminations, finalists, nextChoice, prefers, runnerUp, tallies, AIDA, LUCAS, PUSH, ROBINSON } from './plan'
 import { asButton, el, text, textWidth, wrap } from './svg'
 
 type Translate = (key: string, params?: Record<string, string | number>) => string
@@ -19,10 +19,12 @@ export interface DeckData {
   matrix: number[][]
   condorcetWinner: number
   condorcetLoser: number
-  /** Plurality once Léo's group marks Manu. */
+  /** Majorities that go round in a circle, each beating the next (empty if none). */
+  cycle: number[]
+  /** Plurality once Aïda's group marks Manu. */
   compromise: Outcome
-  /** Two rounds once Robinson's group marks Poutine in round one. */
-  compromiseTwoRound: Outcome
+  /** Round one of two once two of Lucas's group mark Melon (the push-over). */
+  pushOver: Outcome
   /** Borda once Robinson's group puts Melon last. */
   bury: Outcome
   /** Approval once Lucas's group ticks only Duck. */
@@ -119,6 +121,8 @@ export class TownStage {
   private betMark: { c: number; ring: SVGCircleElement; label: SVGTextElement } | null = null
   private gen = 0
   private current = 0
+  /** Resolves the beat waiting for the reader's tap, if one is. */
+  private waiting: (() => void) | null = null
   // Piles.
   private cols: { token: SVGGElement; count: SVGTextElement }[] = []
   private stacks: Item[][] = []
@@ -146,6 +150,10 @@ export class TownStage {
     for (const id of ['hud', 'buttons', 'picks', 'nav']) this.layer[id] = el('g', {}, ui)
     this.layer.hud.classList.add('fade')
     this.buildCrowd()
+    // Like a slide: a tap anywhere but on a control goes on.
+    svg.addEventListener('click', (e) => {
+      if (!(e.target as Element).closest('.sbtn, .hit')) this.advance()
+    })
     this.crown = el('g', { class: 'gone fade' }, this.layer.crownLayer)
     el('path', { class: 'crown', d: CROWN }, this.crown)
     this.blink = window.setInterval(() => {
@@ -163,7 +171,21 @@ export class TownStage {
     this.layer.hud.classList.toggle('gone', this.current < 3 || this.current === TownStage.SLIDES - 1)
     this.drawHud()
     this.drawNav()
-    void this.slides[this.current]()
+    void this.play(this.current)
+  }
+
+  /** Goes on: the beat waiting for the reader, or the next slide once this one is done. */
+  advance() {
+    this.waiting?.()
+  }
+
+  private async play(i: number) {
+    // A slide left midway never finishes: its animations are dropped, not resolved.
+    await this.slides[i]()
+    if (i < TownStage.SLIDES - 1) {
+      await this.tap()
+      this.o.navigate(i + 1)
+    }
   }
 
   /** Plays the current slide again, e.g. after a change of language. */
@@ -363,7 +385,7 @@ export class TownStage {
       const steps = part.body.split('\n')
       steps.forEach((step, n) => {
         const indent = part.numbered ? 30 : 0
-        wrap(step, part.lead ? 60 : 70).forEach((line, j) => {
+        wrap(step, part.lead ? 56 : 70).forEach((line, j) => {
           cursor += size
           if (part.numbered && j === 0) text(x + 34, cursor, String(n + 1), 'thought-step', g, 'start')
           text(x + 34 + indent, cursor, line, part.lead ? 'thought-text' : 'thought-def', g, 'start')
@@ -402,13 +424,13 @@ export class TownStage {
   /** How a system works, before the reader bets on it. */
   private async how(key: string) {
     this.panel(this.t('deck.panel.how'), [{ body: this.t(`${key}.how`), numbered: true, lead: true }])
-    await this.ask([{ label: this.t('deck.panel.vote'), primary: true }])
+    await this.tap()
     this.unpanel()
   }
 
-  /** What went wrong, and what Riverton tries next. */
+  /** Once the reader has seen the result: what went wrong, and what Riverton tries next. */
   private async lesson(key: string, params: Record<string, string | number> = {}, idea = true) {
-    await this.ask([{ label: this.t('deck.panel.why'), primary: true }])
+    await this.tap()
     const parts = [{ title: this.t('deck.panel.problem'), body: this.t(`${key}.problem`, params) }]
     if (idea) parts.push({ title: this.t('deck.panel.idea'), body: this.t(`${key}.idea`) })
     this.panel(this.t(`${key}.title`), parts)
@@ -470,7 +492,25 @@ export class TownStage {
     return w
   }
 
-  /** Action buttons, bottom right, where the thumb is. Resolves with the index pressed. */
+  /** Waits for the reader: a tap anywhere, or →, Space or Enter. A hint shows bottom right. */
+  private tap(): Promise<void> {
+    const my = this.gen
+    return new Promise((resolve) => {
+      const parent = this.layer.buttons
+      parent.replaceChildren()
+      const label = this.t('deck.tap')
+      const done = () => {
+        if (my !== this.gen || this.waiting !== done) return
+        this.waiting = null
+        parent.replaceChildren()
+        resolve()
+      }
+      this.button(parent, 1240 - (textWidth(label, 17) + 40), 672, label, done, 'ghost')
+      this.waiting = done
+    })
+  }
+
+  /** Choices, bottom right, where the thumb is. Resolves with the index pressed. */
   private ask(list: { label: string; primary?: boolean }[]): Promise<number> {
     const my = this.gen
     return new Promise((resolve) => {
@@ -554,15 +594,15 @@ export class TownStage {
     })
   }
 
-  /** Back bottom left, the slide dots, and Next (or Start over) top right. */
+  /** Back bottom left, the slide dots, and Skip (or Start over) top right. */
   private drawNav() {
     const nav = this.layer.nav
     nav.replaceChildren()
     const last = this.current === TownStage.SLIDES - 1
     if (this.current > 0) this.button(nav, 40, 672, this.t('deck.back'), () => this.o.navigate(this.current - 1), 'ghost')
     if (!last) {
-      const label = this.t('deck.next')
-      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => this.o.navigate(this.current + 1), 'primary')
+      const label = this.t('deck.skip')
+      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => this.o.navigate(this.current + 1), 'ghost')
     } else {
       const label = this.t('deck.startOver')
       this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => {
@@ -673,6 +713,33 @@ export class TownStage {
     return moving
   }
 
+  /**
+   * The ballots in c's pile that now count for someone else move there; the rest
+   * close ranks. Piles that send ballots to each other go one after the other.
+   */
+  private async regroup(c: number, pick: (v: Voter) => number) {
+    const leaving = this.stacks[c].filter((item) => pick(item.v) !== c)
+    if (!leaving.length) return
+    this.stacks[c] = this.stacks[c].filter((item) => !leaving.includes(item))
+    this.landed[c] = this.stacks[c].length
+    this.land(c, 0)
+    await Promise.all([
+      ...this.stacks[c].map((item, i) => this.fly(item, this.slot(c, i), { dur: 360, lift: 0 })),
+      ...leaving.map((item, i) => {
+        const to = pick(item.v)
+        const k = this.stacks[to].length
+        this.stacks[to].push(item)
+        return this.fly(item, this.slot(to, k), { dur: 800, delay: i * 140, lift: 80, recolor: to }).then(() => this.land(to, 1))
+      }),
+    ])
+  }
+
+  /** Who beats c one on one, by the server's counts. */
+  private beaters(c: number) {
+    const m = this.o.data.matrix
+    return CANDIDATES.map((_, x) => x).filter((x) => m[x][c] > m[c][x])
+  }
+
   private shake(c: number) {
     return this.anim.animate(420, (t) => {
       const dx = Math.sin(t * Math.PI * 9) * (1 - t) * 6
@@ -731,6 +798,7 @@ export class TownStage {
 
   private reset() {
     this.gen++
+    this.waiting = null
     this.anim.cancel()
     for (const id of ['machine', 'notes', 'coins', 'stamps', 'buttons', 'picks', 'thought']) this.layer[id].replaceChildren()
     DIMMED.forEach((id) => this.layer[id].classList.remove('dim'))
@@ -761,7 +829,7 @@ export class TownStage {
     () => this.sPlurality(),
     () => this.sCompromise(),
     () => this.sTwoRound(),
-    () => this.sTwoRoundCompromise(),
+    () => this.sPushOver(),
     () => this.sIrv(),
     () => this.sBorda(),
     () => this.sBury(),
@@ -888,7 +956,7 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.ask([{ label: this.t(`${k}.count`), primary: true }])
+    await this.anim.sleep(500)
     await this.dropAll(this.firstChoices(), false)
     const outcome = this.o.data.honest.plurality
     const w = outcome.winner
@@ -901,7 +969,8 @@ export class TownStage {
     const tops = CANDIDATES.map((_, c) => (c === w ? Infinity : this.pileTop(c)))
     this.bracket(Math.min(...others) - 40, Math.max(...others) + 40, Math.min(...tops) - 46, this.t(`${k}.others`, { n: TOTAL - votes }))
     const last = PERSONAS.filter((p) => p.ranking[p.ranking.length - 1] === w).reduce((n, p) => n + p.voters, 0)
-    await this.lesson(k, { winner: NAME[w], split: TOTAL - votes, total: TOTAL, last }, false)
+    const beaters = this.o.list(this.beaters(w).map((c) => NAME[c]))
+    await this.lesson(k, { winner: NAME[w], split: TOTAL - votes, total: TOTAL, last, beaters }, false)
   }
 
   // ---- The lesser evil (vote utile).
@@ -914,20 +983,20 @@ export class TownStage {
     this.react(honest, false)
     const k = 'deck.compromise'
     this.words(this.t(`${k}.title`), this.t(`${k}.caption`))
-    this.think(LEO, k)
-    await this.ask([{ label: this.t(`${k}.button`), primary: true }])
+    this.think(AIDA, k)
+    await this.tap()
     this.unpanel()
-    // Léo's group is the only one with Cuauhtémoc first, so his whole pile moves.
-    const target = PERSONAS[LEO].ranking[1]
-    await this.movePile(PERSONAS[LEO].ranking[0], () => target, false)
+    // Aïda's group is the only one with Melon first, so her whole pile moves.
+    const target = PERSONAS[AIDA].ranking[1]
+    await this.movePile(PERSONAS[AIDA].ranking[0], () => target, false)
     const outcome = this.o.data.compromise
     const w = outcome.winner
     await this.crownPile(w)
     this.react(w, false)
-    const placed = [this.say(LEO, this.t(`${k}.after`))]
+    const placed = [this.say(AIDA, this.t(`${k}.after`))]
     const fan = PERSONAS.findIndex((p) => p.ranking[0] === w)
-    if (fan >= 0 && fan !== LEO) this.say(fan, this.voice(fan, 'best'), placed)
-    this.stamp(this.groups[LEO].cx, 604, this.t(`${k}.stamp`))
+    if (fan >= 0 && fan !== AIDA) this.say(fan, this.voice(fan, 'best'), placed)
+    this.stamp(this.groups[AIDA].cx, 604, this.t(`${k}.stamp`))
     const totals = tallies(outcome)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: totals[w], next: runnerUp(totals, w).votes }))
     await this.lesson(k)
@@ -942,14 +1011,14 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.ask([{ label: this.t(`${k}.round1`), primary: true }])
+    await this.anim.sleep(500)
     await this.dropAll(this.firstChoices(), true)
     const outcome = this.o.data.honest.two_round
     const [a, b] = finalists(outcome)
     const outs = CANDIDATES.map((_, c) => c).filter((c) => c !== a && c !== b)
     outs.forEach((c) => this.knockOut(c))
     this.setCaption(this.t(`${k}.through`, { majority: MAJORITY, a: NAME[a], b: NAME[b] }))
-    await this.ask([{ label: this.t(`${k}.round2`), primary: true }])
+    await this.tap()
     const pick = (v: Voter) => (prefers(v.ranking, a, b) ? a : b)
     await Promise.all(outs.map((c) => this.movePile(c, pick, false)))
     const w = outcome.winner
@@ -963,34 +1032,37 @@ export class TownStage {
     await this.lesson(k, {}, false)
   }
 
-  // ---- The lesser evil in round one: help a finalist you can live with.
-  private async sTwoRoundCompromise() {
+  // ---- The push-over: vote for a weak rival in round one, to face them in the runoff.
+  private async sPushOver() {
     this.crowdLayout()
     this.buildPiles()
     this.placeFirstChoices()
-    const k = 'deck.twoRoundCompromise'
-    const group = PERSONAS[ROBINSON]
-    this.words(this.t(`${k}.title`), this.t(`${k}.caption`, { n: group.voters }))
-    this.think(ROBINSON, k)
-    await this.ask([{ label: this.t(`${k}.button`), primary: true }])
+    const d = this.o.data
+    const fav = PERSONAS[PUSH.group].ranking[0]
+    const k = 'deck.pushOver'
+    this.words(this.t(`${k}.title`), this.t(`${k}.caption`))
+    this.think(PUSH.group, k)
+    await this.tap()
     this.unpanel()
-    // Robinson's group is the only one with Manu first, so his whole pile moves.
-    const target = group.ranking[1]
-    await this.movePile(group.ranking[0], () => target, false)
-    const outcome = this.o.data.compromiseTwoRound
-    const [a, b] = finalists(outcome)
+    // A few of the group's voters, not its spokesperson, mark the weak rival.
+    const pushers = new Set(this.voters.filter((v) => v.g === PUSH.group && !v.spoke).slice(-PUSH.voters))
+    await this.regroup(fav, (v) => (pushers.has(v) ? PUSH.mark : fav))
+    this.stamp(this.groups[PUSH.group].cx, 604, this.t(`${k}.stamp`))
+    const [a, b] = finalists(d.pushOver)
     const outs = CANDIDATES.map((_, c) => c).filter((c) => c !== a && c !== b)
     outs.forEach((c) => this.knockOut(c))
     this.setCaption(this.t('deck.twoRound.through', { majority: MAJORITY, a: NAME[a], b: NAME[b] }))
-    await this.ask([{ label: this.t('deck.twoRound.round2'), primary: true }])
-    await Promise.all(outs.map((c) => this.movePile(c, (v) => (prefers(v.ranking, a, b) ? a : b), false)))
-    const w = outcome.winner
+    await this.tap()
+    // Round two: everyone votes their true preference again, the pushers first.
+    const pick = (v: Voter) => (prefers(v.ranking, a, b) ? a : b)
+    await Promise.all([a, b].map((c) => this.regroup(c, pick)))
+    await Promise.all(outs.map((c) => this.regroup(c, pick)))
+    const w = d.matrix[a][b] > d.matrix[b][a] ? a : b
+    const l = w === a ? b : a
     await this.crownPile(w)
     this.react(w, false)
-    this.say(ROBINSON, this.t(`${k}.after`))
-    this.stamp(this.groups[ROBINSON].cx, 604, this.t(`${k}.stamp`))
-    const final = tallies(outcome, outcome.rounds.length - 1)
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: final[w], next: runnerUp(final, w).votes, n: group.voters }))
+    this.say(PUSH.group, this.t(`${k}.after`))
+    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: d.matrix[w][l], next: d.matrix[l][w], n: PUSH.voters, mark: NAME[PUSH.mark] }))
     await this.lesson(k)
   }
 
@@ -1003,24 +1075,23 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.ask([{ label: this.t(`${k}.count`), primary: true }])
+    await this.anim.sleep(500)
     await this.dropAll(this.firstChoices(), true)
     const outcome = this.o.data.honest.irv
     const order = eliminations(outcome)
-    let auto = false
     for (const [round, out] of order.entries()) {
       this.setCaption(this.t(`${k}.round`, { n: round + 1, majority: MAJORITY }))
-      if (!auto) auto = (await this.ask([{ label: this.t(`${k}.play`) }, { label: this.t(`${k}.next`), primary: true }])) === 0
+      await this.anim.sleep(1100)
       await this.shake(out)
       this.knockOut(out)
-      const moved = await this.movePile(out, (v) => nextChoice(v.ranking, this.active), auto)
+      const moved = await this.movePile(out, (v) => nextChoice(v.ranking, this.active), false)
       const gains = new Map<number, number>()
       moved.forEach((item) => {
         const to = nextChoice(item.v.ranking, this.active)
         gains.set(to, (gains.get(to) ?? 0) + 1)
       })
       gains.forEach((n, c) => this.float(COLX[c] + 40, this.pileTop(c) - 4, '+' + n, 'good-text'))
-      await this.anim.sleep(auto ? 450 : 250)
+      await this.anim.sleep(400)
     }
     const w = outcome.winner
     await this.crownPile(w)
@@ -1028,7 +1099,9 @@ export class TownStage {
     this.react(w)
     const final = tallies(outcome, outcome.rounds.length - 1)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: final[w], first: NAME[order[0]] }))
-    await this.lesson(k)
+    const cw = this.o.data.condorcetWinner
+    const beaters = this.o.list(this.beaters(w).map((c) => NAME[c]))
+    await this.lesson(k, { winner: NAME[w], beaters, cw: NAME[cw], round: order.indexOf(cw) + 1 })
   }
 
   // ---- 4. Borda points.
@@ -1049,7 +1122,7 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.ask([{ label: this.t(`${k}.throw`), primary: true }])
+    await this.anim.sleep(500)
     const throws: Promise<void>[] = []
     this.voters.forEach((v) => {
       let j = 0
@@ -1092,27 +1165,30 @@ export class TownStage {
     const k = 'deck.bury'
     this.words(this.t(`${k}.title`), this.t(`${k}.caption`))
     this.think(ROBINSON, k)
-    await this.ask([{ label: this.t(`${k}.button`), primary: true }])
+    await this.tap()
     this.unpanel()
     this.stamp(this.groups[ROBINSON].cx, 604, this.t(`${k}.stamp`))
     await this.anim.sleep(500)
     // The points that change hands, as the server counts them.
     const after = tallies(this.o.data.bury)
     const loser = after.findIndex((p, c) => p < before[c])
-    const gainer = after.findIndex((p, c) => p > before[c])
-    const moved = before[loser] - after[loser]
-    this.float(COLX[loser] + 46, JAR_TOP - 10, '−' + moved, 'bad-text')
-    await Promise.all(
-      Array.from({ length: moved }, (_, i) =>
-        coin({ x: COLX[loser], y: BASE - 6 - pts[loser] * PX }, gainer, i * 260, 820, () => {
-          pts[loser]--
-          pts[gainer]++
-          show(loser)
-          show(gainer)
-        }),
-      ),
-    )
-    this.float(COLX[gainer] + 46, JAR_TOP - 10, '+' + moved, 'good-text')
+    const gains = after.map((p, c) => Math.max(0, p - before[c]))
+    this.float(COLX[loser] + 46, JAR_TOP - 10, '−' + (before[loser] - after[loser]), 'bad-text')
+    const flights: Promise<void>[] = []
+    gains.forEach((n, c) => {
+      for (let j = 0; j < n; j++) {
+        flights.push(
+          coin({ x: COLX[loser], y: BASE - 6 - pts[loser] * PX }, c, flights.length * 120, 820, () => {
+            pts[loser]--
+            pts[c]++
+            show(loser)
+            show(c)
+          }),
+        )
+      }
+    })
+    await Promise.all(flights)
+    gains.forEach((n, c) => n && this.float(COLX[c] + 46, JAR_TOP - 10, '+' + n, 'good-text'))
     const w = this.o.data.bury.winner
     await this.crownJar(pts)
     this.react(w)
@@ -1143,6 +1219,7 @@ export class TownStage {
     const left = side(LEFT)
     const right = side(RIGHT)
     const edges = el('g', {}, m)
+    const edgeOf = new Map<string, SVGLineElement>()
     const rings = node.map((p, c) => {
       token(p.x, p.y, 16, c, m, 15)
       return el('circle', { cx: p.x, cy: p.y, r: 22, class: 'node-ring gone fade' }, m)
@@ -1160,11 +1237,10 @@ export class TownStage {
       ...others.map((c): [number, number] => [champ, c]).sort((x, y) => (y[1] === d.condorcetLoser ? 1 : 0) - (x[1] === d.condorcetLoser ? 1 : 0)),
       ...others.flatMap((a, i) => others.slice(i + 1).map((b): [number, number] => [a, b])),
     ]
-    let auto = false
-    for (const [a, c] of order) {
-      if (!auto) {
-        auto = (await this.ask([{ label: this.t(`${k}.play`) }, { label: this.t(`${k}.duel`, { a: NAME[a], b: NAME[c] }), primary: true }])) === 0
-      }
+    await this.anim.sleep(500)
+    for (const [i, [a, c]] of order.entries()) {
+      // The champion's duels at a walk, the others at a run.
+      const auto = i >= others.length
       this.layer.labels.classList.add('gone')
       for (const [s, cand] of [[left, a], [right, c]] as const) {
         s.g.classList.remove('gone')
@@ -1199,6 +1275,7 @@ export class TownStage {
       const uy = (q.y - p.y) / len
       const line = el('line', { x1: p.x + ux * 19, y1: p.y + uy * 19, x2: q.x - ux * 24, y2: q.y - uy * 24, class: 'edge', 'marker-end': 'url(#stage-arrow)' }, edges)
       line.setAttribute('stroke-dasharray', String(len - 43))
+      edgeOf.set(`${w}>${l}`, line)
       this.setCaption(this.t(`${k}.beats`, { winner: NAME[w], loser: NAME[l], votes: d.matrix[w][l], next: d.matrix[l][w] }))
       await this.anim.animate(auto ? 260 : 420, (t) => line.setAttribute('stroke-dashoffset', String((len - 43) * (1 - easeOut(t)))))
       await this.anim.sleep(auto ? 360 : 600)
@@ -1220,8 +1297,13 @@ export class TownStage {
     const lost = d.condorcetLoser
     if (lost >= 0) this.note(node[lost].x + (flip(lost) ? 34 : -34), node[lost].y + 5, this.t(`${k}.losesAll`, { n: rivals }), flip(lost) ? 'start' : 'end')
     this.stamp(640, 410, this.t(`${k}.stamp`))
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[champ], loser: NAME[lost] }))
-    await this.lesson(k)
+    // Below the champion, majorities may go round in a circle.
+    const [x, y, z] = d.cycle
+    const circle = d.cycle.length === 3 ? { a: NAME[x], b: NAME[y], c: NAME[z] } : null
+    d.cycle.forEach((c, i) => edgeOf.get(`${c}>${d.cycle[(i + 1) % d.cycle.length]}`)?.classList.add('cycle'))
+    const result = this.t(`${k}.result`, { winner: NAME[champ] })
+    this.setCaption(circle ? `${result} ${this.t(`${k}.cycle`, circle)}` : result)
+    await this.lesson(k, { winner: NAME[champ], ...(circle ?? { a: '', b: '', c: '' }) })
   }
 
   // ---- 6. Approval: the reader ticks a ballot too, then the bullet vote.
@@ -1269,7 +1351,7 @@ export class TownStage {
     this.setCaption(this.t(`${k}.ask`))
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.ask([{ label: this.t(`${k}.count`), primary: true }])
+    await this.anim.sleep(500)
     let results: { honest: Outcome; bullet: Outcome }
     try {
       results = await counted
@@ -1303,9 +1385,10 @@ export class TownStage {
     this.react(w)
     this.setCaption(this.t(yours.some(Boolean) ? `${k}.resultYours` : `${k}.result`, { winner: NAME[w], votes: tallies(honest)[w] }))
     // Lucas's group thinks about ticking its favourite alone.
-    await this.ask([{ label: this.t(`${k}.what`), primary: true }])
+    await this.tap()
+    this.setCaption(this.t(`${k}.what`))
     this.think(LUCAS, k)
-    await this.ask([{ label: this.t(`${k}.bullet`), primary: true }])
+    await this.tap()
     this.unpanel()
     // Lucas's group takes back every tick but its favourite's; the piles settle.
     const favourite = PERSONAS[LUCAS].ranking[0]

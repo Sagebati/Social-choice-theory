@@ -38,7 +38,7 @@ describe('French messages', () => {
   it('are actually translated', () => {
     // Names, symbols and words French borrows as they are.
     const same = [...english].filter(([key, s]) => french.get(key) === s && /[a-z]{4,}/.test(s))
-    const allowed = /^(✓ Condorcet|Participation|STAR|Minimax|Coombs|Copeland|Schulze|Duels|Points|Push-over|Riverton|auto|points|\{.*)/
+    const allowed = /^(✓ Condorcet|Condorcet|Participation|STAR|Minimax|Coombs|Copeland|Schulze|Duels|Points|Push-over|push-over|Riverton|auto|points|\{.*)/
     expect(same.filter(([, s]) => !allowed.test(s)).map(([k]) => k)).toEqual([])
   })
 })

@@ -63,6 +63,7 @@
 .town-stage .rope { stroke: var(--ink-2); stroke-width: 3; stroke-linecap: round; }
 .town-stage .knot { fill: var(--ink); }
 .town-stage .edge { stroke: var(--ink-2); stroke-width: 2; fill: none; }
+.town-stage .edge.cycle { stroke: var(--bad); stroke-width: 3.5; }
 .town-stage .arrowhead { fill: var(--ink-2); }
 .town-stage .node-ring { fill: none; stroke: var(--ink); stroke-width: 2.5; }
 .town-stage .bracket { fill: none; stroke: var(--ink-2); stroke-width: 1.6; }

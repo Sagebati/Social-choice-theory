@@ -29,47 +29,56 @@ French terms are in [`docs/glossary-fr.md`](docs/glossary-fr.md).
 ## The journey
 
 The whole journey follows one town. Riverton is electing a mayor, and the same
-five groups of voters (30 people) vote in every chapter; only the counting rule
+five groups of voters (32 people) vote in every chapter; only the counting rule
 changes, and with it the mayor.
 
 | Group | Voters | Ranking |
 | --- | --- | --- |
-| Lucas, hardware store | 9 | Duck > Manu > Melon > Poutine > Cuauhtémoc |
-| Léo, bike courier | 7 | Cuauhtémoc > Manu > Melon > Poutine > Duck |
-| Aïda, parent of two | 6 | Melon > Poutine > Manu > Cuauhtémoc > Duck |
-| Clélia, night-shift nurse | 5 | Poutine > Melon > Duck > Cuauhtémoc > Manu |
-| Robinson, retired city clerk | 3 | Manu > Poutine > Cuauhtémoc > Melon > Duck |
+| Lucas, hardware store | 10 | Duck > Manu > Poutine > Melon > Cuauhtémoc |
+| Léo, bike courier | 7 | Cuauhtémoc > Poutine > Manu > Duck > Melon |
+| Aïda, parent of two | 6 | Melon > Manu > Poutine > Cuauhtémoc > Duck |
+| Clélia, night-shift nurse | 4 | Poutine > Cuauhtémoc > Duck > Melon > Manu |
+| Robinson, retired city clerk | 5 | Manu > Poutine > Melon > Cuauhtémoc > Duck |
+
+Manu beats every rival one on one. Below him, Melon beats Cuauhtémoc, who beats
+Duck, who beats Melon: the circle that lets Duck's voters win two rounds by
+voting for Melon. These ballots were found by stating every slide's story as a
+constraint: [`tools/riverton`](tools/riverton) holds the model, in MiniZinc and
+for OR-Tools.
 
 The journey is a full-screen slide deck played on Riverton's town square, in
 the spirit of *The Evolution of Trust*: the words sit inside the scene
 (captions, labels, the voters' speech bubbles, a stamp for each lesson), and
-every count is something you watch happen. Before each count you bet on the
-winner; a board keeps score.
+every count is something you watch happen. Like slides, it goes on when you tap
+(or press →, Space or Enter) wherever there is text to read, and plays by
+itself otherwise; *Skip* jumps to the next slide. Before each count you bet on
+the winner; a board keeps score.
 
-Each system opens with a short panel on how it works. After each count, a
-panel names what went wrong and the idea Riverton tries next, so every flaw
-motivates the next system: one mark elects the candidate most voters rank
-last, so the town adds a runoff; the runoff brings back the lesser evil in
-round one, so it lets voters rank everyone; and so on. When a group cheats,
-its spokesperson thinks the tactic through out loud, and the panel names and
-defines it (the lesser evil, burying, bullet voting).
+Each system, under the name Wikipedia gives it, opens with a short panel on
+how it works. After each count, a panel names what went wrong and the idea
+Riverton tries next, so every flaw motivates the next system: first past the
+post elects a candidate most voters would beat, so the town adds a runoff; the
+runoff can be gamed by voting for a weak rival in round one, so it lets voters
+rank everyone; and so on. When a group cheats, its spokesperson thinks the
+tactic through out loud, and the panel names and defines it (the lesser evil,
+the push-over, burying, bullet voting).
 
 | # | Slide | What happens | Mayor |
 | --- | --- | --- | --- |
 | 1 | Riverton elects a mayor | The five candidates walk on | |
 | 2 | Five neighbours, five opinions | The spokespeople and their rankings; tap a face to hear why | |
-| 3 | Each one speaks for a group | Each spokesperson's group fills in: 30 voters | |
+| 3 | Each one speaks for a group | Each spokesperson's group fills in: 32 voters | |
 | 4 | The game | Six counts to bet on | |
-| 5 | One mark | Ballots fly into piles under the majority line | Duck |
-| 6 | The lesser evil (vote utile) | Léo's group marks Manu instead of Cuauhtémoc | Manu |
-| 7 | Two rounds | The top two meet; the other ballots move to the finalist each voter prefers | Cuauhtémoc |
-| 8 | The lesser evil, in round one | Robinson's group marks Poutine in round one and puts him in the runoff | Poutine |
-| 9 | Instant runoff | The smallest pile is knocked out, round after round | Poutine |
-| 10 | Borda points | Coins rain into jars | Melon |
-| 11 | Burying | Robinson's group moves Melon to last; three coins change jars | Manu |
-| 12 | Head to head | The crowd splits for each of the ten duels; arrows build the duel map | Manu |
-| 13 | Approval | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Duck and it backfires | Manu, then Poutine |
-| 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's theorem | |
+| 5 | First past the post | Ballots fly into piles under the majority line | Duck |
+| 6 | The lesser evil (vote utile) | Aïda's group marks Manu instead of Melon | Manu |
+| 7 | Two-round system | The top two meet; the other ballots move to the finalist each voter prefers | Cuauhtémoc |
+| 8 | The push-over | Two of Lucas's group mark Melon in round one, so Duck meets her in the runoff, and beats her | Duck |
+| 9 | Instant-runoff voting | The smallest pile is knocked out, round after round; Manu goes out second | Melon |
+| 10 | Borda count | Coins rain into jars | Poutine |
+| 11 | Burying | Robinson's group moves Poutine to last; his coins go to the three below him | Manu |
+| 12 | Condorcet method | The crowd splits for each of the ten duels; arrows build the duel map, the circle in red | Manu |
+| 13 | Approval voting | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Duck and it backfires | Manu, then Poutine |
+| 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's and Gibbard's theorems | |
 
 Who wins and by how much comes from the Worker; the stage only shows which
 ballot goes where (`frontend/src/stage`). The opinion map, Yee diagrams,

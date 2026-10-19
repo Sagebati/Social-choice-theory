@@ -133,7 +133,7 @@ impl Method {
             Method::TwoRound => lang.pick("Two-round runoff", "Scrutin à deux tours"),
             Method::Irv => lang.pick("Instant runoff (IRV)", "Vote alternatif (second tour instantané)"),
             Method::Coombs => lang.pick("Coombs", "Méthode de Coombs"),
-            Method::Borda => lang.pick("Borda count", "Méthode de Borda"),
+            Method::Borda => lang.pick("Borda count", "Méthode Borda"),
             Method::Agenda => lang.pick("Agenda (sequential pairwise)", "Vote séquentiel (ordre du jour)"),
             Method::Copeland => lang.pick("Copeland", "Méthode de Copeland"),
             Method::Minimax => "Minimax",

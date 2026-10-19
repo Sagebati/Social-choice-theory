@@ -40,32 +40,32 @@ export const PERSONAS: Persona[] = [
   {
     key: 'lucas',
     name: 'Lucas',
-    voters: 9,
-    ranking: [DUCK, MANU, MELON, POUTINE, CUAUHTEMOC],
+    voters: 10,
+    ranking: [DUCK, MANU, POUTINE, MELON, CUAUHTEMOC],
   },
   {
     key: 'leo',
     name: 'Léo',
     voters: 7,
-    ranking: [CUAUHTEMOC, MANU, MELON, POUTINE, DUCK],
+    ranking: [CUAUHTEMOC, POUTINE, MANU, DUCK, MELON],
   },
   {
     key: 'aida',
     name: 'Aïda',
     voters: 6,
-    ranking: [MELON, POUTINE, MANU, CUAUHTEMOC, DUCK],
+    ranking: [MELON, MANU, POUTINE, CUAUHTEMOC, DUCK],
   },
   {
     key: 'clelia',
     name: 'Clélia',
-    voters: 5,
-    ranking: [POUTINE, MELON, DUCK, CUAUHTEMOC, MANU],
+    voters: 4,
+    ranking: [POUTINE, CUAUHTEMOC, DUCK, MELON, MANU],
   },
   {
     key: 'robinson',
     name: 'Robinson',
-    voters: 3,
-    ranking: [MANU, POUTINE, CUAUHTEMOC, MELON, DUCK],
+    voters: 5,
+    ranking: [MANU, POUTINE, MELON, CUAUHTEMOC, DUCK],
   },
 ]
 
@@ -73,6 +73,8 @@ export const PERSONAS: Persona[] = [
 export interface CastBallot {
   ranking: number[]
   approvals?: boolean[]
+  /** How many of the group cast it, when only some of them do (the rest are `extra` ballots). */
+  voters?: number
 }
 
 /** Ballots built from a ranking approve the top two. */
@@ -89,7 +91,11 @@ export function electionOf(ballots: CastBallot[], extra: BallotInput[] = []): El
     candidates: CANDIDATES.map((c) => c.name),
     ballots: [
       ...ballots.map(
-        (b, g): BallotInput => ({ weight: PERSONAS[g].voters, ranking: [...b.ranking], ...(b.approvals ? { approvals: [...b.approvals] } : {}) }),
+        (b, g): BallotInput => ({
+          weight: b.voters ?? PERSONAS[g].voters,
+          ranking: [...b.ranking],
+          ...(b.approvals ? { approvals: [...b.approvals] } : {}),
+        }),
       ),
       ...extra,
     ],

@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { CANDIDATES, PERSONAS, type CastBallot } from '../cast'
-import { bordaCoins, bullet, bury, compromise, compromiseTwoRound, honest, nextChoice, prefers } from './plan'
+import { bordaCoins, bullet, bury, compromise, honest, nextChoice, prefers, pushOver } from './plan'
 
 // The stage moves ballots one by one from the rankings; the server decides who
 // wins. These counts, done the stage's way, must land on the numbers the Rust
 // library's tests assert for Riverton (crates/social-choice/src/scenarios.rs).
 
 const n = CANDIDATES.length
-const weight = (g: number) => PERSONAS[g].voters
+const TOTAL = PERSONAS.reduce((s, p) => s + p.voters, 0)
+const weight = (b: CastBallot, g: number) => b.voters ?? PERSONAS[g].voters
 
 function count(ballots: CastBallot[], pick: (b: CastBallot) => number[]) {
   const totals = Array<number>(n).fill(0)
-  ballots.forEach((b, g) => pick(b).forEach((c) => (totals[c] += weight(g))))
+  ballots.forEach((b, g) => pick(b).forEach((c) => (totals[c] += weight(b, g))))
   return totals
 }
 const top = (totals: number[]) => totals.indexOf(Math.max(...totals))
@@ -28,7 +29,7 @@ function irv(ballots: CastBallot[]) {
   const order: number[] = []
   for (;;) {
     const totals = count(ballots, (b) => [nextChoice(b.ranking, active)])
-    if (Math.max(...totals) * 2 > 30) return { order, totals }
+    if (Math.max(...totals) * 2 > TOTAL) return { order, totals }
     const live = totals.map((t, c) => (active[c] ? t : Infinity))
     const out = live.indexOf(Math.min(...live))
     active[out] = false
@@ -38,42 +39,47 @@ function irv(ballots: CastBallot[]) {
 
 const borda = (ballots: CastBallot[]) => {
   const totals = Array<number>(n).fill(0)
-  ballots.forEach((b, g) => bordaCoins(b.ranking).forEach(({ c, n: k }) => (totals[c] += k * weight(g))))
+  ballots.forEach((b, g) => bordaCoins(b.ranking).forEach(({ c, n: k }) => (totals[c] += k * weight(b, g))))
   return totals
 }
 
 const approvals = (ballots: CastBallot[]) => count(ballots, (b) => b.approvals!.flatMap((on, c) => (on ? [c] : [])))
 
 describe('the stage counts Riverton like the server', () => {
-  it('one mark, and the lesser evil', () => {
-    expect(count(honest(), (b) => [b.ranking[0]])).toEqual([7, 3, 6, 5, 9])
-    const leo = count(compromise(), (b) => [b.ranking[0]])
-    expect(leo).toEqual([0, 10, 6, 5, 9])
-    expect(top(leo)).toBe(1)
+  it('one round, and the lesser evil', () => {
+    expect(TOTAL).toBe(32)
+    expect(count(honest(), (b) => [b.ranking[0]])).toEqual([7, 5, 6, 4, 10])
+    const aida = count(compromise(), (b) => [b.ranking[0]])
+    expect(aida).toEqual([7, 11, 0, 4, 10])
+    expect(top(aida)).toBe(1)
   })
 
-  it('two rounds, and the lesser evil in round one', () => {
-    expect(twoRound(honest())).toEqual({ finalists: [0, 4], runoff: [16, 0, 0, 0, 14] })
-    expect(twoRound(compromiseTwoRound())).toEqual({ finalists: [3, 4], runoff: [0, 0, 0, 21, 9] })
+  it('two rounds, and the push-over', () => {
+    expect(twoRound(honest())).toEqual({ finalists: [0, 4], runoff: [22, 0, 0, 0, 10] })
+    // Round one with two of Lucas's group on Melon: Duck and Melon 8 each, Cuauhtémoc 7.
+    expect(count(pushOver(), (b) => [b.ranking[0]])).toEqual([7, 5, 8, 4, 8])
+    // In the runoff everyone votes their true preference again, and Duck wins.
+    const runoff = count(honest(), (b) => [prefers(b.ranking, 4, 2) ? 4 : 2])
+    expect(runoff).toEqual([0, 0, 11, 0, 21])
   })
 
-  it('instant runoff knocks out Manu, Melon, then Cuauhtémoc', () => {
-    expect(irv(honest())).toEqual({ order: [1, 2, 0], totals: [0, 0, 0, 21, 9] })
+  it('instant runoff knocks out Poutine, Manu, then Duck', () => {
+    expect(irv(honest())).toEqual({ order: [3, 1, 4], totals: [11, 0, 21, 0, 0] })
   })
 
-  it('Borda points, and burying Melon', () => {
-    expect(borda(honest())).toEqual([45, 72, 74, 63, 46])
-    expect(borda(bury())).toEqual([45, 72, 71, 63, 49])
+  it('Borda points, and burying Poutine', () => {
+    expect(borda(honest())).toEqual([51, 82, 48, 84, 55])
+    expect(borda(bury())).toEqual([56, 82, 53, 69, 60])
   })
 
   it('approval, and the bullet vote that backfires', () => {
-    expect(approvals(honest())).toEqual([7, 19, 11, 14, 9])
-    expect(approvals(bullet())).toEqual([7, 10, 11, 14, 9])
+    expect(approvals(honest())).toEqual([11, 21, 6, 16, 10])
+    expect(approvals(bullet())).toEqual([11, 11, 6, 16, 10])
   })
 
-  it('head to head: Manu beats everyone, Duck loses to everyone', () => {
-    const beats = (a: number, b: number) => count(honest(), (bal) => (prefers(bal.ranking, a, b) ? [a] : [b]))[a] > 15
+  it('head to head: Manu beats everyone; Melon, Cuauhtémoc and Duck go round in a circle', () => {
+    const beats = (a: number, b: number) => count(honest(), (bal) => (prefers(bal.ranking, a, b) ? [a] : [b]))[a] * 2 > TOTAL
     expect([0, 2, 3, 4].every((c) => beats(1, c))).toBe(true)
-    expect([0, 1, 2, 3].every((c) => beats(c, 4))).toBe(true)
+    expect([beats(2, 0), beats(0, 4), beats(4, 2)]).toEqual([true, true, true])
   })
 })
