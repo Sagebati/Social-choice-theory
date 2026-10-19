@@ -468,17 +468,17 @@ export class TownStage {
     return w
   }
 
-  /** Action buttons, top right. Resolves with the index pressed. */
+  /** Action buttons, bottom right, where the thumb is. Resolves with the index pressed. */
   private ask(list: { label: string; primary?: boolean }[]): Promise<number> {
     const my = this.gen
     return new Promise((resolve) => {
       const parent = this.layer.buttons
       parent.replaceChildren()
-      let x = 1232
+      let x = 1240
       for (let i = list.length - 1; i >= 0; i--) {
         const { label, primary } = list[i]
         x -= textWidth(label, 17) + 40
-        this.button(parent, x, 30, label, () => {
+        this.button(parent, x, 672, label, () => {
           if (my !== this.gen) return
           parent.replaceChildren()
           resolve(i)
@@ -552,6 +552,7 @@ export class TownStage {
     })
   }
 
+  /** Back bottom left, the slide dots, and Next (or Start over) top right. */
   private drawNav() {
     const nav = this.layer.nav
     nav.replaceChildren()
@@ -559,10 +560,10 @@ export class TownStage {
     if (this.current > 0) this.button(nav, 40, 672, this.t('deck.back'), () => this.o.navigate(this.current - 1), 'ghost')
     if (!last) {
       const label = this.t('deck.next')
-      this.button(nav, 1240 - (textWidth(label, 17) + 40), 672, label, () => this.o.navigate(this.current + 1), 'primary')
+      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => this.o.navigate(this.current + 1), 'primary')
     } else {
       const label = this.t('deck.startOver')
-      this.button(nav, 1240 - (textWidth(label, 17) + 40), 672, label, () => {
+      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => {
         memory.bets.fill(null)
         memory.known.fill(false)
         this.o.navigate(0)
