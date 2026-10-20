@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '../api'
@@ -22,6 +22,7 @@ const svg = ref<SVGSVGElement | null>(null)
 const live = ref('')
 const error = ref<string | null>(null)
 const ready = ref(false)
+const heading = ref('')
 let stage: TownStage | null = null
 let alive = true
 
@@ -72,6 +73,8 @@ async function load(): Promise<DeckData> {
 // Like a slide deck: →, Space or Enter go on (to the next beat, then the next
 // slide), ← goes back a slide, Page Down skips to the next one.
 function onKey(event: KeyboardEvent) {
+  // Alt+← and the like belong to the browser.
+  if (event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return
   const target = event.target as HTMLElement | null
   if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
   const onControl = !!target?.closest('a, button, [role="button"]')
@@ -83,8 +86,23 @@ function onKey(event: KeyboardEvent) {
   if (event.key === 'ArrowLeft' || event.key === 'PageUp') go(index.value - 1)
 }
 
+// The reader may turn reduced motion on or off while the deck is open.
+const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
+const onMotion = () => {
+  if (stage) stage.reducedMotion = motion.matches
+}
+
+// The tab names the slide; after App's own title, which follows the language.
+watchEffect(
+  () => {
+    if (heading.value) document.title = t('deck.tab', { n: index.value + 1, total: TownStage.SLIDES, title: heading.value, site: t('app.title') })
+  },
+  { flush: 'post' },
+)
+
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
+  motion.addEventListener('change', onMotion)
   let data: DeckData
   try {
     data = await load()
@@ -97,10 +115,11 @@ onMounted(async () => {
     t: (key, params) => t(key, params ?? {}),
     list: listOf,
     data,
-    reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reducedMotion: motion.matches,
     navigate: go,
     open: (path) => void router.push(path),
     announce: (words) => (live.value = words),
+    heading: (title) => (heading.value = title),
     approvalWith: async (ticks) => {
       // The reader's ballot joins the town's, honest and with Lucas's bullet vote.
       const extra = ticks.some(Boolean) ? [approvalBallot(ticks)] : []
@@ -118,6 +137,8 @@ watch(locale, () => stage?.replay())
 onBeforeUnmount(() => {
   alive = false
   window.removeEventListener('keydown', onKey)
+  motion.removeEventListener('change', onMotion)
+  document.title = t('app.title')
   stage?.dispose()
   stage = null
 })
@@ -125,7 +146,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="deck">
-    <svg ref="svg" class="town-stage" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="t('deck.aria')" />
+    <!-- A group, not an image: screen readers flatten an image's children, and the stage's buttons live inside it. -->
+    <svg ref="svg" class="town-stage" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" role="group" :aria-label="t('deck.aria')" />
     <p v-if="error" class="state notice">{{ t('common.apiError', { error }) }}</p>
     <p v-else-if="!ready" class="state muted">{{ t('deck.loading') }}</p>
     <p class="turn">{{ t('deck.turn') }}</p>

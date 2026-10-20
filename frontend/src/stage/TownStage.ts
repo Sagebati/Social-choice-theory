@@ -43,6 +43,8 @@ export interface StageOptions {
   open: (path: string) => void
   /** What a screen reader should hear after each beat. */
   announce: (words: string) => void
+  /** The slide's title, for the browser tab. */
+  heading: (title: string) => void
   /** Approval with the reader's own ballot added: honestly, and once Lucas's group ticks only Duck. */
   approvalWith: (yours: boolean[]) => Promise<{ honest: Outcome; bullet: Outcome }>
 }
@@ -63,7 +65,23 @@ const PX = JAR_H / 90
 const SYSTEMS = ['plurality', 'twoRound', 'irv', 'borda', 'duels', 'approval'] as const
 // What fades behind a panel (how it works, a tactic thought through, the lesson).
 const DIMMED = ['machine', 'notes', 'items', 'coins', 'crownLayer', 'stamps']
+// Pictures only: the words that matter are on the cards, the captions and the live region.
+const SILENT = ['cards', 'crowd', 'items', 'coins', 'crownLayer']
+/** With reduced motion nothing moves, so a pause between two steps is all the time there is to read. */
+const READ = 1800
+const DOT_GAP = 24
 type System = (typeof SYSTEMS)[number]
+type Kind = 'primary' | 'ghost' | ''
+/** A decorative arrow either side of a button's words; screen readers hear the words alone. */
+type Glyphs = { before?: string; after?: string }
+
+interface Button {
+  g: SVGGElement
+  /** Redraws it with its left edge at x (or its right edge, with `right`); returns its width. */
+  draw: (label: string, x: number, y: number, kind?: Kind, glyphs?: Glyphs, right?: boolean) => number
+  onPress: (action: () => void) => void
+  show: (on: boolean) => void
+}
 
 interface Voter {
   g: number
@@ -119,6 +137,13 @@ export class TownStage {
   private readonly blink: number
   private readonly hiddenCards = new Set<number>()
   private betMark: { c: number; ring: SVGCircleElement; label: SVGTextElement } | null = null
+  // Back, Skip (or Start over) and the slide dots stay from slide to slide, so the focus stays on them.
+  private readonly back: Button
+  private readonly corner: Button
+  private readonly dots: SVGGElement[] = []
+  /** What the screen reader has yet to hear from this beat, said in one go. */
+  private heard: string[] = []
+  private hearing = 0
   private gen = 0
   private current = 0
   /** Resolves the beat waiting for the reader's tap, if one is. */
@@ -144,15 +169,22 @@ export class TownStage {
     for (const id of ['machine', 'notes', 'cards', 'crowd', 'labels', 'items', 'coins', 'crownLayer', 'stamps', 'bubbles', 'thought', 'ui']) {
       this.layer[id] = el('g', faded.has(id) ? { class: 'fade' } : {}, svg)
     }
+    SILENT.forEach((id) => this.layer[id].setAttribute('aria-hidden', 'true'))
     const ui = this.layer.ui
+    // The title is where the focus waits while the controls it was on are redrawn.
     this.title = text(48, 66, '', 'title', ui, 'start')
+    Object.entries({ role: 'heading', 'aria-level': 1, tabindex: -1 }).forEach(([k, v]) => this.title.setAttribute(k, String(v)))
     this.caption = text(48, 104, '', 'caption', ui, 'start')
     for (const id of ['hud', 'buttons', 'picks', 'nav']) this.layer[id] = el('g', {}, ui)
     this.layer.hud.classList.add('fade')
+    this.layer.hud.setAttribute('role', 'img')
+    this.back = this.makeButton(this.layer.nav)
+    this.corner = this.makeButton(this.layer.nav)
+    this.buildDots()
     this.buildCrowd()
-    // Like a slide: a tap anywhere but on a control goes on.
+    // Like a slide: a click anywhere but on a control goes on.
     svg.addEventListener('click', (e) => {
-      if (!(e.target as Element).closest('.sbtn, .hit')) this.advance()
+      if (!(e.target as Element).closest('.sbtn, .hit, .dot-btn')) this.advance()
     })
     this.crown = el('g', { class: 'gone fade' }, this.layer.crownLayer)
     el('path', { class: 'crown', d: CROWN }, this.crown)
@@ -166,12 +198,21 @@ export class TownStage {
 
   /** Shows slide i (0-based) from its start. */
   show(i: number) {
+    const focused = this.svg.contains(document.activeElement)
     this.reset()
     this.current = Math.max(0, Math.min(TownStage.SLIDES - 1, i))
-    this.layer.hud.classList.toggle('gone', this.current < 3 || this.current === TownStage.SLIDES - 1)
+    const noHud = this.current < 3 || this.current === TownStage.SLIDES - 1
+    this.layer.hud.classList.toggle('gone', noHud)
+    this.layer.hud.setAttribute('aria-hidden', String(noHud))
     this.drawHud()
     this.drawNav()
+    // The control the focus was on may be gone (Back, on the first slide).
+    if (focused && !this.showing(document.activeElement)) this.park()
     void this.play(this.current)
+  }
+
+  set reducedMotion(on: boolean) {
+    this.anim.reduced = on
   }
 
   /** Goes on: the beat waiting for the reader, or the next slide once this one is done. */
@@ -197,6 +238,7 @@ export class TownStage {
     this.gen++
     this.anim.cancel()
     window.clearInterval(this.blink)
+    window.clearTimeout(this.hearing)
     this.svg.replaceChildren()
   }
 
@@ -319,7 +361,10 @@ export class TownStage {
   private words(title: string, caption = '') {
     this.title.textContent = title
     this.setCaption(caption, false)
-    this.o.announce(caption ? `${title}. ${caption}` : title)
+    if (title) {
+      this.tell(caption ? `${title}. ${caption}` : title)
+      this.o.heading(title)
+    }
   }
 
   private setCaption(caption: string, announce = true) {
@@ -328,7 +373,48 @@ export class TownStage {
       const span = el('tspan', { x: 48, dy: i ? 26 : 0 }, this.caption)
       span.textContent = line
     })
-    if (announce && caption) this.o.announce(caption)
+    if (announce) this.tell(caption)
+  }
+
+  /**
+   * For the screen reader. What one beat says (a result, the bet, a voice, a
+   * stamp) goes out together once the beat is drawn, so nothing overwrites anything.
+   */
+  private tell(words: string) {
+    if (!words || this.heard.includes(words)) return
+    this.heard.push(words)
+    if (!this.hearing) {
+      this.hearing = window.setTimeout(() => {
+        this.hearing = 0
+        this.o.announce(this.heard.splice(0).join(' '))
+      })
+    }
+  }
+
+  /** A pause between two steps that each say something. */
+  private beat(ms: number) {
+    return this.anim.reduced ? this.anim.hold(Math.max(ms, READ)) : this.anim.sleep(ms)
+  }
+
+  // ---- Focus. Controls come and go with the beats; the focus never falls out of the stage.
+
+  /** The focus waits on the slide's title. */
+  private park() {
+    this.title.focus({ preventScroll: true })
+  }
+
+  /** Before the control with the focus goes away, the focus moves to the title. */
+  private release(parent: Element) {
+    if (parent.contains(document.activeElement)) this.park()
+  }
+
+  /** A new control for the reader: the focus moves to it if it was waiting on the title. */
+  private offer(control: SVGElement) {
+    if (document.activeElement === this.title) control.focus({ preventScroll: true })
+  }
+
+  private showing(e: Element | null) {
+    return !!e && this.svg.contains(e) && !e.closest('[display="none"]')
   }
 
   private clearBubbles() {
@@ -353,6 +439,7 @@ export class TownStage {
     const tail = Math.max(x + 14, Math.min(x + w - 14, v.pos.x))
     el('path', { d: `M${tail - 7},${y + h - 1} L${v.pos.x},${y + h + 9} L${tail + 7},${y + h - 1}Z` }, g)
     text(x + w / 2, y + 22, line, '', g)
+    this.tell(this.t('deck.says', { name: PERSONAS[gi].name, line }))
     return { x, w }
   }
 
@@ -404,7 +491,7 @@ export class TownStage {
         el('circle', { cx: from.x + (to.x - from.x) * f, cy: from.y + (to.y - from.y) * f, r, class: 'thought-dot' }, g)
       }
     }
-    this.o.announce([eyebrow, ...parts.map((p) => (p.title ? `${p.title}: ${p.body}` : p.body))].join(' ').replace(/\n/g, ' '))
+    this.tell([eyebrow, ...parts.map((p) => (p.title ? `${p.title}: ${p.body}` : p.body))].join(' ').replace(/\n/g, ' '))
   }
 
   private unpanel() {
@@ -455,12 +542,19 @@ export class TownStage {
     if (worst >= 0) placed.push(this.say(worst, this.voice(worst, 'worst'), placed))
   }
 
-  private stamp(x: number, y: number, label: string, tone = '') {
+  /** A stamp, and what a screen reader hears of it. */
+  private stamp(x: number, y: number, label: string, heard: string, tone = '') {
     const w = textWidth(label, 16) * 1.12 + 28
-    const g = el('g', { class: 'stamp ' + tone }, this.layer.stamps)
+    const g = el('g', { class: 'stamp ' + tone, 'aria-hidden': 'true' }, this.layer.stamps)
     const inner = el('g', { transform: `translate(${x},${y}) rotate(-7)` }, g)
     el('rect', { x: -w / 2, y: -18, width: w, height: 34, rx: 6 }, inner)
     text(0, 6, label.toUpperCase(), '', inner)
+    this.tell(heard)
+  }
+
+  /** A group's tactic, stamped under it. */
+  private groupStamp(gi: number, label: string, tone = '') {
+    this.stamp(this.groups[gi].cx, 604, label, this.t('deck.groupStamp', { name: PERSONAS[gi].name, stamp: label }), tone)
   }
 
   private note(x: number, y: number, s: string, anchor: 'start' | 'middle' | 'end' = 'middle') {
@@ -473,60 +567,89 @@ export class TownStage {
     text((x1 + x2) / 2, y - 12, label.toUpperCase(), 'small-caps', g)
   }
 
-  private float(x: number, y: number, s: string, tone: string) {
-    const t = text(x, y, s, 'float ' + tone, this.layer.notes)
-    void this.anim
-      .animate(1200, (k) => {
-        t.setAttribute('y', String(y - 28 * easeOut(k)))
-        t.style.opacity = String(1 - Math.max(0, k - 0.6) / 0.4)
-      })
-      .then(() => t.remove())
+  /** Ballots or points gained (n > 0) or lost by candidate c, floating up from x, y. */
+  private float(x: number, y: number, c: number, n: number) {
+    const t = text(x, y, (n > 0 ? '+' : '−') + Math.abs(n), 'float ' + (n > 0 ? 'good-text' : 'bad-text'), this.layer.notes)
+    t.setAttribute('aria-hidden', 'true')
+    this.tell(this.t(n > 0 ? 'deck.gains' : 'deck.loses', { name: NAME[c], n: Math.abs(n) }))
+    // With reduced motion it stays a moment where it would have floated to.
+    const gone = this.anim.reduced
+      ? (t.setAttribute('y', String(y - 28)), this.anim.hold(1200))
+      : this.anim.animate(1200, (k) => {
+          t.setAttribute('y', String(y - 28 * easeOut(k)))
+          t.style.opacity = String(1 - Math.max(0, k - 0.6) / 0.4)
+        })
+    void gone.then(() => t.remove())
   }
 
-  private button(parent: SVGGElement, x: number, y: number, label: string, onClick: () => void, kind: 'primary' | 'ghost' | '' = '') {
-    const w = textWidth(label, 17) + 40
-    const g = el('g', { class: `sbtn pop ${kind}` }, parent)
-    el('rect', { x, y, width: w, height: 40, rx: 20 }, g)
-    text(x + w / 2, y + 26, label, '', g)
-    asButton(g, label, onClick)
-    return w
+  private makeButton(parent: SVGGElement, kind = ''): Button {
+    let action = () => {}
+    const g = el('g', { class: 'sbtn ' + kind }, parent)
+    const rect = el('rect', { height: 40, rx: 20 }, g)
+    const words = text(0, 0, '', '', g)
+    asButton(g, '', () => action())
+    return {
+      g,
+      draw: (label, x, y, k = '', { before, after } = {}, right = false) => {
+        const shown = [before, label, after].filter(Boolean).join(' ')
+        const w = textWidth(shown, 17) + 40
+        const left = right ? x - w : x
+        g.setAttribute('class', `sbtn ${kind} ${k}`)
+        g.setAttribute('aria-label', label)
+        Object.entries({ x: left, y, width: w }).forEach(([a, v]) => rect.setAttribute(a, String(v)))
+        Object.entries({ x: left + w / 2, y: y + 26 }).forEach(([a, v]) => words.setAttribute(a, String(v)))
+        words.textContent = shown
+        return w
+      },
+      onPress: (f) => (action = f),
+      show: (on) => (on ? g.removeAttribute('display') : g.setAttribute('display', 'none')),
+    }
   }
 
-  /** Waits for the reader: a tap anywhere, or →, Space or Enter. A hint shows bottom right. */
+  private button(parent: SVGGElement, x: number, y: number, label: string, onClick: () => void, kind: Kind = '', glyphs: Glyphs = {}, right = false) {
+    const b = this.makeButton(parent, 'pop')
+    b.onPress(onClick)
+    return { w: b.draw(label, x, y, kind, glyphs, right), g: b.g }
+  }
+
+  /** Waits for the reader: a click anywhere, or →, Space or Enter. A button shows bottom right. */
   private tap(): Promise<void> {
     const my = this.gen
     return new Promise((resolve) => {
       const parent = this.layer.buttons
       parent.replaceChildren()
-      const label = this.t('deck.tap')
       const done = () => {
         if (my !== this.gen || this.waiting !== done) return
         this.waiting = null
+        this.release(parent)
         parent.replaceChildren()
         resolve()
       }
-      this.button(parent, 1240 - (textWidth(label, 17) + 40), 672, label, done, 'ghost')
+      this.offer(this.button(parent, 1240, 672, this.t('deck.next'), done, 'ghost', { after: '▸' }, true).g)
       this.waiting = done
     })
   }
 
   /** Choices, bottom right, where the thumb is. Resolves with the index pressed. */
-  private ask(list: { label: string; primary?: boolean }[]): Promise<number> {
+  private ask(list: { label: string; primary?: boolean; glyphs?: Glyphs }[]): Promise<number> {
     const my = this.gen
     return new Promise((resolve) => {
       const parent = this.layer.buttons
       parent.replaceChildren()
       let x = 1240
+      let first: SVGGElement | null = null
       for (let i = list.length - 1; i >= 0; i--) {
-        const { label, primary } = list[i]
-        x -= textWidth(label, 17) + 40
-        this.button(parent, x, 672, label, () => {
+        const { label, primary, glyphs } = list[i]
+        const b = this.button(parent, x, 672, label, () => {
           if (my !== this.gen) return
+          this.release(parent)
           parent.replaceChildren()
           resolve(i)
-        }, primary ? 'primary' : '')
-        x -= 12
+        }, primary ? 'primary' : '', glyphs, true)
+        x -= b.w + 12
+        first = b.g
       }
+      if (first) this.offer(first)
     })
   }
 
@@ -537,12 +660,14 @@ export class TownStage {
     return new Promise((resolve) => {
       const picks = this.layer.picks
       picks.replaceChildren()
-      points.forEach((p, c) => {
+      const hits = points.map((p, c) => {
         el('circle', { cx: p.x, cy: p.y, r: p.r + 3, class: 'pulse' }, picks)
         const hit = el('circle', { cx: p.x, cy: p.y, r: p.r + 9, class: 'hit' }, picks)
         asButton(hit, this.t('deck.bet.on', { name: NAME[c] }), () => {
           if (my !== this.gen) return
+          this.release(picks)
           picks.replaceChildren()
+          this.tell(this.t('deck.bet.placed', { name: NAME[c] }))
           const g = el('g', {}, this.layer.notes)
           this.betMark = {
             c,
@@ -551,7 +676,9 @@ export class TownStage {
           }
           resolve(c)
         })
+        return hit
       })
+      this.offer(hits[0])
     })
   }
 
@@ -571,6 +698,9 @@ export class TownStage {
       this.betMark.label.setAttribute('class', 'bet-label ' + (right ? 'good-text' : 'bad-text'))
       this.betMark.label.textContent = `${right ? '✓' : '✗'} ${this.t('deck.bet.yours').toUpperCase()}`
       memory.bets[i] = right
+      this.tell(this.t(right ? 'deck.bet.right' : 'deck.bet.wrong', { name: NAME[this.betMark.c] }))
+      const placed = memory.bets.filter((b) => b !== null)
+      this.tell(this.t('deck.bet.score', { score: placed.filter(Boolean).length, total: placed.length }))
       this.betMark = null
     }
     this.drawHud()
@@ -580,43 +710,79 @@ export class TownStage {
     const hud = this.layer.hud
     hud.replaceChildren()
     text(1022, 86, this.t('deck.bet.board').toUpperCase(), 'small-caps', hud, 'start')
+    const said = [this.t('deck.hud.title')]
     SYSTEMS.forEach((s, i) => {
       const x = 1022 + i * 36
       const g = el('g', { class: 'cell' }, hud)
-      el('title', {}, g).textContent = this.t(`deck.systems.${s}`)
-      if (memory.known[i]) token(x + 15, 109, 15, this.winnerOf(s), g, 13)
-      else {
+      const system = this.t(`deck.systems.${s}`)
+      el('title', {}, g).textContent = system
+      const b = memory.bets[i]
+      if (memory.known[i]) {
+        token(x + 15, 109, 15, this.winnerOf(s), g, 13)
+        const how = b === null ? 'won' : b ? 'right' : 'wrong'
+        said.push(this.t(`deck.hud.${how}`, { system, winner: NAME[this.winnerOf(s)] }))
+      } else {
         el('rect', { x, y: 94, width: 30, height: 30, rx: 15 }, g)
         text(x + 15, 114, '?', 'small-caps', g)
+        said.push(this.t('deck.hud.pending', { system }))
       }
-      const b = memory.bets[i]
       if (b !== null) text(x + 15, 142, b ? '✓' : '✗', 'small-caps ' + (b ? 'good-text' : 'bad-text'), g)
     })
+    hud.setAttribute('aria-label', said.join(' '))
+  }
+
+  /**
+   * The slide dots, one button each. Like a toolbar, only the current one is in
+   * the tab order; ← and → move between them, Enter or Space goes there.
+   */
+  private buildDots() {
+    const bar = el('g', { role: 'toolbar' }, this.layer.nav)
+    const x0 = 640 - ((TownStage.SLIDES - 1) * DOT_GAP) / 2
+    for (let i = 0; i < TownStage.SLIDES; i++) {
+      const g = el('g', { class: 'dot-btn' }, bar)
+      el('rect', { x: x0 + i * DOT_GAP - DOT_GAP / 2, y: 670, width: DOT_GAP, height: 44, rx: 8, class: 'dot-hit' }, g)
+      el('circle', { cx: x0 + i * DOT_GAP, cy: 692, r: 4.5, class: 'dot' }, g)
+      asButton(g, '', () => this.o.navigate(i))
+      g.addEventListener('keydown', (event) => {
+        const key = (event as KeyboardEvent).key
+        const to = { ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: TownStage.SLIDES - 1 }[key]
+        if (to === undefined) return
+        event.preventDefault()
+        event.stopPropagation()
+        this.dots[Math.max(0, Math.min(TownStage.SLIDES - 1, to))].focus()
+      })
+      this.dots.push(g)
+    }
   }
 
   /** Back bottom left, the slide dots, and Skip (or Start over) top right. */
   private drawNav() {
-    const nav = this.layer.nav
-    nav.replaceChildren()
     const last = this.current === TownStage.SLIDES - 1
-    if (this.current > 0) this.button(nav, 40, 672, this.t('deck.back'), () => this.o.navigate(this.current - 1), 'ghost')
+    this.back.show(this.current > 0)
+    this.back.draw(this.t('deck.back'), 40, 672, 'ghost', { before: '←' })
+    this.back.onPress(() => this.o.navigate(this.current - 1))
     if (!last) {
-      const label = this.t('deck.skip')
-      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => this.o.navigate(this.current + 1), 'ghost')
+      this.corner.draw(this.t('deck.skip'), 1240, 30, 'ghost', { after: '⏭' }, true)
+      this.corner.onPress(() => this.o.navigate(this.current + 1))
     } else {
-      const label = this.t('deck.startOver')
-      this.button(nav, 1240 - (textWidth(label, 17) + 40), 30, label, () => {
+      this.corner.draw(this.t('deck.startOver'), 1240, 30, 'primary', { before: '↺' }, true)
+      this.corner.onPress(() => {
         memory.bets.fill(null)
         memory.known.fill(false)
         this.o.navigate(0)
-      }, 'primary')
+      })
     }
-    const x0 = 640 - ((TownStage.SLIDES - 1) * 18) / 2
-    for (let i = 0; i < TownStage.SLIDES; i++) {
-      const dot = el('circle', { cx: x0 + i * 18, cy: 692, r: i === this.current ? 6 : 4.5, class: 'dot' + (i === this.current ? ' here' : '') }, nav)
-      dot.setAttribute('aria-hidden', 'true')
-      dot.addEventListener('click', () => this.o.navigate(i))
-    }
+    this.dots[0].parentElement?.setAttribute('aria-label', this.t('deck.slides'))
+    this.dots.forEach((g, i) => {
+      const here = i === this.current
+      g.setAttribute('aria-label', this.t('deck.slide', { n: i + 1, total: TownStage.SLIDES }))
+      g.setAttribute('tabindex', here ? '0' : '-1')
+      if (here) g.setAttribute('aria-current', 'step')
+      else g.removeAttribute('aria-current')
+      const dot = g.querySelector('.dot')!
+      dot.setAttribute('r', here ? '6' : '4.5')
+      dot.classList.toggle('here', here)
+    })
   }
 
   // ---- The crown.
@@ -753,7 +919,7 @@ export class TownStage {
   private knockOut(c: number) {
     this.active[c] = false
     this.cols[c].token.classList.add('out')
-    this.stamp(COLX[c], TOKEN_Y, this.t('deck.out'), 'bad')
+    this.stamp(COLX[c], TOKEN_Y, this.t('deck.out'), this.t('deck.isOut', { name: NAME[c] }), 'bad')
   }
 
   // ---- Jars of points.
@@ -800,6 +966,11 @@ export class TownStage {
     this.gen++
     this.waiting = null
     this.anim.cancel()
+    // What the last slide had still to say is dropped, and the live region emptied.
+    window.clearTimeout(this.hearing)
+    this.hearing = 0
+    this.heard = []
+    this.o.announce('')
     for (const id of ['machine', 'notes', 'coins', 'stamps', 'buttons', 'picks', 'thought']) this.layer[id].replaceChildren()
     DIMMED.forEach((id) => this.layer[id].classList.remove('dim'))
     this.layer.items.querySelectorAll('.extra').forEach((e) => e.remove())
@@ -892,7 +1063,7 @@ export class TownStage {
         el('path', { d: `M${COLX[gi] - 8},${y + 1} L${COLX[gi]},${y - 10} L${COLX[gi] + 8},${y + 1}Z` }, b)
         lines.forEach((line, i) => text(x + w / 2, y + 26 + i * 20, line, '', b))
         this.spokes.forEach((v) => this.setMood(v, v.g === gi ? 1 : 0))
-        this.o.announce(`${p.name}: ${this.voice(gi, 'why')}`)
+        this.tell(this.t('deck.says', { name: p.name, line: this.voice(gi, 'why') }))
       })
     })
   }
@@ -956,15 +1127,15 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.anim.sleep(500)
+    await this.beat(500)
     await this.dropAll(this.firstChoices(), false)
     const outcome = this.o.data.honest.plurality
     const w = outcome.winner
     const votes = tallies(outcome)[w]
     await this.crownPile(w)
+    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes, total: TOTAL, majority: MAJORITY }))
     this.settle('plurality')
     this.react(w)
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes, total: TOTAL, majority: MAJORITY }))
     const others = COLX.filter((_, c) => c !== w)
     const tops = CANDIDATES.map((_, c) => (c === w ? Infinity : this.pileTop(c)))
     this.bracket(Math.min(...others) - 40, Math.max(...others) + 40, Math.min(...tops) - 46, this.t(`${k}.others`, { n: TOTAL - votes }))
@@ -992,13 +1163,13 @@ export class TownStage {
     const outcome = this.o.data.compromise
     const w = outcome.winner
     await this.crownPile(w)
+    const totals = tallies(outcome)
+    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: totals[w], next: runnerUp(totals, w).votes }))
     this.react(w, false)
     const placed = [this.say(AIDA, this.t(`${k}.after`))]
     const fan = PERSONAS.findIndex((p) => p.ranking[0] === w)
     if (fan >= 0 && fan !== AIDA) this.say(fan, this.voice(fan, 'best'), placed)
-    this.stamp(this.groups[AIDA].cx, 604, this.t(`${k}.stamp`))
-    const totals = tallies(outcome)
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: totals[w], next: runnerUp(totals, w).votes }))
+    this.groupStamp(AIDA, this.t(`${k}.stamp`))
     await this.lesson(k)
   }
 
@@ -1011,7 +1182,7 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.anim.sleep(500)
+    await this.beat(500)
     await this.dropAll(this.firstChoices(), true)
     const outcome = this.o.data.honest.two_round
     const [a, b] = finalists(outcome)
@@ -1023,12 +1194,12 @@ export class TownStage {
     await Promise.all(outs.map((c) => this.movePile(c, pick, false)))
     const w = outcome.winner
     await this.crownPile(w)
-    this.settle('twoRound')
-    this.react(w)
     const final = tallies(outcome, outcome.rounds.length - 1)
     this.setCaption(
       this.t(`${k}.result`, { winner: NAME[w], votes: final[w], next: runnerUp(final, w).votes, others: this.o.list(outs.map((c) => NAME[c])) }),
     )
+    this.settle('twoRound')
+    this.react(w)
     await this.lesson(k, {}, false)
   }
 
@@ -1047,7 +1218,7 @@ export class TownStage {
     // A few of the group's voters, not its spokesperson, mark the weak rival.
     const pushers = new Set(this.voters.filter((v) => v.g === PUSH.group && !v.spoke).slice(-PUSH.voters))
     await this.regroup(fav, (v) => (pushers.has(v) ? PUSH.mark : fav))
-    this.stamp(this.groups[PUSH.group].cx, 604, this.t(`${k}.stamp`))
+    this.groupStamp(PUSH.group, this.t(`${k}.stamp`))
     const [a, b] = finalists(d.pushOver)
     const outs = CANDIDATES.map((_, c) => c).filter((c) => c !== a && c !== b)
     outs.forEach((c) => this.knockOut(c))
@@ -1060,9 +1231,9 @@ export class TownStage {
     const w = d.matrix[a][b] > d.matrix[b][a] ? a : b
     const l = w === a ? b : a
     await this.crownPile(w)
+    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: d.matrix[w][l], next: d.matrix[l][w], n: PUSH.voters, mark: NAME[PUSH.mark] }))
     this.react(w, false)
     this.say(PUSH.group, this.t(`${k}.after`))
-    this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: d.matrix[w][l], next: d.matrix[l][w], n: PUSH.voters, mark: NAME[PUSH.mark] }))
     await this.lesson(k)
   }
 
@@ -1075,13 +1246,13 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.anim.sleep(500)
+    await this.beat(500)
     await this.dropAll(this.firstChoices(), true)
     const outcome = this.o.data.honest.irv
     const order = eliminations(outcome)
     for (const [round, out] of order.entries()) {
       this.setCaption(this.t(`${k}.round`, { n: round + 1, majority: MAJORITY }))
-      await this.anim.sleep(1100)
+      await this.beat(1100)
       await this.shake(out)
       this.knockOut(out)
       const moved = await this.movePile(out, (v) => nextChoice(v.ranking, this.active), false)
@@ -1090,15 +1261,15 @@ export class TownStage {
         const to = nextChoice(item.v.ranking, this.active)
         gains.set(to, (gains.get(to) ?? 0) + 1)
       })
-      gains.forEach((n, c) => this.float(COLX[c] + 40, this.pileTop(c) - 4, '+' + n, 'good-text'))
-      await this.anim.sleep(400)
+      gains.forEach((n, c) => this.float(COLX[c] + 40, this.pileTop(c) - 4, c, n))
+      await this.beat(400)
     }
     const w = outcome.winner
     await this.crownPile(w)
-    this.settle('irv')
-    this.react(w)
     const final = tallies(outcome, outcome.rounds.length - 1)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: final[w], first: NAME[order[0]] }))
+    this.settle('irv')
+    this.react(w)
     const cw = this.o.data.condorcetWinner
     const beaters = this.o.list(this.beaters(w).map((c) => NAME[c]))
     await this.lesson(k, { winner: NAME[w], beaters, cw: NAME[cw], round: order.indexOf(cw) + 1 })
@@ -1122,7 +1293,7 @@ export class TownStage {
     await this.how(k)
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.anim.sleep(500)
+    await this.beat(500)
     const throws: Promise<void>[] = []
     this.voters.forEach((v) => {
       let j = 0
@@ -1145,11 +1316,11 @@ export class TownStage {
     })
     const w = outcome.winner
     await this.crownJar(pts)
-    this.settle('borda')
-    this.react(w)
     const second = runnerUp(totals, w)
     const fans = PERSONAS.filter((p) => p.ranking[0] === w).reduce((n, p) => n + p.voters, 0)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: totals[w], next: second.votes, runner: NAME[second.c], fans }))
+    this.settle('borda')
+    this.react(w)
   }
 
   // ---- Burying.
@@ -1167,13 +1338,13 @@ export class TownStage {
     this.think(ROBINSON, k)
     await this.tap()
     this.unpanel()
-    this.stamp(this.groups[ROBINSON].cx, 604, this.t(`${k}.stamp`))
-    await this.anim.sleep(500)
+    this.groupStamp(ROBINSON, this.t(`${k}.stamp`))
+    await this.beat(500)
     // The points that change hands, as the server counts them.
     const after = tallies(this.o.data.bury)
     const loser = after.findIndex((p, c) => p < before[c])
     const gains = after.map((p, c) => Math.max(0, p - before[c]))
-    this.float(COLX[loser] + 46, JAR_TOP - 10, '−' + (before[loser] - after[loser]), 'bad-text')
+    this.float(COLX[loser] + 46, JAR_TOP - 10, loser, after[loser] - before[loser])
     const flights: Promise<void>[] = []
     gains.forEach((n, c) => {
       for (let j = 0; j < n; j++) {
@@ -1188,11 +1359,11 @@ export class TownStage {
       }
     })
     await Promise.all(flights)
-    gains.forEach((n, c) => n && this.float(COLX[c] + 46, JAR_TOP - 10, '+' + n, 'good-text'))
+    gains.forEach((n, c) => n && this.float(COLX[c] + 46, JAR_TOP - 10, c, n))
     const w = this.o.data.bury.winner
     await this.crownJar(pts)
-    this.react(w)
     this.setCaption(this.t(`${k}.result`, { winner: NAME[w], votes: after[w], next: runnerUp(after, w).votes, n: PERSONAS[ROBINSON].voters }))
+    this.react(w)
     await this.lesson(k)
   }
 
@@ -1237,7 +1408,7 @@ export class TownStage {
       ...others.map((c): [number, number] => [champ, c]).sort((x, y) => (y[1] === d.condorcetLoser ? 1 : 0) - (x[1] === d.condorcetLoser ? 1 : 0)),
       ...others.flatMap((a, i) => others.slice(i + 1).map((b): [number, number] => [a, b])),
     ]
-    await this.anim.sleep(500)
+    await this.beat(500)
     for (const [i, [a, c]] of order.entries()) {
       // The champion's duels at a walk, the others at a run.
       const auto = i >= others.length
@@ -1278,7 +1449,7 @@ export class TownStage {
       edgeOf.set(`${w}>${l}`, line)
       this.setCaption(this.t(`${k}.beats`, { winner: NAME[w], loser: NAME[l], votes: d.matrix[w][l], next: d.matrix[l][w] }))
       await this.anim.animate(auto ? 260 : 420, (t) => line.setAttribute('stroke-dashoffset', String((len - 43) * (1 - easeOut(t)))))
-      await this.anim.sleep(auto ? 360 : 600)
+      await this.beat(auto ? 360 : 600)
     }
     rings.forEach((r) => r.classList.add('gone'))
     left.g.classList.add('gone')
@@ -1289,6 +1460,12 @@ export class TownStage {
     this.layer.labels.classList.remove('gone')
     this.layer.cards.classList.remove('gone')
     await this.crownAt(node[champ].x, node[champ].y - 40)
+    // Below the champion, majorities may go round in a circle.
+    const [x, y, z] = d.cycle
+    const circle = d.cycle.length === 3 ? { a: NAME[x], b: NAME[y], c: NAME[z] } : null
+    d.cycle.forEach((c, i) => edgeOf.get(`${c}>${d.cycle[(i + 1) % d.cycle.length]}`)?.classList.add('cycle'))
+    const result = this.t(`${k}.result`, { winner: NAME[champ] })
+    this.setCaption(circle ? `${result} ${this.t(`${k}.cycle`, circle)}` : result)
     this.settle('duels')
     this.react(champ)
     const rivals = CANDIDATES.length - 1
@@ -1296,25 +1473,19 @@ export class TownStage {
     this.note(node[champ].x + (flip(champ) ? 34 : -34), node[champ].y + 5, this.t(`${k}.beatsAll`, { n: rivals }), flip(champ) ? 'start' : 'end')
     const lost = d.condorcetLoser
     if (lost >= 0) this.note(node[lost].x + (flip(lost) ? 34 : -34), node[lost].y + 5, this.t(`${k}.losesAll`, { n: rivals }), flip(lost) ? 'start' : 'end')
-    this.stamp(640, 410, this.t(`${k}.stamp`))
-    // Below the champion, majorities may go round in a circle.
-    const [x, y, z] = d.cycle
-    const circle = d.cycle.length === 3 ? { a: NAME[x], b: NAME[y], c: NAME[z] } : null
-    d.cycle.forEach((c, i) => edgeOf.get(`${c}>${d.cycle[(i + 1) % d.cycle.length]}`)?.classList.add('cycle'))
-    const result = this.t(`${k}.result`, { winner: NAME[champ] })
-    this.setCaption(circle ? `${result} ${this.t(`${k}.cycle`, circle)}` : result)
+    this.stamp(640, 410, this.t(`${k}.stamp`), this.t('deck.named', { name: NAME[champ], stamp: this.t(`${k}.stamp`) }))
     await this.lesson(k, { winner: NAME[champ], ...(circle ?? { a: '', b: '', c: '' }) })
   }
 
   // ---- 6. Approval: the reader ticks a ballot too, then the bullet vote.
 
-  /** Tap candidates to tick or untick them; resolves with the ticks when the reader votes. */
+  /** The reader ticks or unticks candidates; resolves with the ticks when the reader votes. */
   private tickBallot(): Promise<boolean[]> {
     const my = this.gen
     const ticks = CANDIDATES.map(() => false)
     const picks = this.layer.picks
     picks.replaceChildren()
-    CANDIDATES.forEach((_, c) => {
+    const hits = CANDIDATES.map((_, c) => {
       const x = COLX[c]
       el('circle', { cx: x, cy: TOKEN_Y, r: 23, class: 'pulse' }, picks)
       const ring = el('circle', { cx: x, cy: TOKEN_Y, r: 27, class: 'ring' }, picks)
@@ -1330,8 +1501,13 @@ export class TownStage {
         hit.setAttribute('aria-pressed', String(ticks[c]))
       })
       hit.setAttribute('aria-pressed', 'false')
+      return hit
     })
-    return this.ask([{ label: this.t('deck.approval.vote'), primary: true }]).then(() => {
+    // The focus goes to the first candidate rather than to Vote.
+    const first = document.activeElement === this.title
+    const voted = this.ask([{ label: this.t('deck.approval.vote'), primary: true, glyphs: { after: '▶' } }])
+    if (first) hits[0].focus({ preventScroll: true })
+    return voted.then(() => {
       // The ticks stay on the tokens as the reader's ballot.
       picks.querySelectorAll('.pulse, .hit').forEach((e) => e.remove())
       return ticks
@@ -1351,7 +1527,7 @@ export class TownStage {
     this.setCaption(this.t(`${k}.ask`))
     await this.bet(this.rowPoints())
     this.setCaption(this.t(`${k}.rule`))
-    await this.anim.sleep(500)
+    await this.beat(500)
     let results: { honest: Outcome; bullet: Outcome }
     try {
       results = await counted
@@ -1381,9 +1557,9 @@ export class TownStage {
     const honest = results.honest
     const w = honest.winner
     await this.crownPile(w)
+    this.setCaption(this.t(yours.some(Boolean) ? `${k}.resultYours` : `${k}.result`, { winner: NAME[w], votes: tallies(honest)[w] }))
     this.settle('approval', w)
     this.react(w)
-    this.setCaption(this.t(yours.some(Boolean) ? `${k}.resultYours` : `${k}.result`, { winner: NAME[w], votes: tallies(honest)[w] }))
     // Lucas's group thinks about ticking its favourite alone.
     await this.tap()
     this.setCaption(this.t(`${k}.what`))
@@ -1401,15 +1577,15 @@ export class TownStage {
       this.land(c, 0)
       await Promise.all(mine.map((item, i) => this.fly(item, this.hand(item.v), { dur: 600, delay: i * 60, lift: 50, s1: 0.36, rot1: -16 }).then(() => item.g.remove())))
       await Promise.all(this.stacks[c].map((item, i) => this.fly(item, this.slot(c, i), { dur: 360, lift: 0 })))
-      this.float(COLX[c] + 40, this.pileTop(c) - 4, '−' + mine.length, 'bad-text')
+      this.float(COLX[c] + 40, this.pileTop(c) - 4, c, -mine.length)
     }
     const after = results.bullet
     const w2 = after.winner
     await this.crownPile(w2)
+    this.setCaption(this.t(`${k}.backfire`, { winner: NAME[w2], votes: tallies(after)[w2] }))
     this.react(w2, false)
     this.say(LUCAS, this.t(`${k}.after`))
-    this.stamp(this.groups[LUCAS].cx, 604, this.t(`${k}.stamp`), 'bad')
-    this.setCaption(this.t(`${k}.backfire`, { winner: NAME[w2], votes: tallies(after)[w2] }))
+    this.groupStamp(LUCAS, this.t(`${k}.stamp`), 'bad')
     await this.lesson(k)
   }
 
