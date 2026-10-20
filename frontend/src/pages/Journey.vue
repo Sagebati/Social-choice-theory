@@ -72,6 +72,8 @@ async function load(): Promise<DeckData> {
 // Like a slide deck: →, Space or Enter go on (to the next beat, then the next
 // slide), ← goes back a slide, Page Down skips to the next one.
 function onKey(event: KeyboardEvent) {
+  // Alt+← and the like belong to the browser.
+  if (event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return
   const target = event.target as HTMLElement | null
   if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return
   const onControl = !!target?.closest('a, button, [role="button"]')
@@ -125,7 +127,8 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="deck">
-    <svg ref="svg" class="town-stage" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" role="img" :aria-label="t('deck.aria')" />
+    <!-- A group, not an image: screen readers flatten an image's children, and the stage's buttons live inside it. -->
+    <svg ref="svg" class="town-stage" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet" role="group" :aria-label="t('deck.aria')" />
     <p v-if="error" class="state notice">{{ t('common.apiError', { error }) }}</p>
     <p v-else-if="!ready" class="state muted">{{ t('deck.loading') }}</p>
     <p class="turn">{{ t('deck.turn') }}</p>

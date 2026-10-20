@@ -53,7 +53,7 @@ const kind = computed(() => BALLOT_KIND[props.example.method])
 
 .sides {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: 0.75rem;
 }
 

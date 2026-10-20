@@ -128,7 +128,7 @@ function updateCrowd(patch: Partial<Crowd>) {
         </div>
         <div class="row tools">
           <button class="btn small" :disabled="candidates.length >= 8" @click="addCandidate">{{ t('sandbox.addCandidate') }}</button>
-          <button class="btn small" :disabled="candidates.length <= 2" @click="removeCandidate">− {{ candidates[candidates.length - 1].name }}</button>
+          <button class="btn small" :disabled="candidates.length <= 2" :aria-label="t('sandbox.removeCandidate', { name: candidates[candidates.length - 1].name })" @click="removeCandidate">− {{ candidates[candidates.length - 1].name }}</button>
           <button class="btn small" :disabled="crowds.length >= 6" @click="addCrowd">{{ t('sandbox.addCrowd') }}</button>
           <label class="row small">
             <input v-model="showYee" type="checkbox" /> {{ t('sandbox.yee', { method: methodName(primary) }) }}

@@ -196,7 +196,9 @@ const describe = computed(() => {
       class="crowd"
       :class="{ movable: crowdsMovable, selected: selected?.kind === 'crowd' && selected.index === i }"
       :tabindex="crowdsMovable ? 0 : -1"
+      role="button"
       :aria-label="t('spatialMap.crowd', crowd.count)"
+      @focus="emit('select', { kind: 'crowd', index: i })"
       @pointerdown="start($event, 'crowd', i)"
       @keydown="nudge($event, 'crowd', i)"
     >
@@ -245,6 +247,7 @@ const describe = computed(() => {
       :tabindex="canMove('candidate', i) ? 0 : -1"
       role="button"
       :aria-label="winner === i ? t('spatialMap.winning', { name: c.name }) : c.name"
+      @focus="emit('select', { kind: 'candidate', index: i })"
       @pointerdown="start($event, 'candidate', i)"
       @keydown="nudge($event, 'candidate', i)"
     >

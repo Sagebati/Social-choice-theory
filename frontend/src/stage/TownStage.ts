@@ -49,7 +49,6 @@ export interface StageOptions {
 
 const NAME = CANDIDATES.map((c) => c.name)
 const LETTER = NAME.map((n) => initial(n, NAME))
-const ON_DARK = [true, true, false, false, false]
 const TOTAL = PERSONAS.reduce((n, p) => n + p.voters, 0)
 const MAJORITY = Math.floor(TOTAL / 2) + 1
 const COLX = [200, 420, 640, 860, 1080]
@@ -1452,7 +1451,7 @@ export class TownStage {
 
 const CROWN = 'M-16,9 L-16,-5 L-8,2 L0,-12 L8,2 L16,-5 L16,9 Z'
 
-const onClass = (c: number) => (ON_DARK[c] ? 'on-dark' : 'on-light')
+const onClass = (c: number) => `on-c${c}`
 
 function mouthPath(r: number, mood: number) {
   const w = r * 0.42

@@ -20,6 +20,7 @@ export default {
       dark: 'dark',
     },
     language: 'Language',
+    skip: 'Skip to content',
     footer:
       'Built on a Rust library of social choice theory, served from a Cloudflare Worker. Every result on this page is computed by the server, not looked up.',
   },

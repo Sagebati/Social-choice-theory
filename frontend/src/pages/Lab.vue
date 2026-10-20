@@ -40,10 +40,20 @@ const { data } = useElect(() => election.value, ALL_METHODS)
 const names = computed(() => election.value.candidates)
 const distinct = computed(() => new Set(data.value?.results.map((r) => (r.outcome.tied.length > 1 ? 'tie' : r.outcome.winner))).size)
 let seed = 1
+const shuffling = ref(false)
+const shuffleError = ref<string | null>(null)
 
 async function shuffle() {
   seed += 1
-  election.value = rankingsOnly(await api.random(4, 5, seed))
+  shuffling.value = true
+  shuffleError.value = null
+  try {
+    election.value = rankingsOnly(await api.random(4, 5, seed))
+  } catch (e) {
+    shuffleError.value = t('common.apiError', { error: e instanceof Error ? e.message : String(e) })
+  } finally {
+    shuffling.value = false
+  }
 }
 </script>
 
@@ -60,8 +70,9 @@ async function shuffle() {
       <div class="split">
         <div class="stack">
           <div class="row">
-            <button class="btn small" @click="shuffle">{{ t('lab.winners.random') }}</button>
+            <button class="btn small" :disabled="shuffling" @click="shuffle">{{ t('lab.winners.random') }}</button>
           </div>
+          <p v-if="shuffleError" class="notice" role="alert">{{ shuffleError }}</p>
           <ProfileEditor v-model="election" structural />
         </div>
         <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" />

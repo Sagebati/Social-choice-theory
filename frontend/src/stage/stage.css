@@ -42,8 +42,11 @@
 .town-stage .letter { font-weight: 800; }
 .town-stage .tiny { font-size: 11px; }
 .town-stage .duel-letter { font-size: 28px; }
-.town-stage .on-dark { fill: #fff; }
-.town-stage .on-light { fill: #0b0b0b; }
+.town-stage .on-c0 { fill: var(--on-c0); }
+.town-stage .on-c1 { fill: var(--on-c1); }
+.town-stage .on-c2 { fill: var(--on-c2); }
+.town-stage .on-c3 { fill: var(--on-c3); }
+.town-stage .on-c4 { fill: var(--on-c4); }
 .town-stage .count { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .town-stage .small-caps { font-size: 13px; font-weight: 750; letter-spacing: 0.08em; fill: var(--ink-2); }
 .town-stage .muted { fill: var(--muted); }

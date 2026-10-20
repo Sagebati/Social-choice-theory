@@ -206,6 +206,23 @@ function removeBloc(g: number) {
   margin: 0;
 }
 
+@media (pointer: coarse) {
+  .step {
+    width: 44px;
+    height: 44px;
+  }
+
+  .weight input {
+    min-height: 44px;
+  }
+
+  .cand {
+    min-height: 44px;
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 520px) {
   .nm {
     display: none;

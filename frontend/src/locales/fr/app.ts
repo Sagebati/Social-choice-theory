@@ -20,6 +20,7 @@ const app: typeof source = {
       dark: 'sombre',
     },
     language: 'Langue',
+    skip: 'Aller au contenu',
     footer:
       'Construit sur une bibliothèque Rust de théorie du choix social, servie par un Worker Cloudflare. Chaque résultat de cette page est calculé par le serveur, rien n’est recopié.',
   },

@@ -7,6 +7,7 @@ const messages: typeof source = {
       'Déplacez candidats et foules, ajoutez-en d’autres, laissez les électeurs mentir, et comparez toutes les méthodes sur les mêmes électeurs. Cliquez sur une méthode pour colorer la carte selon son résultat.',
     mapLabel: 'Carte du bac à sable',
     addCandidate: '+ Candidat',
+    removeCandidate: 'Retirer {name}',
     addCrowd: '+ Foule',
     yee: 'Diagramme de Yee ({method})',
     selectedCrowd: 'Foule sélectionnée',

@@ -7,6 +7,7 @@ export default {
       "Drag candidates and crowds, add more of each, let voters lie, and compare every method on the same voters. Click a method's card to colour the map by it.",
     mapLabel: 'Sandbox map',
     addCandidate: '+ Candidate',
+    removeCandidate: 'Remove {name}',
     addCrowd: '+ Crowd',
     yee: 'Yee map ({method})',
     selectedCrowd: 'Selected crowd',

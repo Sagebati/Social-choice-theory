@@ -51,7 +51,9 @@ async function tryScenario(id: string | null) {
   if (!s) return
   open.value = s
   await nextTick()
-  labEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  labEl.value?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' })
+  labEl.value?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
 }
 </script>
 
@@ -68,7 +70,7 @@ async function tryScenario(id: string | null) {
     <section ref="labEl" class="scenario-lab">
       <div v-if="open" class="card">
         <div class="row head">
-          <h2>{{ t('rigging.tryTitle', { title: open.title }) }}</h2>
+          <h2 tabindex="-1">{{ t('rigging.tryTitle', { title: open.title }) }}</h2>
           <button class="btn small" @click="open = null">{{ t('common.close') }}</button>
         </div>
         <ScenarioLab :scenario="open" />
@@ -176,7 +178,7 @@ async function tryScenario(id: string | null) {
 
 .concepts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -186,7 +188,7 @@ async function tryScenario(id: string | null) {
 
 .tactics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: 0.75rem;
   margin: 0;
 }
@@ -210,7 +212,7 @@ async function tryScenario(id: string | null) {
 
 .methods {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(21rem, 100%), 1fr));
   gap: 1rem;
 }
 

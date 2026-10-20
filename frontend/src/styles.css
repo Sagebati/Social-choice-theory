@@ -7,7 +7,7 @@
   --surface-2: #f0efeb;
   --ink: #0b0b0b;
   --ink-2: #52514e;
-  --muted: #7a7873;
+  --muted: #6b6964;
   --grid: #e1e0d9;
   --axis: #c3c2b7;
   --border: rgba(11, 11, 11, 0.1);
@@ -25,6 +25,15 @@
   --c5: #008300;
   --c6: #6250d6;
   --c7: #e34948;
+  /* Text on a candidate colour: whichever of ink or white contrasts more. */
+  --on-c0: #ffffff;
+  --on-c1: #0b0b0b;
+  --on-c2: #0b0b0b;
+  --on-c3: #0b0b0b;
+  --on-c4: #0b0b0b;
+  --on-c5: #ffffff;
+  --on-c6: #ffffff;
+  --on-c7: #0b0b0b;
   --radius: 14px;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
@@ -55,6 +64,14 @@
     --c5: #008300;
     --c6: #9085e9;
     --c7: #e66767;
+    --on-c0: #0b0b0b;
+    --on-c1: #0b0b0b;
+    --on-c2: #0b0b0b;
+    --on-c3: #0b0b0b;
+    --on-c4: #0b0b0b;
+    --on-c5: #ffffff;
+    --on-c6: #0b0b0b;
+    --on-c7: #0b0b0b;
   }
 }
 
@@ -83,6 +100,14 @@
   --c5: #008300;
   --c6: #9085e9;
   --c7: #e66767;
+  --on-c0: #0b0b0b;
+  --on-c1: #0b0b0b;
+  --on-c2: #0b0b0b;
+  --on-c3: #0b0b0b;
+  --on-c4: #0b0b0b;
+  --on-c5: #ffffff;
+  --on-c6: #0b0b0b;
+  --on-c7: #0b0b0b;
 }
 
 * {
@@ -178,6 +203,23 @@ button {
 .btn.small {
   padding: 0.2em 0.7em;
   font-size: 0.85rem;
+}
+
+/* On touch screens every control is at least a fingertip (44px) tall. */
+@media (pointer: coarse) {
+  .btn,
+  select {
+    min-height: 44px;
+  }
+
+  input[type='checkbox'] {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  input[type='range'] {
+    min-height: 32px;
+  }
 }
 
 .card {
