@@ -14,7 +14,7 @@ export class Animator {
   private jobs: Job[] = []
   private raf = 0
   /** 0 when the reader prefers reduced motion: every tween jumps to its end. */
-  private readonly speed: number
+  private speed: number
 
   constructor(reducedMotion: boolean) {
     this.speed = reducedMotion ? 0 : 1
@@ -22,6 +22,11 @@ export class Animator {
 
   get reduced(): boolean {
     return this.speed === 0
+  }
+
+  /** The reader can change the setting while the deck is open. */
+  set reduced(on: boolean) {
+    this.speed = on ? 0 : 1
   }
 
   /** Calls `frame(t)` with t from 0 to 1 over `dur` ms, after `delay` ms. */
@@ -32,14 +37,23 @@ export class Animator {
       frame(1)
       return Promise.resolve()
     }
-    return new Promise((resolve) => {
-      this.jobs.push({ start: performance.now() + wait, dur: Math.max(1, d), frame, resolve })
-      if (!this.raf) this.raf = requestAnimationFrame(this.tick)
-    })
+    return this.queue(wait, d, frame)
   }
 
   sleep(ms: number): Promise<void> {
     return this.animate(ms, () => {})
+  }
+
+  /** Waits `ms` even when motion is reduced: time to read, not to move. */
+  hold(ms: number): Promise<void> {
+    return this.queue(0, ms, () => {})
+  }
+
+  private queue(wait: number, dur: number, frame: (t: number) => void): Promise<void> {
+    return new Promise((resolve) => {
+      this.jobs.push({ start: performance.now() + wait, dur: Math.max(1, dur), frame, resolve })
+      if (!this.raf) this.raf = requestAnimationFrame(this.tick)
+    })
   }
 
   /** Drops every pending tween; their scripts never resume. */

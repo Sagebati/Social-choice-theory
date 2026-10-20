@@ -119,8 +119,15 @@
 .town-stage .ring.good { stroke: var(--good); stroke-dasharray: none; stroke-width: 3; }
 .town-stage .ring.bad { stroke: var(--bad); stroke-dasharray: none; stroke-width: 3; }
 .town-stage .bet-label { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; fill: var(--ink-2); }
-.town-stage .dot { fill: var(--axis); cursor: pointer; }
+.town-stage .dot { fill: var(--axis); }
 .town-stage .dot.here { fill: var(--ink); }
+.town-stage .dot-btn { cursor: pointer; }
+.town-stage .dot-hit { fill: transparent; }
+.town-stage .dot-btn:hover .dot:not(.here) { fill: var(--ink-2); }
+.town-stage .dot-btn:focus { outline: none; }
+.town-stage .dot-btn:focus-visible .dot-hit { stroke: var(--c0); stroke-width: 3; }
+/* The focus waits on the title while the buttons change; it is not a control. */
+.town-stage .title:focus { outline: none; }
 
 /* Panels over the dimmed scene: how it works, thinking a tactic through, the lesson */
 .town-stage .dim { opacity: 0.16; }
