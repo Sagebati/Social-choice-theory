@@ -113,7 +113,7 @@ export default {
   lab: {
     title: 'Theorem lab',
     intro:
-      'The machinery behind the journey, with every knob exposed. Everything here is computed on the server by the Rust library, by brute force where possible.',
+      'The machinery behind the journey, with every knob exposed. Everything here is computed in your browser by the Rust library, by brute force where possible.',
     winners: {
       title: 'Same ballots, many winners',
       text: 'Edit the ballots, or shuffle in a random election. This one currently has <strong>{distinct}</strong> different outcome across the {methods} methods. | Edit the ballots, or shuffle in a random election. This one currently has <strong>{distinct}</strong> different outcomes across the {methods} methods.',
@@ -121,15 +121,15 @@ export default {
     },
     arrow: {
       title: "Arrow's theorem, by brute force",
-      text: "Pick a rule. The server builds every possible election with three candidates and the chosen number of voters, and checks Arrow's four conditions on each. If a condition fails, you get the most telling counterexample.",
+      text: "Pick a rule. The library builds every possible election with three candidates and the chosen number of voters, and checks Arrow's four conditions on each. If a condition fails, you get the most telling counterexample.",
     },
     criteria: {
       title: 'Fairness criteria',
-      text: 'Which method guarantees what. Every ✗ is backed by a real counterexample: click one and the server searches random elections until it finds an election that breaks the rule, then shrinks it.',
+      text: 'Which method guarantees what. Every ✗ is backed by a real counterexample: click one and the library searches random elections until it finds an election that breaks the rule, then shrinks it.',
     },
     manipulability: {
       title: 'How manipulable is each method?',
-      text: 'For each random election, the server tries every possible insincere ballot for every bloc of voters and checks whether any of them would get a result the bloc prefers.',
+      text: 'For each random election, the library tries every possible insincere ballot for every bloc of voters and checks whether any of them would get a result the bloc prefers.',
       candidates: 'Candidates',
       running: 'Running…',
       run: 'Run the experiment',
@@ -215,7 +215,7 @@ export default {
     found: 'Counterexample found.',
     show: 'Show an election where {method} breaks {criterion}',
     failsAria: '{method} fails {criterion}: show an example',
-    legend: '✓ always satisfied · ✗ can fail: tap it and the server will search for a concrete election.',
+    legend: '✓ always satisfied · ✗ can fail: tap it and the library will search for a concrete election.',
     versus: '{method} vs {criterion}',
     searching: 'Searching random elections…',
     empty: 'The search came back empty this time.',

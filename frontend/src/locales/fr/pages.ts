@@ -113,7 +113,7 @@ const messages: typeof source = {
   lab: {
     title: 'Labo des théorèmes',
     intro:
-      'La mécanique derrière le parcours, tous les réglages à portée de main. Tout ici est calculé sur le serveur par la bibliothèque Rust, par force brute quand c’est possible.',
+      'La mécanique derrière le parcours, tous les réglages à portée de main. Tout ici est calculé dans votre navigateur par la bibliothèque Rust, par force brute quand c’est possible.',
     winners: {
       title: 'Mêmes bulletins, plusieurs vainqueurs',
       text: 'Modifiez les bulletins, ou tirez une élection au hasard. Celle-ci donne pour l’instant <strong>{distinct}</strong> seul résultat pour les {methods} méthodes. | Modifiez les bulletins, ou tirez une élection au hasard. Celle-ci donne pour l’instant <strong>{distinct}</strong> résultats différents selon les {methods} méthodes.',
@@ -121,15 +121,15 @@ const messages: typeof source = {
     },
     arrow: {
       title: 'Le théorème d’Arrow, par force brute',
-      text: 'Choisissez une règle. Le serveur construit toutes les élections possibles à trois candidats avec le nombre d’électeurs choisi, et vérifie sur chacune les quatre conditions d’Arrow. Si une condition tombe, vous obtenez le contre-exemple le plus parlant.',
+      text: 'Choisissez une règle. La bibliothèque construit toutes les élections possibles à trois candidats avec le nombre d’électeurs choisi, et vérifie sur chacune les quatre conditions d’Arrow. Si une condition tombe, vous obtenez le contre-exemple le plus parlant.',
     },
     criteria: {
       title: 'Critères d’équité',
-      text: 'Quelle méthode garantit quoi. Chaque ✗ s’appuie sur un vrai contre-exemple : cliquez dessus, et le serveur fouille des élections aléatoires jusqu’à en trouver une qui enfreint la règle, puis la réduit au minimum.',
+      text: 'Quelle méthode garantit quoi. Chaque ✗ s’appuie sur un vrai contre-exemple : cliquez dessus, et la bibliothèque fouille des élections aléatoires jusqu’à en trouver une qui enfreint la règle, puis la réduit au minimum.',
     },
     manipulability: {
       title: 'À quel point chaque méthode est-elle manipulable ?',
-      text: 'Pour chaque élection aléatoire, le serveur essaie tous les bulletins insincères possibles pour chaque bloc d’électeurs, et regarde si l’un d’eux donnerait un résultat que ce bloc préfère.',
+      text: 'Pour chaque élection aléatoire, la bibliothèque essaie tous les bulletins insincères possibles pour chaque bloc d’électeurs, et regarde si l’un d’eux donnerait un résultat que ce bloc préfère.',
       candidates: 'Candidats',
       running: 'Calcul en cours…',
       run: 'Lancer l’expérience',
@@ -215,7 +215,7 @@ const messages: typeof source = {
     found: 'Contre-exemple trouvé.',
     show: 'Montrer une élection où {method} enfreint le critère « {criterion} »',
     failsAria: '{method} enfreint le critère « {criterion} » : voir un exemple',
-    legend: '✓ toujours respecté · ✗ peut échouer : touchez-le et le serveur cherchera une élection concrète.',
+    legend: '✓ toujours respecté · ✗ peut échouer : touchez-le et la bibliothèque cherchera une élection concrète.',
     versus: '{method} face au critère « {criterion} »',
     searching: 'Recherche parmi des élections aléatoires…',
     empty: 'La recherche n’a rien donné cette fois-ci.',
