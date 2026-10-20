@@ -43,7 +43,7 @@ const format = (v: number) => n(v, { maximumFractionDigits: 1 })
     >
       <span class="label" role="rowheader">
         <span class="swatch" :style="{ background: color(row.i) }" aria-hidden="true" />
-        {{ row.name }}<span v-if="winner === row.i" class="star" :aria-label="t('tally.winner')"> ★</span>
+        {{ row.name }}<template v-if="winner === row.i"><span class="star" aria-hidden="true"> ★</span><span class="visually-hidden">, {{ t('tally.winner') }}</span></template>
       </span>
       <span class="track" role="cell">
         <span

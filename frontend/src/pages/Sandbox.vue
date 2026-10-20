@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import Announce from '../components/Announce.vue'
 import DuelGraph from '../components/DuelGraph.vue'
+import MapLegend from '../components/MapLegend.vue'
 import ManipulationFinder from '../components/ManipulationFinder.vue'
 import RichText from '../components/RichText'
 import RoundsView from '../components/RoundsView.vue'
 import SpatialMap from '../components/SpatialMap.vue'
 import { favourites, changed, model, resultFor, useSpatial, useYee } from '../composables/useApi'
-import { activeChoice, ALL_METHODS, BALLOT_KIND, eliminatedBefore, methodName, NAMES, simplifyFor } from '../election'
+import { activeChoice, ALL_METHODS, BALLOT_KIND, eliminatedBefore, methodName, NAMES, simplifyFor, winnerName } from '../election'
+import { listOf } from '../i18n'
 import { color } from '../palette'
 import type { Crowd, Election, MethodId, SpatialCandidate } from '../types'
 
@@ -43,18 +46,19 @@ const current = computed(() =>
   }),
 )
 const requested = computed(() => (methods.value.includes(primary.value) ? methods.value : [primary.value, ...methods.value]))
-const { data, error } = useSpatial(() => current.value, () => requested.value)
-const { data: yee } = useYee(() => (showYee.value ? current.value : null), () => primary.value)
+const { data, error, loading } = useSpatial(() => current.value, () => requested.value)
+const { data: yee, error: yeeError } = useYee(() => (showYee.value ? current.value : null), () => primary.value)
 
 const names = computed(() => candidates.value.map((c) => c.name))
 const main = computed(() => resultFor(data.value, primary.value))
 watch(primary, () => (step.value = 0))
 
 // Ranked-ballot counts recolour voters as their ballots transfer between rounds.
+const byRound = computed(() => ['irv', 'coombs', 'two_round'].includes(primary.value))
 const colors = computed(() => {
   const r = main.value
   if (!r) return []
-  if (['irv', 'coombs', 'two_round'].includes(primary.value)) {
+  if (byRound.value) {
     const out = eliminatedBefore(r.outcome, step.value)
     return r.votes.map((v) => activeChoice(v.ballot.ranking, out))
   }
@@ -62,6 +66,18 @@ const colors = computed(() => {
 })
 const finderElection = computed(() =>
   main.value ? simplifyFor(BALLOT_KIND[primary.value], main.value.election as Election) : null,
+)
+
+const shown = computed(() => data.value?.results.filter((r) => methods.value.includes(r.method)) ?? [])
+// Every card's winner in one sentence, read out once a drag settles.
+const summary = computed(() =>
+  shown.value
+    .map((r) =>
+      r.outcome.tied.length > 1
+        ? t('sandbox.ties', { method: methodName(r.method), names: listOf(r.outcome.tied.map((c) => names.value[c])) })
+        : t('sandbox.wins', { method: methodName(r.method), name: names.value[r.outcome.winner] }),
+    )
+    .join(' '),
 )
 
 function toggleMethod(m: MethodId) {
@@ -148,6 +164,16 @@ function updateCrowd(patch: Partial<Crowd>) {
             <input type="range" min="0" max="0.45" step="0.01" :value="selectedCrowd.spread" @input="updateCrowd({ spread: Number(($event.target as HTMLInputElement).value) })" />
           </label>
         </div>
+        <MapLegend
+          v-if="data"
+          :names="names"
+          :colors="colors"
+          :rings="changed(data, primary)"
+          :yee="showYee ? yee : null"
+          :method="methodName(primary)"
+          :by-round="byRound"
+        />
+        <p v-if="showYee && yeeError" class="notice" role="alert">{{ t('sandbox.yeeError', { error: yeeError }) }}</p>
       </div>
 
       <div class="right">
@@ -179,10 +205,11 @@ function updateCrowd(patch: Partial<Crowd>) {
           </div>
         </div>
 
-        <p v-if="error" class="notice">{{ error }}</p>
-        <div v-if="data" class="results">
+        <p v-if="error" class="notice" role="alert">{{ t('common.resultsError', { error }) }}</p>
+        <Announce v-if="data" :text="summary" />
+        <div v-if="data" class="results" :aria-busy="loading">
           <button
-            v-for="r in data.results.filter((x) => methods.includes(x.method))"
+            v-for="r in shown"
             :key="r.method"
             class="result"
             :class="{ active: r.method === primary }"
@@ -191,8 +218,8 @@ function updateCrowd(patch: Partial<Crowd>) {
           >
             <span class="m">{{ methodName(r.method) }}</span>
             <span class="w">
-              <span class="sw" :style="{ background: color(r.outcome.winner) }" />
-              {{ r.outcome.tied.length > 1 ? t('common.tie') : names[r.outcome.winner] }}
+              <span v-if="r.outcome.tied.length === 1" class="sw" :style="{ background: color(r.outcome.winner) }" />
+              {{ winnerName(names, r.outcome) }}
             </span>
             <span v-if="r.spoilers.length" class="small spoil">
               {{ t('sandbox.spoiling', { names: r.spoilers.map((s) => names[s.candidate]).join(', ') }) }}
@@ -206,10 +233,10 @@ function updateCrowd(patch: Partial<Crowd>) {
           </button>
         </div>
 
-        <div v-if="main" class="card">
+        <div v-if="main" class="card" :aria-busy="loading">
           <RoundsView v-model:step="step" :outcome="main.outcome" :names="names" />
         </div>
-        <div v-if="data" class="card">
+        <div v-if="data" class="card" :aria-busy="loading">
           <div class="eyebrow">{{ t('sandbox.headToHead') }}</div>
           <DuelGraph :names="names" :pairwise="data.pairwise" />
         </div>

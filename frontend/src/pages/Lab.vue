@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api'
+import Announce from '../components/Announce.vue'
 import ArrowLab from '../components/ArrowLab.vue'
 import CriteriaTable from '../components/CriteriaTable.vue'
 import DuelGraph from '../components/DuelGraph.vue'
@@ -11,10 +12,10 @@ import RichText from '../components/RichText'
 import WinnerStrip from '../components/WinnerStrip.vue'
 import { useElect } from '../composables/useApi'
 import { useLive } from '../composables/useLive'
-import { ALL_METHODS, rankingsOnly } from '../election'
+import { ALL_METHODS, methodName, rankingsOnly } from '../election'
 import type { ElectionInput, RuleId } from '../types'
 
-const { t } = useI18n()
+const { t, n } = useI18n()
 const allRules: RuleId[] = [...ALL_METHODS, 'pairwise_majority']
 
 // Manipulability sweep: only runs when asked, it is the heaviest request.
@@ -24,6 +25,21 @@ const { data: manipulability, loading: sweeping, error: sweepError } = useLive(
   () => sweep.value,
   (q) => api.manipulability(ALL_METHODS, q.candidates, 120),
 )
+// The sweep takes a while: say when it is done, and what it found.
+const sweepNews = computed(() => {
+  if (sweeping.value) return t('lab.manipulability.running')
+  const rows = manipulability.value
+  if (!rows?.length) return ''
+  const sorted = [...rows].sort((a, b) => b.rate - a.rate)
+  const [most, least] = [sorted[0], sorted[sorted.length - 1]]
+  const pct = (r: number) => n(r, { style: 'percent' })
+  return t('lab.manipulability.done', {
+    most: methodName(most.method),
+    mostShare: pct(most.rate),
+    least: methodName(least.method),
+    leastShare: pct(least.rate),
+  })
+})
 
 // Same ballots, fifteen answers.
 const election = ref<ElectionInput>({
@@ -36,7 +52,7 @@ const election = ref<ElectionInput>({
     { weight: 4, ranking: [2, 0, 1, 3] },
   ],
 })
-const { data } = useElect(() => election.value, ALL_METHODS)
+const { data, error, loading } = useElect(() => election.value, ALL_METHODS)
 const names = computed(() => election.value.candidates)
 const distinct = computed(() => new Set(data.value?.results.map((r) => (r.outcome.tied.length > 1 ? 'tie' : r.outcome.winner))).size)
 let seed = 1
@@ -67,6 +83,8 @@ async function shuffle() {
     <section class="card">
       <h2>{{ t('lab.winners.title') }}</h2>
       <RichText tag="p" :text="t('lab.winners.text', { distinct, methods: ALL_METHODS.length }, distinct)" />
+      <Announce v-if="data" :text="t('lab.winners.text', { distinct, methods: ALL_METHODS.length }, distinct)" />
+      <p v-if="error" class="notice" role="alert">{{ t('common.resultsError', { error }) }}</p>
       <div class="split">
         <div class="stack">
           <div class="row">
@@ -75,9 +93,9 @@ async function shuffle() {
           <p v-if="shuffleError" class="notice" role="alert">{{ shuffleError }}</p>
           <ProfileEditor v-model="election" structural />
         </div>
-        <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" />
+        <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" :aria-busy="loading" />
       </div>
-      <WinnerStrip v-if="data" :outcomes="data.results.map((r) => r.outcome)" :names="names" :condorcet="data.pairwise.condorcet_winner" show-condorcet />
+      <WinnerStrip v-if="data" :aria-busy="loading" :outcomes="data.results.map((r) => r.outcome)" :names="names" :condorcet="data.pairwise.condorcet_winner" show-condorcet />
     </section>
 
     <section class="card">
@@ -103,12 +121,14 @@ async function shuffle() {
             <option :value="4">4</option>
           </select>
         </label>
-        <button class="btn primary small" :disabled="sweeping" @click="sweep = { candidates: sweepCandidates }">
+        <!-- aria-disabled, not disabled: the button keeps focus while the sweep runs. -->
+        <button class="btn primary small" :aria-disabled="sweeping" @click="sweeping || (sweep = { candidates: sweepCandidates })">
           {{ sweeping ? t('lab.manipulability.running') : t('lab.manipulability.run') }}
         </button>
       </div>
-      <p v-if="sweepError" class="notice">{{ sweepError }}</p>
-      <ManipulabilityChart v-if="manipulability" :data="manipulability" />
+      <p v-if="sweepError" class="notice" role="alert">{{ t('common.resultsError', { error: sweepError }) }}</p>
+      <Announce :text="sweepNews" :delay="100" />
+      <ManipulabilityChart v-if="manipulability" :data="manipulability" :aria-busy="sweeping" />
     </section>
   </div>
 </template>

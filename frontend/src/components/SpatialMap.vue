@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { color, initial, onColor } from '../palette'
 import type { Crowd, Point, SpatialCandidate } from '../types'
+import Announce from './Announce.vue'
 
 // The opinion map. Model coordinates are the unit square; the SVG draws it at SIZE.
 const SIZE = 400
@@ -118,6 +119,27 @@ function end() {
   dragging.value = null
 }
 
+// Where a token is, in words: "Ada at 52, 55".
+function where(kind: Kind, index: number, p: Point = position(kind, index)): string {
+  const x = Math.round(p.x * 100)
+  const y = Math.round(p.y * 100)
+  if (kind === 'crowd') return t('spatialMap.crowdAt', { n: props.crowds[index].count, x, y }, props.crowds[index].count)
+  const name = kind === 'candidate' ? props.candidates[index].name : (props.voterLabels[index] ?? t('spatialMap.you'))
+  return t('spatialMap.candidateAt', { name, x, y })
+}
+const moved = ref('')
+
+function key(event: KeyboardEvent, kind: Kind, index: number) {
+  // Tokens are buttons: pressing one selects it and says how to move it.
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    if (kind !== 'voter') emit('select', { kind, index })
+    moved.value = canMove(kind, index) ? t('spatialMap.howToMove', { position: where(kind, index) }) : where(kind, index)
+    return
+  }
+  nudge(event, kind, index)
+}
+
 function nudge(event: KeyboardEvent, kind: Kind, index: number) {
   const step = event.shiftKey ? 0.05 : 0.01
   const delta: Record<string, [number, number]> = {
@@ -130,7 +152,9 @@ function nudge(event: KeyboardEvent, kind: Kind, index: number) {
   if (!d || !canMove(kind, index)) return
   event.preventDefault()
   const cur = position(kind, index)
-  place(kind, index, { x: cur.x + d[0], y: cur.y + d[1] })
+  const p = { x: clamp(cur.x + d[0]), y: clamp(cur.y + d[1]) }
+  place(kind, index, p)
+  moved.value = where(kind, index, p)
 }
 
 const cellSize = computed(() => (props.yee ? SIZE / props.yee.resolution : 0))
@@ -200,7 +224,7 @@ const describe = computed(() => {
       :aria-label="t('spatialMap.crowd', crowd.count)"
       @focus="emit('select', { kind: 'crowd', index: i })"
       @pointerdown="start($event, 'crowd', i)"
-      @keydown="nudge($event, 'crowd', i)"
+      @keydown="key($event, 'crowd', i)"
     >
       <circle :cx="crowd.x * SIZE" :cy="crowd.y * SIZE" :r="Math.max(crowd.spread * SIZE, 10) + 6" />
     </g>
@@ -249,7 +273,7 @@ const describe = computed(() => {
       :aria-label="winner === i ? t('spatialMap.winning', { name: c.name }) : c.name"
       @focus="emit('select', { kind: 'candidate', index: i })"
       @pointerdown="start($event, 'candidate', i)"
-      @keydown="nudge($event, 'candidate', i)"
+      @keydown="key($event, 'candidate', i)"
     >
       <circle class="hit" r="24" />
       <circle v-if="winner === i" class="win-ring" r="21" />
@@ -268,13 +292,15 @@ const describe = computed(() => {
       role="button"
       :aria-label="voterLabels[i] ?? t('spatialMap.you')"
       @pointerdown="start($event, 'voter', i)"
-      @keydown="nudge($event, 'voter', i)"
+      @keydown="key($event, 'voter', i)"
     >
       <circle class="hit" r="22" />
       <circle class="dot" r="9" :fill="color(nearest(v))" />
       <text class="name" y="25">{{ voterLabels[i] ?? t('spatialMap.you') }}</text>
     </g>
   </svg>
+  <!-- A live region has to be HTML, so it sits beside the SVG. -->
+  <Announce :text="moved" :delay="250" />
 </template>
 
 <style scoped>

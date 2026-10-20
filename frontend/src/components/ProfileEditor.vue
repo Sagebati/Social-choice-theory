@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ordinal } from '../i18n'
 import { color, initial, onColor } from '../palette'
 import type { ElectionInput } from '../types'
+import Announce from './Announce.vue'
 
 // Edit blocs of voters: how many voters, and in what order they rank the
 // candidates. Rankings are edited by nudging a candidate left (up the ballot).
@@ -33,13 +36,26 @@ function setWeight(g: number, w: number) {
   update((e) => (e.ballots[g].weight = Math.max(0, Math.min(props.maxWeight, Math.round(w) || 0))))
 }
 
-function raise(g: number, pos: number) {
-  if (pos === 0) return
+const root = ref<HTMLElement | null>(null)
+const moved = ref('')
+
+async function raise(g: number, pos: number) {
+  if (lockedAt(pos)) return
+  const c = election.value.ballots[g].ranking[pos]
   update((e) => {
     const r = e.ballots[g].ranking
     ;[r[pos - 1], r[pos]] = [r[pos], r[pos - 1]]
   })
+  moved.value = t('profileEditor.moved', { name: election.value.candidates[c], pos: ordinal(pos), n: g + 1 })
+  // Reordering the list can move the focused button out of the document and
+  // back, which drops focus: put it back on the candidate that moved.
+  await nextTick()
+  root.value?.querySelector<HTMLElement>(`[data-bloc="${g}"][data-cand="${c}"]`)?.focus()
 }
+
+// The top candidate can't move up, but their button stays focusable
+// (aria-disabled, not disabled) so focus survives the move that put them there.
+const lockedAt = (pos: number) => props.lockRankings || pos === 0
 
 function addBloc() {
   update((e) => e.ballots.push({ weight: 1, ranking: e.candidates.map((_, i) => i) }))
@@ -51,7 +67,7 @@ function removeBloc(g: number) {
 </script>
 
 <template>
-  <div class="profile">
+  <div ref="root" class="profile">
     <div v-for="(b, g) in election.ballots" :key="g" class="bloc" :class="{ highlight: highlight.includes(g) }">
       <div class="weight">
         <template v-if="!lockWeights">
@@ -74,17 +90,20 @@ function removeBloc(g: number) {
           <button
             class="cand"
             :style="{ background: color(c), color: onColor(c) }"
-            :disabled="lockRankings || pos === 0"
-            :title="lockRankings || pos === 0 ? election.candidates[c] : t('profileEditor.moveUp', { name: election.candidates[c] })"
+            :data-bloc="g"
+            :data-cand="c"
+            :disabled="lockRankings"
+            :aria-disabled="pos === 0"
+            :title="lockedAt(pos) ? election.candidates[c] : t('profileEditor.moveUp', { name: election.candidates[c] })"
             :aria-label="
-              t(lockRankings || pos === 0 ? 'profileEditor.position' : 'profileEditor.positionMovable', {
+              t(lockedAt(pos) ? 'profileEditor.position' : 'profileEditor.positionMovable', {
                 pos: pos + 1,
                 name: election.candidates[c],
               })
             "
             @click="raise(g, pos)"
           >
-            <span v-if="!lockRankings && pos > 0" class="arrow" aria-hidden="true">‹</span>
+            <span v-if="!lockedAt(pos)" class="arrow" aria-hidden="true">‹</span>
             <span class="init" aria-hidden="true">{{ initial(election.candidates[c], election.candidates) }}</span>
             <span class="nm">{{ election.candidates[c] }}</span>
           </button>
@@ -95,6 +114,7 @@ function removeBloc(g: number) {
     </div>
     <button v-if="structural" class="btn small" @click="addBloc">{{ t('profileEditor.addBloc') }}</button>
     <p v-if="!lockRankings" class="hint muted small">{{ t('profileEditor.hint') }}</p>
+    <Announce :text="moved" :delay="150" />
   </div>
 </template>
 
@@ -181,11 +201,12 @@ function removeBloc(g: number) {
   font-size: 0.88rem;
 }
 
-.cand:disabled {
+.cand:disabled,
+.cand[aria-disabled='true'] {
   cursor: default;
 }
 
-.cand:not(:disabled):hover {
+.cand:not(:disabled):not([aria-disabled='true']):hover {
   filter: brightness(1.08);
 }
 

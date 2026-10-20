@@ -61,6 +61,15 @@ const edges = computed(() => {
   return out
 })
 
+// The drawing in words, for screen readers: every contest, winner first.
+const contests = computed(() =>
+  edges.value.map((e) => {
+    const m = props.pairwise.matrix
+    const params = { a: props.names[e.a], b: props.names[e.b], for: m[e.a][e.b], against: m[e.b][e.a] }
+    return e.tie ? t('duelGraph.tiesWith', params) : t('duelGraph.beatsBy', params)
+  }),
+)
+
 const summary = computed(() => {
   const cw = props.pairwise.condorcet_winner
   if (cw !== null) return t('duelGraph.beatsEveryone', { name: props.names[cw] })
@@ -75,7 +84,8 @@ const summary = computed(() => {
 
 <template>
   <figure class="duels">
-    <svg :viewBox="`0 0 ${W} ${W}`" role="img" :aria-label="t('duelGraph.aria', { summary })">
+    <!-- The figcaption names the figure and the list below reads it out, so the drawing itself is hidden. -->
+    <svg :viewBox="`0 0 ${W} ${W}`" aria-hidden="true">
       <defs>
         <marker :id="arrowId" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
           <path d="M 0 0 L 10 5 L 0 10 z" class="head" />
@@ -95,6 +105,9 @@ const summary = computed(() => {
         <text class="initial" dy="0.35em" :fill="onColor(node.i)">{{ initial(node.name, names) }}</text>
       </g>
     </svg>
+    <ul class="visually-hidden" :aria-label="t('duelGraph.list')">
+      <li v-for="(text, k) in contests" :key="k">{{ text }}</li>
+    </ul>
     <figcaption>{{ summary }}</figcaption>
   </figure>
 </template>

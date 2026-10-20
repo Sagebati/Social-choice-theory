@@ -39,6 +39,7 @@ export default {
     tieBetween: 'tie: {names}',
     loading: 'Loading…',
     close: 'Close',
+    resultsError: 'The results could not be updated: {error}',
   },
 
   methods: {
@@ -91,6 +92,8 @@ export default {
     next: 'Next round →',
     winner: 'Winner: <strong>{name}</strong>',
     tiebreak: '(a tie was broken by candidate order)',
+    tally: '{name} {value}',
+    summary: '{round}: {tallies}.',
   },
 
   winnerStrip: {
@@ -98,5 +101,9 @@ export default {
     notCondorcet: '✗ not Condorcet',
     champion: 'Head-to-head champion',
     cycle: 'nobody: a cycle',
+    wins: '{name} wins under {methods}.',
+    tied: 'A tie between {names} under {methods}.',
+    championIs: 'Head-to-head champion: {name}.',
+    noChampion: 'No head-to-head champion: the majorities go round in a cycle.',
   },
 }
