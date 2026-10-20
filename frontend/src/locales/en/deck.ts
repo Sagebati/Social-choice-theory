@@ -6,7 +6,6 @@ export default {
   deck: {
     aria: "Riverton's town square",
     loading: 'Counting the ballots…',
-    turn: 'Turn your phone sideways for the whole town square.',
     // Buttons and the tab title. The stage draws the arrows beside the words.
     back: 'Back',
     skip: 'Skip',
@@ -17,6 +16,8 @@ export default {
     tab: 'Slide {n} of {total}: {title} · {site}',
     voters: 'voters',
     majority: 'majority · {n}',
+    // On a phone, the majority's label stands on two lines beside the piles.
+    majorityLines: 'majority\n{n}',
     out: 'out',
     // What a screen reader hears of the stamps, the bubbles and the numbers that float up.
     isOut: '{name} is out.',

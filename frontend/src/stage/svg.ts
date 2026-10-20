@@ -58,3 +58,11 @@ export function asButton(e: SVGElement, label: string, onClick: () => void) {
     }
   })
 }
+
+/** An HTML element for the words and buttons around the picture. */
+export function html<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: Element): HTMLElementTagNameMap[K] {
+  const e = document.createElement(tag)
+  if (cls) e.className = cls
+  parent?.appendChild(e)
+  return e
+}

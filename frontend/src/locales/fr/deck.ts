@@ -4,7 +4,6 @@ const deck: typeof source = {
   deck: {
     aria: 'La grand-place de Riverton',
     loading: 'Dépouillement en cours…',
-    turn: 'Tournez votre téléphone pour voir toute la place.',
     back: 'Retour',
     skip: 'Passer',
     next: 'Continuer',
@@ -14,6 +13,7 @@ const deck: typeof source = {
     tab: 'Diapositive {n} sur {total} : {title} · {site}',
     voters: 'électeurs',
     majority: 'majorité · {n}',
+    majorityLines: 'majorité\n{n}',
     out: 'hors course',
     isOut: '{name} est hors course.',
     groupStamp: 'Groupe de {name} : {stamp}.',
