@@ -22,6 +22,20 @@ const messages: typeof source = {
     notCondorcet: 'pas le vainqueur de Condorcet',
     headToHead: 'Face-à-face',
     canLie: 'Peut-on gagner en mentant avec la méthode « {method} » ?',
+    wins: '{method} : {name} gagne.',
+    ties: '{method} : égalité entre {names}.',
+    yeeError: 'Le diagramme de Yee n’a pas pu être tracé : {error}',
+  },
+
+  mapLegend: {
+    aria: 'Légende de la carte',
+    dots: 'Chaque point est un électeur, coloré selon le candidat que son bulletin place en tête.',
+    dotsRound: 'Chaque point est un électeur, coloré selon le candidat pour qui son bulletin compte à ce tour.',
+    rings: 'Les points cerclés ont voté de façon stratégique.',
+    yee: 'Les zones colorées montrent qui la méthode « {method} » élit quand une foule est centrée à cet endroit.',
+    voters: '{share} des électeurs',
+    map: 'gagne sur {share} de la carte',
+    none: 'Plus aucun candidat',
   },
 
   rigging: {
@@ -91,6 +105,8 @@ const messages: typeof source = {
     howToRig: 'Comment la truquer',
     tryIt: 'Essayer',
     criteriaAria: 'Critères',
+    satisfied: 'respecté',
+    canFail: 'peut échouer',
   },
 
   lab: {
@@ -116,6 +132,7 @@ const messages: typeof source = {
       candidates: 'Candidats',
       running: 'Calcul en cours…',
       run: 'Lancer l’expérience',
+      done: 'Expérience terminée. La plus manipulable : {most} ({mostShare}). La moins : {least} ({leastShare}).',
     },
   },
 
@@ -192,6 +209,9 @@ const messages: typeof source = {
       clones: 'Insensible aux clones',
     },
     always: '{method} respecte toujours le critère « {criterion} »',
+    satisfied: 'toujours respecté',
+    aria: 'Les méthodes face aux critères d’équité',
+    found: 'Contre-exemple trouvé.',
     show: 'Montrer une élection où {method} enfreint le critère « {criterion} »',
     failsAria: '{method} enfreint le critère « {criterion} » : voir un exemple',
     legend: '✓ toujours respecté · ✗ peut échouer : touchez-le et le serveur cherchera une élection concrète.',
@@ -201,7 +221,9 @@ const messages: typeof source = {
   },
 
   duelGraph: {
-    aria: 'Résultats des face-à-face. {summary}',
+    list: 'Tous les face-à-face',
+    beatsBy: '{a} bat {b}, {for} à {against}.',
+    tiesWith: '{a} et {b} sont à égalité, {for} à {against}.',
     beatsEveryone: '{name} bat tout le monde en face-à-face.',
     beats: 'bat',
     cycle: 'Pas de vainqueur de Condorcet : {cycle}.',
@@ -221,6 +243,7 @@ const messages: typeof source = {
     liars: '{n} menteur | {n} menteurs',
     apply: 'Appliquer ce mensonge',
     partOnly: 'Seule la partie du bulletin que lit cette méthode est modifiée.',
+    found: '{n} mensonge payant trouvé. | {n} mensonges payants trouvés.',
   },
 
   profileEditor: {
@@ -235,6 +258,7 @@ const messages: typeof source = {
     remove: 'Supprimer',
     addBloc: '+ Ajouter un bloc d’électeurs',
     hint: 'Touchez un candidat pour le faire monter sur le bulletin de ce bloc.',
+    moved: '{name} passe en {pos} position dans le bloc {n}',
   },
 
   scenarioLab: {
@@ -252,6 +276,8 @@ const messages: typeof source = {
     crowd: 'Foule de {n} électeur | Foule de {n} électeurs',
     winning: '{name}, en tête',
     you: 'Vous',
+    crowdAt: 'Foule de {n} électeur en {x}, {y} | Foule de {n} électeurs en {x}, {y}',
+    howToMove: '{position}. Utilisez les flèches pour le déplacer, avec Maj pour aller plus vite.',
   },
 }
 

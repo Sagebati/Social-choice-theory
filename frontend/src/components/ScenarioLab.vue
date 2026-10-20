@@ -21,7 +21,7 @@ watch(
     method.value = props.scenario.methods[0]
   },
 )
-const { data } = useElect(() => election.value, () => props.scenario.methods)
+const { data, error, loading } = useElect(() => election.value, () => props.scenario.methods)
 const names = computed(() => election.value.candidates)
 
 function apply(e: Election) {
@@ -39,10 +39,11 @@ function apply(e: Election) {
           <button class="btn small" @click="election = rankingsOnly(scenario.election)">{{ $t('scenarioLab.reset') }}</button>
         </div>
         <ProfileEditor v-model="election" structural />
-        <WinnerStrip v-if="data" :outcomes="data.results.map((r) => r.outcome)" :names="names" :condorcet="data.pairwise.condorcet_winner" show-condorcet />
+        <p v-if="error" class="notice" role="alert">{{ $t('common.resultsError', { error }) }}</p>
+        <WinnerStrip v-if="data" :aria-busy="loading" :outcomes="data.results.map((r) => r.outcome)" :names="names" :condorcet="data.pairwise.condorcet_winner" show-condorcet />
       </div>
       <div class="stack">
-        <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" />
+        <DuelGraph v-if="data" :names="names" :pairwise="data.pairwise" :aria-busy="loading" />
         <div>
           <div class="row small">
             {{ $t('scenarioLab.rigUnder') }}

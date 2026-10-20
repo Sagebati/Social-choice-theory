@@ -38,6 +38,7 @@ const app: typeof source = {
     tieBetween: 'égalité : {names}',
     loading: 'Chargement…',
     close: 'Fermer',
+    resultsError: 'Les résultats n’ont pas pu être mis à jour : {error}',
   },
 
   methods: {
@@ -90,6 +91,8 @@ const app: typeof source = {
     next: 'Tour suivant →',
     winner: 'Vainqueur : <strong>{name}</strong>',
     tiebreak: '(égalité départagée par l’ordre des candidats)',
+    tally: '{name} {value}',
+    summary: '{round} : {tallies}.',
   },
 
   winnerStrip: {
@@ -97,6 +100,10 @@ const app: typeof source = {
     notCondorcet: '✗ pas Condorcet',
     champion: 'Champion des duels',
     cycle: 'personne : un cycle',
+    wins: '{name} gagne avec {methods}.',
+    tied: 'Égalité entre {names} avec {methods}.',
+    championIs: 'Champion des duels : {name}.',
+    noChampion: 'Pas de champion des duels : les majorités tournent en cycle.',
   },
 }
 

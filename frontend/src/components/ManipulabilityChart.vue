@@ -26,7 +26,6 @@ const pct = (r: number) => n(r, { style: 'percent' })
         class="row"
         role="row"
         :class="{ hl: highlight === r.method }"
-        tabindex="0"
         :title="t('manipulability.rowTitle', { method: methodName(r.method), n: r.manipulable, samples: r.samples, share: pct(r.rate) })"
       >
         <span class="label" role="rowheader">{{ methodName(r.method) }}</span>
@@ -69,8 +68,7 @@ const pct = (r: number) => n(r, { style: 'percent' })
   border-radius: 4px;
 }
 
-.row:hover .fill,
-.row:focus-visible .fill {
+.row:hover .fill {
   filter: brightness(1.12);
 }
 

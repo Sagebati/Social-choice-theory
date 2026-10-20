@@ -47,4 +47,24 @@ describe('useLive', () => {
     await tick()
     expect(live.error.value).toBe('boom')
   })
+
+  it('reports a failure at once, even with a newer input queued, and clears it on the next answer', async () => {
+    const pending: ((ok: boolean) => void)[] = []
+    const input = ref(1)
+    const live = useLive(
+      () => input.value,
+      (n: number) =>
+        new Promise<number>((resolve, reject) => pending.push((ok) => (ok ? resolve(n) : reject(new Error('down'))))),
+    )
+    input.value = 2
+    await nextTick()
+    pending.shift()!(false)
+    await tick()
+    expect(live.error.value).toBe('down')
+    expect(live.loading.value).toBe(true)
+    pending.shift()!(true)
+    await tick()
+    expect(live.error.value).toBeNull()
+    expect(live.data.value).toBe(2)
+  })
 })

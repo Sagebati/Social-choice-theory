@@ -245,6 +245,36 @@ button {
   font-size: 0.92rem;
 }
 
+/* Results being recomputed are dimmed, but only once the wait is noticeable,
+   so a quick drag doesn't flicker. They come back at once. */
+[aria-busy] {
+  transition: opacity 0.15s;
+}
+
+[aria-busy='true'] {
+  opacity: 0.6;
+  transition: opacity 0.2s 0.3s;
+}
+
+/* A button that is off for now but keeps focus, unlike one that is disabled. */
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn[aria-disabled='true']:hover {
+  background: var(--surface);
+}
+
+.btn[aria-disabled='true']:active {
+  transform: none;
+}
+
+.btn.primary[aria-disabled='true']:hover {
+  background: var(--ink);
+  opacity: 0.45;
+}
+
 input[type='range'] {
   width: 100%;
   accent-color: var(--ink);

@@ -22,6 +22,20 @@ export default {
     notCondorcet: 'not the Condorcet winner',
     headToHead: 'Head to head',
     canLie: 'Can anyone win by lying under {method}?',
+    wins: '{method}: {name} wins.',
+    ties: '{method}: a tie between {names}.',
+    yeeError: 'The Yee map could not be drawn: {error}',
+  },
+
+  mapLegend: {
+    aria: 'Map key',
+    dots: 'Each dot is a voter, coloured by the candidate their ballot puts first.',
+    dotsRound: 'Each dot is a voter, coloured by the candidate their ballot counts for in this round.',
+    rings: 'Ringed dots cast a strategic ballot.',
+    yee: 'The shading shows who {method} elects when a crowd is centred on that spot.',
+    voters: '{share} of voters',
+    map: 'wins {share} of the map',
+    none: 'No candidate left',
   },
 
   rigging: {
@@ -91,6 +105,8 @@ export default {
     howToRig: 'How to rig it',
     tryIt: 'Try it',
     criteriaAria: 'Criteria',
+    satisfied: 'satisfied',
+    canFail: 'can fail',
   },
 
   lab: {
@@ -116,6 +132,7 @@ export default {
       candidates: 'Candidates',
       running: 'Running…',
       run: 'Run the experiment',
+      done: 'Experiment finished. Most manipulable: {most} ({mostShare}). Least: {least} ({leastShare}).',
     },
   },
 
@@ -192,6 +209,9 @@ export default {
       clones: 'Clone-proof',
     },
     always: '{method} always satisfies {criterion}',
+    satisfied: 'always satisfied',
+    aria: 'Methods against fairness criteria',
+    found: 'Counterexample found.',
     show: 'Show an election where {method} breaks {criterion}',
     failsAria: '{method} fails {criterion}: show an example',
     legend: '✓ always satisfied · ✗ can fail: tap it and the server will search for a concrete election.',
@@ -201,7 +221,9 @@ export default {
   },
 
   duelGraph: {
-    aria: 'Head-to-head results. {summary}',
+    list: 'Every head-to-head contest',
+    beatsBy: '{a} beats {b}, {for} to {against}.',
+    tiesWith: '{a} and {b} tie, {for} to {against}.',
     beatsEveryone: '{name} beats everyone head to head.',
     beats: 'beats',
     cycle: 'No Condorcet winner: {cycle}.',
@@ -221,6 +243,7 @@ export default {
     liars: '{n} liar | {n} liars',
     apply: 'Apply this lie',
     partOnly: 'Only the part of the ballot this method reads is changed.',
+    found: 'Found {n} profitable lie. | Found {n} profitable lies.',
   },
 
   profileEditor: {
@@ -235,6 +258,7 @@ export default {
     remove: 'Remove',
     addBloc: '+ Add a bloc of voters',
     hint: "Tap a candidate to move them up that bloc's ballot.",
+    moved: '{name} now {pos} in bloc {n}',
   },
 
   scenarioLab: {
@@ -251,5 +275,7 @@ export default {
     crowd: 'Crowd of {n} voter | Crowd of {n} voters',
     winning: '{name}, winning',
     you: 'You',
+    crowdAt: 'Crowd of {n} voter at {x}, {y} | Crowd of {n} voters at {x}, {y}',
+    howToMove: '{position}. Use the arrow keys to move it, with Shift for bigger steps.',
   },
 }

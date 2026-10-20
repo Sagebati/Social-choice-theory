@@ -6,6 +6,7 @@ import { useLive } from '../composables/useLive'
 import { methodName } from '../election'
 import { listOf } from '../i18n'
 import type { ArrowProfile, RuleId } from '../types'
+import Announce from './Announce.vue'
 import ArrowProfileView from './ArrowProfile.vue'
 import RichText from './RichText'
 
@@ -46,6 +47,22 @@ watch(report, (r) => {
   if (r) emit('checked', r.rule, met.value)
 })
 
+// The rules are a radio group: one tab stop, on the chosen rule, and the arrow
+// keys move the choice along it.
+const group = ref<HTMLElement | null>(null)
+function roam(event: KeyboardEvent) {
+  const step: Record<string, number> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }
+  const i = props.rules.indexOf(rule.value)
+  let next: number
+  if (event.key in step) next = (i + step[event.key] + props.rules.length) % props.rules.length
+  else if (event.key === 'Home') next = 0
+  else if (event.key === 'End') next = props.rules.length - 1
+  else return
+  event.preventDefault()
+  rule.value = props.rules[next]
+  group.value?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus()
+}
+
 function verdict(profile: ArrowProfile, a: number, b: number, names: string[]): string {
   if (!profile.social) return t('arrowLab.verdict.cycle')
   const tier = (c: number) => profile.social!.findIndex((group) => group.includes(c))
@@ -60,7 +77,7 @@ function verdict(profile: ArrowProfile, a: number, b: number, names: string[]): 
 <template>
   <div class="arrow-lab">
     <div class="controls">
-      <div class="row" role="radiogroup" :aria-label="t('arrowLab.ruleAria')">
+      <div ref="group" class="row" role="radiogroup" :aria-label="t('arrowLab.ruleAria')" @keydown="roam">
         <button
           v-for="r in rules"
           :key="r"
@@ -68,24 +85,28 @@ function verdict(profile: ArrowProfile, a: number, b: number, names: string[]): 
           :class="{ primary: rule === r }"
           role="radio"
           :aria-checked="rule === r"
+          :tabindex="rule === r ? 0 : -1"
           @click="rule = r"
         >
           {{ ruleName(r) }}
         </button>
       </div>
-      <label class="row small">
-        {{ t('arrowLab.voters') }}
-        <select v-model.number="voters">
-          <option :value="2">2</option>
-          <option :value="3">3</option>
-          <option :value="4">4</option>
-        </select>
+      <div class="row small">
+        <label class="row">
+          {{ t('arrowLab.voters') }}
+          <select v-model.number="voters">
+            <option :value="2">2</option>
+            <option :value="3">3</option>
+            <option :value="4">4</option>
+          </select>
+        </label>
         <span v-if="report" class="muted">{{ t('arrowLab.checking', { n: report.profiles }) }}</span>
-      </label>
+      </div>
     </div>
 
-    <p v-if="error" class="notice">{{ error }}</p>
-    <div v-if="report" class="results" :class="{ stale: loading }">
+    <p v-if="error" class="notice" role="alert">{{ error }}</p>
+    <Announce v-if="report" :text="t('arrowLab.score', { rule: ruleName(report.rule), met })" />
+    <div v-if="report" class="results" :aria-busy="loading">
       <RichText tag="p" class="score" :text="t('arrowLab.score', { rule: ruleName(report.rule), met })" />
       <div class="cards">
         <div v-for="c in conditions" :key="c.key" class="cond" :class="c.ok ? 'ok' : 'fail'">
@@ -171,11 +192,6 @@ function verdict(profile: ArrowProfile, a: number, b: number, names: string[]): 
   flex-direction: column;
   gap: 0.6rem;
   margin-bottom: 0.9rem;
-}
-
-.stale {
-  opacity: 0.55;
-  transition: opacity 0.2s;
 }
 
 .score {
