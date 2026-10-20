@@ -16,24 +16,15 @@ import type {
   SpatialResponse,
   YeeResponse,
 } from './types'
+import { compute } from './engine'
 import { locale, type Locale } from './i18n'
 
-const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? ''
+// The library runs in the browser (src/engine) and writes its explanations
+// (round notes, method descriptions, errors) in the language asked for.
+const request = <T>(path: string, body?: unknown, lang: Locale = locale.value): Promise<T> =>
+  compute<T>(path.slice(1), lang, body)
 
-// The API writes its explanations (round notes, method descriptions, errors)
-// in the language asked for.
-async function request<T>(path: string, body?: unknown, lang: Locale = locale.value): Promise<T> {
-  const init: RequestInit | undefined =
-    body === undefined
-      ? undefined
-      : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }
-  const response = await fetch(`${BASE}/api${path}?lang=${lang}`, init)
-  const data = await response.json().catch(() => ({ error: response.statusText }))
-  if (!response.ok) throw new Error((data as { error?: string }).error ?? response.statusText)
-  return data as T
-}
-
-// The catalogue never changes while the page is open, so fetch it once per language.
+// The catalogue never changes while the page is open, so ask for it once per language.
 const once = <T>(path: string) => {
   const cached = new Map<Locale, Promise<T>>()
   return () => {

@@ -2,9 +2,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// During development the API runs under `wrangler dev` on port 8787.
-const api = { '/api': 'http://127.0.0.1:8787' }
-
 export default defineConfig({
   plugins: [vue()],
   define: {
@@ -13,8 +10,8 @@ export default defineConfig({
     __VUE_I18N_FULL_INSTALL__: true,
     __INTLIFY_PROD_DEVTOOLS__: false,
   },
-  server: { proxy: api },
-  preview: { proxy: api },
+  // The library runs in module workers (src/engine), which import the wasm bindings.
+  worker: { format: 'es' },
   test: {
     // The locale test globs every source file; a cached transform would miss
     // files added since.

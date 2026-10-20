@@ -21,7 +21,7 @@ export default {
     },
     language: 'Language',
     footer:
-      'Built on a Rust library of social choice theory, served from a Cloudflare Worker. Every result on this page is computed by the server, not looked up.',
+      'Built on a Rust library of social choice theory, compiled to WebAssembly and run in your browser. Every result on this page is computed as you go, not looked up.',
   },
 
   common: {
@@ -33,7 +33,7 @@ export default {
       score: 'score',
     },
     voters: '{n} voter | {n} voters',
-    apiError: 'Could not reach the API: {error}',
+    apiError: 'The calculation failed: {error}',
     tie: 'tie',
     tieBetween: 'tie: {names}',
     loading: 'Loading…',

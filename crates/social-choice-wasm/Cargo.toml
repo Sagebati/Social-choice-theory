@@ -1,0 +1,19 @@
+[package]
+name = "social-choice-wasm"
+version = "0.1.0"
+description = "The social-choice library's JSON API, compiled to WebAssembly for the browser."
+edition.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+social-choice = { path = "../social-choice" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_path_to_error = "0.1"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"

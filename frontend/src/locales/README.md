@@ -27,8 +27,9 @@ Writing messages:
 * French: type ordinary spaces before `: ; ! ?` and inside `« »`;
   `typeset.ts` makes them non-breaking.
 
-The API answers in the reader's language too: every request carries
-`?lang=en|fr`, and `useLive` fetches again when the language changes.
+The Rust library answers in the reader's language too: every call to `api`
+passes the current locale, and `useLive` asks again when the language changes.
 
 To add a language: copy `fr/` to `<code>/`, translate, register it in
-`src/i18n.ts` (`LOCALES` and `messages`), and teach the API its text.
+`src/i18n.ts` (`LOCALES` and `messages`), and teach the Rust library
+its text (`Lang` in `crates/social-choice`).

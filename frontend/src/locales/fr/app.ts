@@ -21,7 +21,7 @@ const app: typeof source = {
     },
     language: 'Langue',
     footer:
-      'Construit sur une bibliothèque Rust de théorie du choix social, servie par un Worker Cloudflare. Chaque résultat de cette page est calculé par le serveur, rien n’est recopié.',
+      'Construit sur une bibliothèque Rust de théorie du choix social, compilée en WebAssembly et exécutée dans votre navigateur. Chaque résultat de cette page est calculé à la volée, rien n’est recopié.',
   },
 
   common: {
@@ -33,7 +33,7 @@ const app: typeof source = {
       score: 'note',
     },
     voters: '{n} électeur | {n} électeurs',
-    apiError: 'Impossible de joindre l’API : {error}',
+    apiError: 'Le calcul a échoué : {error}',
     tie: 'égalité',
     tieBetween: 'égalité : {names}',
     loading: 'Chargement…',

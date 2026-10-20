@@ -1,0 +1,4 @@
+# Read by Cloudflare's static hosting. Vite names every file under /assets by
+# its content hash, so browsers may keep them for good.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
