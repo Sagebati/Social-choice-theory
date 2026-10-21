@@ -31,8 +31,6 @@
 .town-stage .card-sq { stroke: var(--surface); stroke-width: 1; }
 
 /* Type */
-.town-stage .title { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; }
-.town-stage .caption { font-size: 20px; font-weight: 500; fill: var(--ink-2); }
 .town-stage .group-name { font-size: 18px; font-weight: 750; }
 .town-stage .group-n { font-size: 16px; fill: var(--muted); font-weight: 600; }
 .town-stage .cand-name { font-size: 18px; font-weight: 700; }
@@ -92,17 +90,7 @@
 .town-stage .pop { transform-box: fill-box; transform-origin: 50% 100%; animation: stage-pop 0.3s ease-out backwards; }
 @keyframes stage-pop { from { transform: scale(0.6); opacity: 0; } }
 
-/* Controls */
-.town-stage .sbtn { cursor: pointer; }
-.town-stage .sbtn rect { fill: var(--surface); stroke: var(--ink); stroke-width: 1.5; }
-.town-stage .sbtn text { font-size: 17px; font-weight: 700; }
-.town-stage .sbtn.primary rect { fill: var(--ink); }
-.town-stage .sbtn.primary text { fill: var(--surface); }
-.town-stage .sbtn.ghost rect { fill: var(--surface); stroke: var(--border); }
-.town-stage .sbtn:hover rect { stroke-width: 2.6; }
-.town-stage .sbtn:focus,
-.town-stage .hit:focus { outline: none; }
-.town-stage .sbtn:focus-visible rect { stroke: var(--c0); stroke-width: 3.5; }
+/* Targets in the picture: a candidate to bet on or tick, a face to hear */
 .town-stage .hit { fill: transparent; cursor: pointer; }
 .town-stage .hit:focus-visible { stroke: var(--c0); stroke-width: 3; }
 .town-stage .pulse {
@@ -119,26 +107,10 @@
 .town-stage .ring.good { stroke: var(--good); stroke-dasharray: none; stroke-width: 3; }
 .town-stage .ring.bad { stroke: var(--bad); stroke-dasharray: none; stroke-width: 3; }
 .town-stage .bet-label { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; fill: var(--ink-2); }
-.town-stage .dot { fill: var(--axis); }
-.town-stage .dot.here { fill: var(--ink); }
-.town-stage .dot-btn { cursor: pointer; }
-.town-stage .dot-hit { fill: transparent; }
-.town-stage .dot-btn:hover .dot:not(.here) { fill: var(--ink-2); }
-.town-stage .dot-btn:focus { outline: none; }
-.town-stage .dot-btn:focus-visible .dot-hit { stroke: var(--c0); stroke-width: 3; }
-/* The focus waits on the title while the buttons change; it is not a control. */
-.town-stage .title:focus { outline: none; }
 
-/* Panels over the dimmed scene: how it works, thinking a tactic through, the lesson */
+/* Behind a panel the scene dims; a trail of little clouds leads to whoever is thinking */
 .town-stage .dim { opacity: 0.16; }
-.town-stage .thought rect { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
 .town-stage .thought-dot { fill: var(--surface); stroke: var(--ink); stroke-width: 2; }
-.town-stage .thought-text { font-size: 21px; font-weight: 650; }
-.town-stage .thought-step { font-size: 21px; font-weight: 850; fill: var(--muted); }
-.town-stage .thought-rule { stroke: var(--axis); stroke-width: 1.5; }
-.town-stage .thought-name { font-size: 15px; font-weight: 850; letter-spacing: 0.1em; }
-.town-stage .thought-def { font-size: 18px; fill: var(--ink-2); }
-.town-stage .thought { transform-origin: 50% 0%; }
 
 /* The reader's own approval ballot */
 .town-stage .ring.ticked { stroke: var(--ink); stroke-dasharray: none; stroke-width: 3; }
@@ -158,3 +130,243 @@
   .town-stage .out,
   .town-stage .fade { transition: none; }
 }
+
+/* A candidate knocked out, and a bet settled, on the compact stage. */
+.town-stage .out-badge,
+.town-stage .bet-badge.bad { fill: var(--bad); }
+.town-stage .bet-badge.good { fill: var(--good); }
+.town-stage .out-mark { font-size: 13px; font-weight: 900; fill: var(--surface); }
+
+/* The compact stage is drawn at about one unit to the pixel: no word under 13 units. */
+.town-stage.compact .group-name { font-size: 14px; }
+.town-stage.compact .group-n { font-size: 13px; }
+.town-stage.compact .cand-name { font-size: 14px; }
+.town-stage.compact .big-name { font-size: 16px; }
+.town-stage.compact .role,
+.town-stage.compact .small-role { font-size: 13px; }
+.town-stage.compact .duel-letter { font-size: 20px; }
+.town-stage.compact .count { font-size: 15px; }
+.town-stage.compact .bet-label { font-size: 13px; letter-spacing: 0.06em; }
+.town-stage.compact .big { font-size: 26px; }
+.town-stage.compact .huge { font-size: 80px; }
+.town-stage.compact .float { font-size: 17px; }
+.town-stage.compact .bubble text { font-size: 14px; }
+.town-stage.compact .stamp text { font-size: 14px; letter-spacing: 0.08em; }
+.town-stage.compact .head { stroke-width: 1.2; }
+.town-stage.compact .spoke .head { stroke-width: 1.6; }
+.town-stage.compact .mouth { stroke-width: 1.3; }
+
+/* ---- The words and buttons around the picture (HTML). */
+
+.stage {
+  --u: 1px;
+  --ox: 0px;
+  --oy: 0px;
+  position: relative;
+  color: var(--ink);
+}
+
+.stage [hidden] { display: none !important; }
+.stage .scene { position: relative; }
+.stage .town-stage { position: absolute; inset: 0; }
+.stage p { margin: 0; }
+
+.stage .stage-title { font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+/* The focus waits on the title while the buttons change; it is not a control. */
+.stage .stage-title:focus { outline: none; }
+.stage .stage-caption { font-weight: 500; color: var(--ink-2); }
+
+/* Buttons */
+.stage .sbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 max(14px, calc(var(--u) * 20));
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.stage .sbtn.primary { background: var(--ink); color: var(--surface); }
+.stage .sbtn.ghost { border-color: var(--border); }
+.stage .sbtn:hover { box-shadow: inset 0 0 0 1.1px var(--ink); }
+.stage .sbtn:focus-visible { outline: 3px solid var(--c0); outline-offset: 2px; }
+.stage .choices,
+.stage .links { display: flex; }
+
+/* The bets board */
+.stage .hud { display: grid; grid-template-columns: repeat(6, auto); justify-content: start; }
+.stage .hud-label,
+.stage .thought .eyebrow {
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.stage .hud-label { grid-column: 1 / -1; }
+.stage .hud .cell {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 800;
+}
+.stage .hud .cell.known { border: none; }
+.stage .hud .cell { position: relative; }
+.stage .hud .mark { position: absolute; font-weight: 750; text-align: center; }
+.stage .good { color: var(--good); }
+.stage .bad { color: var(--bad); }
+
+/* The slide dots */
+.stage .dots { display: flex; }
+.stage .dot-btn {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}
+.stage .dot { width: calc(var(--u) * 9); height: calc(var(--u) * 9); border-radius: 50%; background: var(--axis); }
+.stage .dot-btn:hover .dot { background: var(--ink-2); }
+.stage .dot-btn.here .dot { width: calc(var(--u) * 12); height: calc(var(--u) * 12); background: var(--ink); }
+
+/* The panel over the dimmed scene: how it works, thinking a tactic through, the lesson */
+.stage .thought {
+  position: absolute;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  transform-origin: 50% 0%;
+}
+.stage .thought .part + .part { border-top: 1.5px solid var(--axis); }
+.stage .thought .name { font-weight: 850; letter-spacing: 0.1em; text-transform: uppercase; }
+.stage .thought .lead { font-weight: 650; }
+.stage .thought .def { color: var(--ink-2); }
+.stage .thought ol { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.stage .thought li { position: relative; counter-increment: step; }
+.stage .thought li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  font-weight: 850;
+  color: var(--muted);
+}
+
+.stage .pop { animation: stage-pop 0.3s ease-out backwards; }
+.stage .sbtn.pop { transform-origin: 50% 100%; }
+
+/* ---- Wide: one picture, the words and buttons laid over it at its scale. */
+
+.stage.wide { flex: 1; min-height: 0; }
+.stage.wide .scene { position: absolute; inset: 0; }
+.stage.wide .bar { display: contents; }
+.stage.wide .progress { display: none; }
+.stage.wide :is(.stage-title, .stage-caption, .hud, .sbtn.back, .sbtn.corner, .choices, .dots) { position: absolute; z-index: 1; }
+.stage .links { position: absolute; }
+.stage.wide .stage-title { font-size: calc(var(--u) * 34); }
+.stage.wide .stage-caption { font-size: max(12px, calc(var(--u) * 20)); line-height: 1.3; width: calc(var(--u) * 900); }
+.stage.wide .sbtn { height: max(44px, calc(var(--u) * 40)); font-size: max(13px, calc(var(--u) * 17)); }
+.stage.wide .choices,
+.stage.wide .links { gap: calc(var(--u) * 12); }
+.stage.wide .hud { column-gap: calc(var(--u) * 6); row-gap: calc(var(--u) * 4); }
+.stage.wide .hud-label { font-size: max(12px, calc(var(--u) * 13)); line-height: calc(var(--u) * 22); }
+.stage.wide .hud .cell { width: calc(var(--u) * 30); height: calc(var(--u) * 30); font-size: max(12px, calc(var(--u) * 13)); }
+.stage.wide .hud .cell.two { font-size: max(11px, calc(var(--u) * 11)); }
+.stage.wide .hud .mark { left: 0; right: 0; top: calc(100% + var(--u) * 4); font-size: max(12px, calc(var(--u) * 13)); line-height: calc(var(--u) * 18); }
+.stage.wide .dot-btn { width: calc(var(--u) * 24); height: calc(var(--u) * 44); }
+.stage.wide .thought { border-radius: calc(var(--u) * 28); padding: calc(var(--u) * 20) calc(var(--u) * 34) calc(var(--u) * 22); }
+.stage.wide .thought .eyebrow { font-size: max(12px, calc(var(--u) * 13)); }
+.stage.wide .thought .part + .part { margin-top: calc(var(--u) * 14); padding-top: calc(var(--u) * 8); }
+.stage.wide .thought .name { font-size: max(12px, calc(var(--u) * 15)); margin-top: calc(var(--u) * 6); }
+.stage.wide .thought .lead { font-size: max(12px, calc(var(--u) * 21)); line-height: 1.43; margin-top: calc(var(--u) * 4); }
+.stage.wide .thought .def { font-size: max(12px, calc(var(--u) * 18)); line-height: 1.45; margin-top: calc(var(--u) * 2); }
+.stage.wide .thought li { padding-left: calc(var(--u) * 30); }
+
+/* ---- Compact: the words and buttons at their own sizes, around a picture drawn for the phone. */
+
+.stage.compact {
+  flex: 1 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'title corner'
+    'caption caption'
+    'hud hud'
+    'scene scene'
+    'bar bar';
+  grid-template-rows: auto auto auto minmax(var(--scene-min), 1fr) auto;
+  column-gap: 12px;
+}
+/* Sideways the height is short: Back and Continue go up beside the caption, and nothing sticks over the town. */
+.stage.landscape {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'title hud corner'
+    'caption bar bar'
+    'scene scene scene';
+  grid-template-rows: auto auto minmax(var(--scene-min), 1fr);
+}
+.stage.compact .stage-title { grid-area: title; align-self: center; padding-top: 6px; font-size: 19px; }
+.stage.compact .stage-caption { grid-area: caption; padding: 4px 0 4px; font-size: 14px; line-height: 1.4; }
+.stage.compact .sbtn { font-size: 15px; }
+.stage.compact .sbtn.corner { grid-area: corner; align-self: start; margin-top: 6px; }
+.stage.compact .hud { grid-area: hud; display: flex; align-items: center; gap: 10px; padding: 7px 0 4px; }
+.stage.landscape .hud { padding: 6px 0 0; }
+.stage.compact .hud-label { margin-right: 4px; font-size: 12px; }
+.stage.compact .hud .cell { width: 25px; height: 25px; font-size: 13px; }
+.stage.compact .hud .cell.two { font-size: 12px; }
+.stage.compact .hud .mark {
+  top: -7px;
+  right: -7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px currentColor;
+  font-size: 12px;
+  line-height: 16px;
+}
+.stage.compact .scene { grid-area: scene; min-height: var(--scene-min); }
+.stage.compact .links { flex-wrap: wrap; justify-content: center; gap: 8px; }
+.stage.compact .bar {
+  grid-area: bar;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0 max(6px, env(safe-area-inset-bottom, 0px));
+  background: var(--page);
+}
+.stage.compact .dots { display: none; }
+.stage.compact .progress { flex: 1; text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.stage.compact .choices { gap: 8px; }
+.stage.landscape .bar { position: static; align-self: start; padding: 0 0 6px; background: none; }
+.stage.landscape .stage-title { padding-top: 4px; }
+.stage.landscape .sbtn.corner { margin-top: 4px; }
+.stage.landscape .progress { flex: 0 0 auto; padding: 0 4px; }
+.stage.compact .thought { border-radius: 18px; padding: 12px 16px 14px; }
+.stage.compact .thought .eyebrow { font-size: 12px; }
+.stage.compact .thought .part + .part { margin-top: 10px; padding-top: 6px; }
+.stage.compact .thought .name { font-size: 13px; margin-top: 4px; }
+.stage.compact .thought .lead { font-size: 16px; line-height: 1.4; margin-top: 4px; }
+.stage.compact .thought .def { font-size: 14px; line-height: 1.45; margin-top: 2px; }
+.stage.compact .thought li { padding-left: 22px; }
+.stage.compact .thought li + li { margin-top: 4px; }
