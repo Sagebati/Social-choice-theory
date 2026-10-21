@@ -16,7 +16,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo clippy -p social-choice-api --target wasm32-unknown-unknown -- -D warnings
+      - run: cargo clippy -p social-choice-wasm --target wasm32-unknown-unknown -- -D warnings
       - run: cargo test --workspace --release
 
   frontend:
@@ -26,6 +26,13 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      # npm test and build compile the library to wasm first (scripts/build-wasm.mjs).
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      # The CLI must match the wasm-bindgen crate in Cargo.lock.
+      - run: cargo install wasm-bindgen-cli --version "$(grep -A1 '^name = "wasm-bindgen"$' ../Cargo.lock | sed -n 's/^version = "\(.*\)"/\1/p')" --locked
       - uses: actions/setup-node@v4
         with:
           node-version: 22
