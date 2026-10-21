@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 import { methodName } from '../election'
 import { locale } from '../i18n'
 import type { CounterexampleResponse, CriterionId, CriterionInfo, MethodId, MethodInfo } from '../types'
+import Announce from './Announce.vue'
 import CounterexampleView from './CounterexampleView.vue'
 
 // Every method against every criterion. A ✗ is a button: the API searches random
@@ -12,6 +13,7 @@ import CounterexampleView from './CounterexampleView.vue'
 const methods = shallowRef<MethodInfo[]>([])
 const criteria = shallowRef<CriterionInfo[]>([])
 const error = ref<string | null>(null)
+const searchError = ref<string | null>(null)
 const open = ref<{ method: MethodId; criterion: CriterionId } | null>(null)
 const result = shallowRef<CounterexampleResponse | null>(null)
 const loading = ref(false)
@@ -34,26 +36,44 @@ watch(
   { immediate: true },
 )
 
+// Each search takes a ticket; only the latest may write its answer, so clicking
+// a second ✗ before the first comes back can't show the first one's election.
+let ticket = 0
+
 async function show(method: MethodId, criterion: CriterionId) {
+  const mine = ++ticket
   open.value = { method, criterion }
   result.value = null
+  searchError.value = null
   loading.value = true
   try {
-    result.value = await api.counterexample(method, criterion)
+    const found = await api.counterexample(method, criterion)
+    if (mine === ticket) result.value = found
   } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e)
+    if (mine === ticket) searchError.value = e instanceof Error ? e.message : String(e)
   } finally {
-    loading.value = false
+    if (mine === ticket) loading.value = false
   }
 }
 
 const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === id)?.name ?? id
+
+// Read out from a region that is always there: the panel below appears with its
+// text, which screen readers would not announce.
+const news = computed(() => {
+  const o = open.value
+  if (!o) return ''
+  const versus = t('criteriaTable.versus', { method: methodName(o.method), criterion: criterionName(o.criterion) })
+  if (loading.value) return `${versus}. ${t('criteriaTable.searching')}`
+  if (result.value) return `${versus}. ${t(result.value.counterexample ? 'criteriaTable.found' : 'criteriaTable.empty')}`
+  return ''
+})
 </script>
 
 <template>
   <div>
-    <p v-if="error" class="notice">{{ error }}</p>
-    <div class="wrap">
+    <p v-if="error" class="notice" role="alert">{{ t('common.apiError', { error }) }}</p>
+    <div class="wrap" tabindex="0" role="region" :aria-label="t('criteriaTable.aria')">
       <table v-if="methods.length">
         <thead>
           <tr>
@@ -70,7 +90,8 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
                 class="yes"
                 :title="t('criteriaTable.always', { method: m.name, criterion: criterionName(v.criterion) })"
               >
-                ✓
+                <span aria-hidden="true">✓</span>
+                <span class="visually-hidden">{{ t('criteriaTable.satisfied') }}</span>
               </span>
               <button
                 v-else
@@ -88,12 +109,14 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
       </table>
     </div>
     <p class="small muted">{{ t('criteriaTable.legend') }}</p>
-    <div v-if="open" class="card panel" aria-live="polite">
+    <Announce :text="news" :delay="100" />
+    <div v-if="open" class="card panel">
       <div class="eyebrow">
         {{ t('criteriaTable.versus', { method: methodName(open.method), criterion: criterionName(open.criterion) }) }}
       </div>
       <p class="small">{{ criteria.find((c) => c.id === open!.criterion)?.description }}</p>
-      <p v-if="loading" class="small">{{ t('criteriaTable.searching') }}</p>
+      <p v-if="searchError" class="notice" role="alert">{{ searchError }}</p>
+      <p v-else-if="loading" class="small">{{ t('criteriaTable.searching') }}</p>
       <CounterexampleView v-else-if="result?.counterexample" :example="result.counterexample" />
       <p v-else-if="result" class="small">{{ t('criteriaTable.empty') }}</p>
     </div>

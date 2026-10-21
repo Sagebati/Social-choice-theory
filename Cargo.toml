@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/social-choice", "backend"]
+members = ["crates/social-choice", "crates/social-choice-wasm"]
 
 [workspace.package]
 edition = "2021"

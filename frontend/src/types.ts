@@ -1,4 +1,4 @@
-// Mirrors of the JSON the Rust API produces (see backend/src/api.rs).
+// Mirrors of the JSON the Rust API produces (see crates/social-choice-wasm/src/api.rs).
 
 export type MethodId =
   | 'plurality'

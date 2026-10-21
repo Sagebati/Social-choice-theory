@@ -7,21 +7,22 @@ of social choice theory.
   (Condorcet) analysis, fairness criteria with counterexample search,
   manipulation search, a brute-force Arrow's theorem checker and the spatial
   "opinion map" model.
-* **`backend`**: an [Axum](https://github.com/tokio-rs/axum) HTTP API over the
-  library, compiled to WebAssembly and run as a Cloudflare Worker with
-  [`workers-rs`](https://github.com/cloudflare/workers-rs).
+* **`crates/social-choice-wasm`**: the library's JSON API, compiled to
+  WebAssembly with [`wasm-bindgen`](https://github.com/wasm-bindgen/wasm-bindgen)
+  and run in the browser, in Web Workers.
 * **`frontend`**: a Vue 3 explorable in the spirit of Nicky Case's *The
   Evolution of Trust*: a full-screen slide deck on one town square, where you
   bet on each count and watch ballots fly, piles move and faces react. It comes
   with a sandbox, a rigging handbook and a theorem lab.
 
-Every number on the page is computed by the Worker, not looked up. The prose
+Every number on the page is computed in the reader's browser, not looked up,
+and the whole site is static files. The prose
 version of the guide is in [`docs/rigging-guide.md`](docs/rigging-guide.md)
 (in French: [`docs/rigging-guide.fr.md`](docs/rigging-guide.fr.md)).
 
 The site speaks **English and French** (*Qui a vraiment gagné ?*). It follows
 the browser's language, the EN/FR switch in the header changes it, and a link
-with `?lang=fr` opens it in French. The API writes its explanations in the
+with `?lang=fr` opens it in French. The library writes its explanations in the
 same language. How the translations are organised, and how to add a language,
 is in [`frontend/src/locales/README.md`](frontend/src/locales/README.md); the
 French terms are in [`docs/glossary-fr.md`](docs/glossary-fr.md).
@@ -80,7 +81,7 @@ the push-over, burying, bullet voting).
 | 13 | Approval voting | You tick your own ballot, each group ticks its top two, then Lucas's group ticks only Duck and it backfires | Manu, then Poutine |
 | 14 | Same voters, five mayors | Every count's winner, your bets, and Arrow's and Gibbard's theorems | |
 
-Who wins and by how much comes from the Worker; the stage only shows which
+Who wins and by how much comes from the library; the stage only shows which
 ballot goes where (`frontend/src/stage`). The opinion map, Yee diagrams,
 criteria and theorems live in the sandbox, the rigging handbook and the lab.
 
@@ -122,90 +123,114 @@ in the scenario stories and confirms Arrow's theorem for every rule.
 
 ## Running it locally
 
-You need Rust (with the `wasm32-unknown-unknown` target) and Node 20.19+ or 22.12+.
+You need Rust (with the `wasm32-unknown-unknown` target),
+[`wasm-bindgen-cli`](https://crates.io/crates/wasm-bindgen-cli) at the same
+version as the `wasm-bindgen` crate in `Cargo.lock`, and Node 20.19+ or 22.12+.
 
 ```sh
 rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.129 --locked
 npm --prefix frontend install
-npm --prefix backend install
 
-# Terminal 1: the API, built to wasm and served by wrangler on :8787
-cd backend && npx wrangler dev
-
-# Terminal 2: the front end with hot reload on :5173, proxying /api to :8787
-cd frontend && npm run dev
+npm --prefix frontend run dev       # http://localhost:5173 with hot reload
 ```
 
-`wrangler dev` builds the Worker with `worker-build` (installed by the build
-command on first run) and serves `frontend/dist` as static assets, so run
-`npm --prefix frontend run build` once first, or use the Vite dev server as
-above.
+`npm run dev`, `build` and `test` first run `npm run wasm`
+(`frontend/scripts/build-wasm.mjs`): it compiles `crates/social-choice-wasm`
+in release mode and writes the module and its bindings to `frontend/wasm/`
+(not committed). After changing the Rust code, run `npm --prefix frontend run
+wasm` again and the page reloads. To type-check on its own
+(`npx vue-tsc --noEmit`), build the module once first.
+
+To try the production build from a plain static server:
+
+```sh
+npm --prefix frontend run build     # writes frontend/dist
+npm --prefix frontend run preview   # http://localhost:4173
+```
 
 Tests:
 
 ```sh
-cargo test --workspace             # library and API (the API router is tested natively)
-npm --prefix frontend test          # front-end unit tests
+cargo test --workspace              # the library and its JSON API, natively
+npm --prefix frontend test          # front-end unit tests, and the built wasm module
 ```
 
-## Deploying to Cloudflare
+## Deploying
+
+`frontend/dist` is the whole site: any static host works, as long as it
+serves `index.html` for the router's paths (`/learn/3`, `/sandbox`, `/lab`…)
+and `.wasm` files as `application/wasm`.
+
+On Cloudflare it is a Worker with static assets and no script
+(`frontend/wrangler.toml`), with the single-page-app fallback and long-lived
+caching for the hashed files under `/assets` (`frontend/public/_headers`):
 
 ```sh
-npm --prefix frontend run build     # writes frontend/dist
-cd backend && npx wrangler deploy   # builds the Worker and uploads it with the assets
+npm --prefix frontend run deploy    # builds, then `wrangler deploy`
 ```
 
-One Worker serves everything: requests to `/api/*` run the Rust code, and every
-other path is served from the static assets with a single-page-app fallback
-(`backend/wrangler.toml`).
-
-**CPU limits.** Most requests take well under a millisecond of CPU. The heavier
-ones (Yee diagrams, the manipulability sweep and some counterexample searches)
-can need tens to hundreds of milliseconds, more than the free plan's 10 ms per
-request. On a paid plan, uncomment the `[limits]` block in `wrangler.toml`.
+**Size and speed.** The module is about 750 KB, 220 KB gzipped and 170 KB
+with Brotli; it is fetched once and compiled while it downloads. The library
+runs in two Web Workers (`frontend/src/engine`): one for quick calls (the
+catalogue, counting an election, the opinion map) and one for slow ones (Yee
+diagrams, manipulation searches, counterexamples, Arrow's theorem and the
+manipulability sweep, which takes about a second for four candidates), so
+neither dragging nor the journey's animations ever wait for a computation.
 
 ## API
 
-All endpoints take and return JSON. Elections may omit approvals and scores;
-they are derived from the rankings (approve the top half, score linearly).
-Every endpoint accepts `?lang=en` (the default) or `?lang=fr` and writes all
-its text (descriptions, round notes, explanations, errors) in that language.
+The front end talks to the library through `api` (`frontend/src/api.ts`),
+which sends each call to a worker as JSON. The same functions are the Rust
+crate's public API: `social_choice_wasm::api::handle(endpoint, lang, body)`
+takes and returns JSON, and the browser calls it through the exported
+`call(endpoint, lang, body)`. Elections may omit approvals and scores; they
+are derived from the rankings (approve the top half, score linearly). Every
+call takes a language, `en` or `fr` (also as a regional tag like `fr-FR`;
+anything else is English), and writes all its text (descriptions, round
+notes, explanations, errors) in it. Errors are thrown with that message.
 
 | Endpoint | Body | Returns |
 | --- | --- | --- |
-| `GET /api/health` | | `{ ok, version }` |
-| `GET /api/methods` | | Every method: description, where it is used, how to rig it, criteria |
-| `GET /api/criteria` | | Every fairness criterion |
-| `GET /api/scenarios` | | The famous elections behind the journey |
-| `POST /api/elect` | `{ election, methods? }` | Outcomes, spoilers and the pairwise summary |
-| `POST /api/spatial` | `{ model, methods? }` | Voter positions, per-voter ballots, outcomes, pairwise summary |
-| `POST /api/yee` | `{ model, method, resolution?, spread?, count? }` | Winner of each cell of a Yee diagram |
-| `POST /api/manipulate` | `{ election, method, limit? }` | Honest outcome, profitable lies, spoilers |
-| `POST /api/manipulability` | `{ methods?, candidates?, samples?, seed? }` | Share of random elections that can be manipulated |
-| `POST /api/counterexample` | `{ method, criterion, seed?, attempts? }` | Whether the method satisfies the criterion, and a counterexample if not |
-| `POST /api/arrow` | `{ rule, voters? }` | Arrow's conditions checked on every profile |
-| `POST /api/random` | `{ candidates?, groups?, seed? }` | A random election |
+| `health` | | `{ ok, version }` |
+| `methods` | | Every method: description, where it is used, how to rig it, criteria |
+| `criteria` | | Every fairness criterion |
+| `scenarios` | | The famous elections behind the journey |
+| `elect` | `{ election, methods? }` | Outcomes, spoilers and the pairwise summary |
+| `spatial` | `{ model, methods? }` | Voter positions, per-voter ballots, outcomes, pairwise summary |
+| `yee` | `{ model, method, resolution?, spread?, count? }` | Winner of each cell of a Yee diagram |
+| `manipulate` | `{ election, method, limit? }` | Honest outcome, profitable lies, spoilers |
+| `manipulability` | `{ methods?, candidates?, samples?, seed? }` | Share of random elections that can be manipulated |
+| `counterexample` | `{ method, criterion, seed?, attempts? }` | Whether the method satisfies the criterion, and a counterexample if not |
+| `arrow` | `{ rule, voters? }` | Arrow's conditions checked on every profile |
+| `random` | `{ candidates?, groups?, seed? }` | A random election |
 
-```sh
-curl -s localhost:8787/api/elect -H 'content-type: application/json' -d '{
+```rust
+use social_choice::Lang;
+use social_choice_wasm::api::handle;
+
+let body = r#"{
   "election": { "candidates": ["Ada", "Bea", "Cal"],
                 "ballots": [{ "weight": 40, "ranking": [0, 1, 2] },
                             { "weight": 35, "ranking": [1, 2, 0] },
                             { "weight": 25, "ranking": [2, 1, 0] }] },
-  "methods": ["plurality", "irv", "schulze"] }'
+  "methods": ["plurality", "irv", "schulze"] }"#;
+let json = handle("elect", Lang::En, body).unwrap();
 ```
 
 ## Layout
 
 ```
-crates/social-choice/   the Rust library
-backend/                Axum router (src/api.rs) + Worker entry point (src/lib.rs), wrangler.toml
-frontend/               Vue 3 + Vite + TypeScript
-  src/stage/            the journey's town square: TownStage, its animations and ballot plans
-  src/cast.ts           Riverton's candidates and voter groups
-  src/pages/            sandbox, rigging handbook, theorem lab
-  src/components/       tallies, duel diagram, opinion map, Arrow lab, …
-  src/locales/          English and French messages
-docs/rigging-guide.md   the written guide
-docs/glossary-fr.md     the French terms
+crates/social-choice/       the Rust library
+crates/social-choice-wasm/  its JSON API (src/api.rs) and the WebAssembly export (src/lib.rs)
+frontend/                   Vue 3 + Vite + TypeScript, wrangler.toml for the static deploy
+  scripts/build-wasm.mjs    builds the wasm module into frontend/wasm/
+  src/engine/               loads the module and runs it in Web Workers
+  src/stage/                the journey's town square: TownStage, its animations and ballot plans
+  src/cast.ts               Riverton's candidates and voter groups
+  src/pages/                sandbox, rigging handbook, theorem lab
+  src/components/           tallies, duel diagram, opinion map, Arrow lab, …
+  src/locales/              English and French messages
+docs/rigging-guide.md       the written guide
+docs/glossary-fr.md         the French terms
 ```

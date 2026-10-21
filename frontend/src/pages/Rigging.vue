@@ -46,12 +46,29 @@ const criterionName = (id: CriterionId) => criteria.value.find((c) => c.id === i
 
 const TACTICS = ['compromising', 'burying', 'pushOver', 'bullet', 'exaggeration', 'spoilers', 'agenda', 'abstention'] as const
 
-async function tryScenario(id: string | null) {
+// The "Try it" button that opened the lab, to hand focus back to on closing.
+let opener: HTMLElement | null = null
+
+async function tryScenario(id: string | null, event?: Event) {
   const s = scenarios.value.find((x) => x.id === id)
   if (!s) return
+  opener = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
   open.value = s
   await nextTick()
-  labEl.value?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  labEl.value?.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' })
+  labEl.value?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
+}
+
+// Closing removes the Close button itself, which would leave focus nowhere.
+// A language change re-renders the buttons, so find the opener again if need be.
+async function close() {
+  const id = open.value?.id
+  open.value = null
+  await nextTick()
+  const target = opener?.isConnected ? opener : document.querySelector<HTMLElement>(`[data-scenario="${id}"]`)
+  target?.focus()
+  opener = null
 }
 </script>
 
@@ -68,8 +85,8 @@ async function tryScenario(id: string | null) {
     <section ref="labEl" class="scenario-lab">
       <div v-if="open" class="card">
         <div class="row head">
-          <h2>{{ t('rigging.tryTitle', { title: open.title }) }}</h2>
-          <button class="btn small" @click="open = null">{{ t('common.close') }}</button>
+          <h2 tabindex="-1">{{ t('rigging.tryTitle', { title: open.title }) }}</h2>
+          <button class="btn small" @click="close">{{ t('common.close') }}</button>
         </div>
         <ScenarioLab :scenario="open" />
       </div>
@@ -123,20 +140,22 @@ async function tryScenario(id: string | null) {
           <ul class="rigs">
             <li v-for="r in m.rigging" :key="r.title">
               <strong>{{ r.title }}.</strong> {{ r.how }}
-              <button v-if="r.scenario" class="btn small try" @click="tryScenario(r.scenario)">{{ t('rigging.tryIt') }}</button>
+              <button v-if="r.scenario" class="btn small try" :data-scenario="r.scenario" @click="tryScenario(r.scenario, $event)">
+                {{ t('rigging.tryIt') }}
+              </button>
             </li>
           </ul>
-          <div class="badges" :aria-label="t('rigging.criteriaAria')">
-            <span
+          <ul class="badges" :aria-label="t('rigging.criteriaAria')">
+            <li
               v-for="c in m.criteria"
               :key="c.criterion"
               class="pill"
               :class="c.satisfied ? 'good' : 'bad'"
               :title="criteria.find((x) => x.id === c.criterion)?.question"
             >
-              {{ c.satisfied ? '✓' : '✗' }} {{ criterionName(c.criterion) }}
-            </span>
-          </div>
+              <span aria-hidden="true">{{ c.satisfied ? '✓' : '✗' }}</span> {{ criterionName(c.criterion) }}<span class="visually-hidden">: {{ c.satisfied ? t('rigging.satisfied') : t('rigging.canFail') }}</span>
+            </li>
+          </ul>
         </article>
       </div>
     </section>
@@ -176,7 +195,7 @@ async function tryScenario(id: string | null) {
 
 .concepts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -186,7 +205,7 @@ async function tryScenario(id: string | null) {
 
 .tactics {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
   gap: 0.75rem;
   margin: 0;
 }
@@ -210,7 +229,7 @@ async function tryScenario(id: string | null) {
 
 .methods {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(21rem, 100%), 1fr));
   gap: 1rem;
 }
 
@@ -243,6 +262,9 @@ async function tryScenario(id: string | null) {
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 a.btn {

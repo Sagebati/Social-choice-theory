@@ -39,7 +39,10 @@ export function useLive<I, O>(input: () => I | null, fetcher: (input: I) => Prom
         error.value = null
       }
     } catch (e) {
-      if (pending === null) error.value = e instanceof Error ? e.message : String(e)
+      // Report a failure even when a newer input is queued: during a long drag
+      // that request may be superseded many times, and the reader should know
+      // the results have stopped updating. The next answer clears it.
+      error.value = e instanceof Error ? e.message : String(e)
     } finally {
       inFlight = false
       loading.value = false

@@ -1,0 +1,10 @@
+# Cloudflare Workers static assets, with no Worker script: the whole site is
+# the built front end (frontend/dist), and the library runs in the browser as
+# WebAssembly. `npm run deploy` builds and uploads it.
+name = "social-choice"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./dist"
+# The router's pages (/learn/3, /sandbox, /lab…) all load index.html.
+not_found_handling = "single-page-application"

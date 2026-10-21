@@ -3,10 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "wasm": "node scripts/build-wasm.mjs",
+    "dev": "npm run wasm && vite",
+    "build": "npm run wasm && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "npm run wasm && vitest run",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "vue": "3.5.44",
@@ -18,6 +20,7 @@
     "typescript": "5.9.3",
     "vite": "8.3.4",
     "vitest": "5.0.5",
-    "vue-tsc": "3.3.13"
+    "vue-tsc": "3.3.13",
+    "wrangler": "4.151.1"
   }
 }

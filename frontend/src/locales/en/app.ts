@@ -20,8 +20,9 @@ export default {
       dark: 'dark',
     },
     language: 'Language',
+    skip: 'Skip to content',
     footer:
-      'Built on a Rust library of social choice theory, served from a Cloudflare Worker. Every result on this page is computed by the server, not looked up.',
+      'Built on a Rust library of social choice theory, compiled to WebAssembly and run in your browser. Every result on this page is computed as you go, not looked up.',
   },
 
   common: {
@@ -33,11 +34,12 @@ export default {
       score: 'score',
     },
     voters: '{n} voter | {n} voters',
-    apiError: 'Could not reach the API: {error}',
+    apiError: 'The calculation failed: {error}',
     tie: 'tie',
     tieBetween: 'tie: {names}',
     loading: 'Loading…',
     close: 'Close',
+    resultsError: 'The results could not be updated: {error}',
   },
 
   methods: {
@@ -90,6 +92,8 @@ export default {
     next: 'Next round →',
     winner: 'Winner: <strong>{name}</strong>',
     tiebreak: '(a tie was broken by candidate order)',
+    tally: '{name} {value}',
+    summary: '{round}: {tallies}.',
   },
 
   winnerStrip: {
@@ -97,5 +101,9 @@ export default {
     notCondorcet: '✗ not Condorcet',
     champion: 'Head-to-head champion',
     cycle: 'nobody: a cycle',
+    wins: '{name} wins under {methods}.',
+    tied: 'A tie between {names} under {methods}.',
+    championIs: 'Head-to-head champion: {name}.',
+    noChampion: 'No head-to-head champion: the majorities go round in a cycle.',
   },
 }

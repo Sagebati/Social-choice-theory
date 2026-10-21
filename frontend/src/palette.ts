@@ -1,8 +1,8 @@
 // Candidate i always wears categorical slot i (see styles.css).
 export const color = (i: number) => `var(--c${i % 8})`
 
-// Ink or white for text drawn on top of a candidate colour, by its lightness.
-export const onColor = (i: number) => ([2, 3, 4].includes(i % 8) ? '#0b0b0b' : '#ffffff')
+// Ink or white for text drawn on top of a candidate colour, whichever contrasts more in this theme.
+export const onColor = (i: number) => `var(--on-c${i % 8})`
 
 /** A candidate's initial, or its first two letters when another of `names` starts the same way. */
 export function initial(name: string, names: readonly string[] = []) {

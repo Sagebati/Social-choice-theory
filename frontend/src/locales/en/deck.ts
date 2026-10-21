@@ -6,14 +6,26 @@ export default {
   deck: {
     aria: "Riverton's town square",
     loading: 'Counting the ballots…',
-    turn: 'Turn your phone sideways for the whole town square.',
-    back: '← Back',
-    skip: 'Skip ⏭',
-    tap: 'Tap to continue ▸',
-    startOver: '↺ Start over',
+    // Buttons and the tab title. The stage draws the arrows beside the words.
+    back: 'Back',
+    skip: 'Skip',
+    next: 'Continue',
+    startOver: 'Start over',
+    slides: 'Slides',
+    slide: 'Slide {n} of {total}',
+    tab: 'Slide {n} of {total}: {title} · {site}',
     voters: 'voters',
     majority: 'majority · {n}',
+    // On a phone, the majority's label stands on two lines beside the piles.
+    majorityLines: 'majority\n{n}',
     out: 'out',
+    // What a screen reader hears of the stamps, the bubbles and the numbers that float up.
+    isOut: '{name} is out.',
+    groupStamp: "{name}'s group: {stamp}.",
+    says: '{name}: {line}',
+    named: '{name}: {stamp}.',
+    gains: '{name} gains {n}.',
+    loses: '{name} loses {n}.',
     thinks: '{name} thinks…',
     panel: {
       how: 'How it works',
@@ -24,6 +36,17 @@ export default {
       on: 'Bet on {name}',
       yours: 'your bet',
       board: 'your bets',
+      placed: 'You bet on {name}.',
+      right: 'Your bet on {name} was right.',
+      wrong: 'Your bet on {name} was wrong.',
+      score: 'Your bets so far: {score} right out of {total}.',
+    },
+    hud: {
+      title: 'Your bets.',
+      pending: '{system}: still to come.',
+      won: '{system}: {winner} won.',
+      right: '{system}: {winner} won, as you bet.',
+      wrong: '{system}: {winner} won; your bet was wrong.',
     },
     systems: {
       plurality: 'First past the post',
@@ -66,7 +89,7 @@ export default {
     },
     personas: {
       title: 'Five neighbours, five opinions',
-      caption: 'Each ranks the five candidates, favourite first. Tap a face to hear why.',
+      caption: 'Each ranks the five candidates, favourite first. Choose a face to hear why.',
       why: 'Why {name} votes this way',
     },
     groups: {
@@ -80,7 +103,7 @@ export default {
     plurality: {
       title: '1 · First past the post',
       how: 'A single round: each voter votes for one candidate.\nThe candidate with the most votes is elected.\nA plurality is enough: the winner may have less than half the votes.',
-      ask: 'Each voter votes for one candidate. Who wins? Tap a candidate to bet.',
+      ask: 'Each voter votes for one candidate. Who wins? Choose a candidate to bet.',
       rule: 'Each voter votes for one candidate; the most votes wins.',
       result: '{winner} wins with {votes} votes out of {total}: a plurality, far short of a majority ({majority}).',
       others: '{n} voted for someone else',
@@ -103,7 +126,7 @@ export default {
     twoRound: {
       title: '2 · Two-round system',
       how: 'Round one: each voter votes for one candidate.\nA candidate with a majority wins outright.\nOtherwise the top two meet in a runoff, and the one with more votes wins.',
-      ask: 'The top two meet in a runoff. Who wins? Tap a candidate to bet.',
+      ask: 'The top two meet in a runoff. Who wins? Choose a candidate to bet.',
       rule: 'The top two meet in a runoff.',
       through: 'Round 1: nobody has a majority ({majority}). {a} and {b} go through.',
       result: '{winner} wins the runoff, {votes} to {next}. {others} never got a second look.',
@@ -175,8 +198,8 @@ export default {
       how: 'Tick as many candidates as you like.\nThe candidate with the most ticks wins.',
       yours: "Your turn first: tick everyone you'd accept, as many as you like.",
       tick: 'Tick {name}',
-      vote: 'Vote ▶',
-      ask: 'Every group ticks its top two. Who wins? Tap a candidate to bet.',
+      vote: 'Vote',
+      ask: 'Every group ticks its top two. Who wins? Choose a candidate to bet.',
       rule: 'Every group ticks its top two; your ticks count too.',
       result: '{winner} wins with {votes} ticks.',
       resultYours: '{winner} wins with {votes} ticks, yours included.',

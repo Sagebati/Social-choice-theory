@@ -7,6 +7,7 @@ const messages: typeof source = {
       'Déplacez candidats et foules, ajoutez-en d’autres, laissez les électeurs mentir, et comparez toutes les méthodes sur les mêmes électeurs. Cliquez sur une méthode pour colorer la carte selon son résultat.',
     mapLabel: 'Carte du bac à sable',
     addCandidate: '+ Candidat',
+    removeCandidate: 'Retirer {name}',
     addCrowd: '+ Foule',
     yee: 'Diagramme de Yee ({method})',
     selectedCrowd: 'Foule sélectionnée',
@@ -22,6 +23,20 @@ const messages: typeof source = {
     notCondorcet: 'pas le vainqueur de Condorcet',
     headToHead: 'Face-à-face',
     canLie: 'Peut-on gagner en mentant avec la méthode « {method} » ?',
+    wins: '{method} : {name} gagne.',
+    ties: '{method} : égalité entre {names}.',
+    yeeError: 'Le diagramme de Yee n’a pas pu être tracé : {error}',
+  },
+
+  mapLegend: {
+    aria: 'Légende de la carte',
+    dots: 'Chaque point est un électeur, coloré selon le candidat que son bulletin place en tête.',
+    dotsRound: 'Chaque point est un électeur, coloré selon le candidat pour qui son bulletin compte à ce tour.',
+    rings: 'Les points cerclés ont voté de façon stratégique.',
+    yee: 'Les zones colorées montrent qui la méthode « {method} » élit quand une foule est centrée à cet endroit.',
+    voters: '{share} des électeurs',
+    map: 'gagne sur {share} de la carte',
+    none: 'Plus aucun candidat',
   },
 
   rigging: {
@@ -91,12 +106,14 @@ const messages: typeof source = {
     howToRig: 'Comment la truquer',
     tryIt: 'Essayer',
     criteriaAria: 'Critères',
+    satisfied: 'respecté',
+    canFail: 'peut échouer',
   },
 
   lab: {
     title: 'Labo des théorèmes',
     intro:
-      'La mécanique derrière le parcours, tous les réglages à portée de main. Tout ici est calculé sur le serveur par la bibliothèque Rust, par force brute quand c’est possible.',
+      'La mécanique derrière le parcours, tous les réglages à portée de main. Tout ici est calculé dans votre navigateur par la bibliothèque Rust, par force brute quand c’est possible.',
     winners: {
       title: 'Mêmes bulletins, plusieurs vainqueurs',
       text: 'Modifiez les bulletins, ou tirez une élection au hasard. Celle-ci donne pour l’instant <strong>{distinct}</strong> seul résultat pour les {methods} méthodes. | Modifiez les bulletins, ou tirez une élection au hasard. Celle-ci donne pour l’instant <strong>{distinct}</strong> résultats différents selon les {methods} méthodes.',
@@ -104,18 +121,19 @@ const messages: typeof source = {
     },
     arrow: {
       title: 'Le théorème d’Arrow, par force brute',
-      text: 'Choisissez une règle. Le serveur construit toutes les élections possibles à trois candidats avec le nombre d’électeurs choisi, et vérifie sur chacune les quatre conditions d’Arrow. Si une condition tombe, vous obtenez le contre-exemple le plus parlant.',
+      text: 'Choisissez une règle. La bibliothèque construit toutes les élections possibles à trois candidats avec le nombre d’électeurs choisi, et vérifie sur chacune les quatre conditions d’Arrow. Si une condition tombe, vous obtenez le contre-exemple le plus parlant.',
     },
     criteria: {
       title: 'Critères d’équité',
-      text: 'Quelle méthode garantit quoi. Chaque ✗ s’appuie sur un vrai contre-exemple : cliquez dessus, et le serveur fouille des élections aléatoires jusqu’à en trouver une qui enfreint la règle, puis la réduit au minimum.',
+      text: 'Quelle méthode garantit quoi. Chaque ✗ s’appuie sur un vrai contre-exemple : cliquez dessus, et la bibliothèque fouille des élections aléatoires jusqu’à en trouver une qui enfreint la règle, puis la réduit au minimum.',
     },
     manipulability: {
       title: 'À quel point chaque méthode est-elle manipulable ?',
-      text: 'Pour chaque élection aléatoire, le serveur essaie tous les bulletins insincères possibles pour chaque bloc d’électeurs, et regarde si l’un d’eux donnerait un résultat que ce bloc préfère.',
+      text: 'Pour chaque élection aléatoire, la bibliothèque essaie tous les bulletins insincères possibles pour chaque bloc d’électeurs, et regarde si l’un d’eux donnerait un résultat que ce bloc préfère.',
       candidates: 'Candidats',
       running: 'Calcul en cours…',
       run: 'Lancer l’expérience',
+      done: 'Expérience terminée. La plus manipulable : {most} ({mostShare}). La moins : {least} ({leastShare}).',
     },
   },
 
@@ -192,16 +210,21 @@ const messages: typeof source = {
       clones: 'Insensible aux clones',
     },
     always: '{method} respecte toujours le critère « {criterion} »',
+    satisfied: 'toujours respecté',
+    aria: 'Les méthodes face aux critères d’équité',
+    found: 'Contre-exemple trouvé.',
     show: 'Montrer une élection où {method} enfreint le critère « {criterion} »',
     failsAria: '{method} enfreint le critère « {criterion} » : voir un exemple',
-    legend: '✓ toujours respecté · ✗ peut échouer : touchez-le et le serveur cherchera une élection concrète.',
+    legend: '✓ toujours respecté · ✗ peut échouer : touchez-le et la bibliothèque cherchera une élection concrète.',
     versus: '{method} face au critère « {criterion} »',
     searching: 'Recherche parmi des élections aléatoires…',
     empty: 'La recherche n’a rien donné cette fois-ci.',
   },
 
   duelGraph: {
-    aria: 'Résultats des face-à-face. {summary}',
+    list: 'Tous les face-à-face',
+    beatsBy: '{a} bat {b}, {for} à {against}.',
+    tiesWith: '{a} et {b} sont à égalité, {for} à {against}.',
     beatsEveryone: '{name} bat tout le monde en face-à-face.',
     beats: 'bat',
     cycle: 'Pas de vainqueur de Condorcet : {cycle}.',
@@ -221,6 +244,7 @@ const messages: typeof source = {
     liars: '{n} menteur | {n} menteurs',
     apply: 'Appliquer ce mensonge',
     partOnly: 'Seule la partie du bulletin que lit cette méthode est modifiée.',
+    found: '{n} mensonge payant trouvé. | {n} mensonges payants trouvés.',
   },
 
   profileEditor: {
@@ -235,6 +259,7 @@ const messages: typeof source = {
     remove: 'Supprimer',
     addBloc: '+ Ajouter un bloc d’électeurs',
     hint: 'Touchez un candidat pour le faire monter sur le bulletin de ce bloc.',
+    moved: '{name} passe en {pos} position dans le bloc {n}',
   },
 
   scenarioLab: {
@@ -252,6 +277,8 @@ const messages: typeof source = {
     crowd: 'Foule de {n} électeur | Foule de {n} électeurs',
     winning: '{name}, en tête',
     you: 'Vous',
+    crowdAt: 'Foule de {n} électeur en {x}, {y} | Foule de {n} électeurs en {x}, {y}',
+    howToMove: '{position}. Utilisez les flèches pour le déplacer, avec Maj pour aller plus vite.',
   },
 }
 

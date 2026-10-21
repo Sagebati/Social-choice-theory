@@ -1,10 +1,38 @@
 <script setup lang="ts">
-import { ref, watchEffect } from 'vue'
+import { nextTick, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { locale, LOCALES, setLocale } from './i18n'
 
 const { t } = useI18n()
+const route = useRoute()
+
+// On a narrow screen the links scroll sideways: keep the current page's in view.
+const links = ref<HTMLElement | null>(null)
+const scrolled = ref(false)
+const onScroll = () => (scrolled.value = (links.value?.scrollLeft ?? 0) > 4)
+watch(
+  () => [route.name, locale.value],
+  async () => {
+    await nextTick()
+    const nav = links.value
+    const here = nav?.querySelector<HTMLElement>('a.active, a.router-link-active')
+    if (!nav || !here) return
+    const left = here.offsetLeft - nav.offsetLeft
+    if (left < nav.scrollLeft || left + here.offsetWidth > nav.scrollLeft + nav.clientWidth - 32) nav.scrollLeft = left - 8
+    onScroll()
+  },
+  { immediate: true },
+)
+
+// A new page takes the focus to its content, as a page load would (slides of the journey don't).
+const main = ref<HTMLElement | null>(null)
+watch(
+  () => route.name,
+  (_, before) => {
+    if (before !== undefined) main.value?.focus({ preventScroll: true })
+  },
+)
 
 // The tab title and description follow the language.
 watchEffect(() => {
@@ -40,6 +68,7 @@ function cycleTheme() {
 
 <template>
   <div class="shell" :class="{ full: !!$route.meta.fullscreen }">
+    <a class="skip btn" href="#main">{{ t('app.skip') }}</a>
     <header class="top">
       <div class="inner">
         <RouterLink to="/learn/1" class="brand">
@@ -50,7 +79,7 @@ function cycleTheme() {
           </svg>
           <span>{{ t('app.title') }}</span>
         </RouterLink>
-        <nav class="links" :aria-label="t('app.nav.aria')">
+        <nav ref="links" class="links" :class="{ scrolled }" :aria-label="t('app.nav.aria')" @scroll.passive="onScroll">
           <RouterLink to="/learn/1" :class="{ active: $route.name === 'journey' }">{{ t('app.nav.journey') }}</RouterLink>
           <RouterLink to="/sandbox">{{ t('app.nav.sandbox') }}</RouterLink>
           <RouterLink to="/rigging">{{ t('app.nav.rigging') }}</RouterLink>
@@ -79,7 +108,7 @@ function cycleTheme() {
         </button>
       </div>
     </header>
-    <main class="page">
+    <main id="main" ref="main" class="page" tabindex="-1">
       <RouterView />
     </main>
     <footer v-if="!$route.meta.fullscreen" class="foot small muted">{{ t('app.footer') }}</footer>
@@ -120,6 +149,7 @@ function cycleTheme() {
   gap: 0.2rem;
   flex: 1;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .links a {
@@ -136,6 +166,22 @@ function cycleTheme() {
 .links a.active {
   background: var(--ink);
   color: var(--surface);
+}
+
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: 0.5rem;
+  z-index: 20;
+  transform: translateY(-200%);
+}
+
+.skip:focus {
+  transform: none;
+}
+
+.page:focus {
+  outline: none;
 }
 
 .page {
@@ -185,12 +231,49 @@ function cycleTheme() {
   padding: 0.25em 0.6em;
 }
 
+@media (pointer: coarse) {
+  .lang {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .links a {
+    padding-block: 0.65rem;
+  }
+}
+
 .lang[aria-pressed='true'] {
   background: var(--ink);
   color: var(--surface);
 }
 
 @media (max-width: 640px) {
+  .inner {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    row-gap: 0.25rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .brand {
+    margin-right: auto;
+  }
+
+  /* The links get a row of their own and scroll sideways; the faded edge says there are more. */
+  .links {
+    order: 1;
+    flex-basis: 100%;
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+  }
+
+  .links.scrolled {
+    mask-image: linear-gradient(to right, transparent, #000 2rem, #000 calc(100% - 2rem), transparent);
+  }
+
+  .links a:last-child {
+    margin-right: 2rem;
+  }
+
   .brand span {
     display: none;
   }

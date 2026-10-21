@@ -7,6 +7,7 @@ export default {
       "Drag candidates and crowds, add more of each, let voters lie, and compare every method on the same voters. Click a method's card to colour the map by it.",
     mapLabel: 'Sandbox map',
     addCandidate: '+ Candidate',
+    removeCandidate: 'Remove {name}',
     addCrowd: '+ Crowd',
     yee: 'Yee map ({method})',
     selectedCrowd: 'Selected crowd',
@@ -22,6 +23,20 @@ export default {
     notCondorcet: 'not the Condorcet winner',
     headToHead: 'Head to head',
     canLie: 'Can anyone win by lying under {method}?',
+    wins: '{method}: {name} wins.',
+    ties: '{method}: a tie between {names}.',
+    yeeError: 'The Yee map could not be drawn: {error}',
+  },
+
+  mapLegend: {
+    aria: 'Map key',
+    dots: 'Each dot is a voter, coloured by the candidate their ballot puts first.',
+    dotsRound: 'Each dot is a voter, coloured by the candidate their ballot counts for in this round.',
+    rings: 'Ringed dots cast a strategic ballot.',
+    yee: 'The shading shows who {method} elects when a crowd is centred on that spot.',
+    voters: '{share} of voters',
+    map: 'wins {share} of the map',
+    none: 'No candidate left',
   },
 
   rigging: {
@@ -91,12 +106,14 @@ export default {
     howToRig: 'How to rig it',
     tryIt: 'Try it',
     criteriaAria: 'Criteria',
+    satisfied: 'satisfied',
+    canFail: 'can fail',
   },
 
   lab: {
     title: 'Theorem lab',
     intro:
-      'The machinery behind the journey, with every knob exposed. Everything here is computed on the server by the Rust library, by brute force where possible.',
+      'The machinery behind the journey, with every knob exposed. Everything here is computed in your browser by the Rust library, by brute force where possible.',
     winners: {
       title: 'Same ballots, many winners',
       text: 'Edit the ballots, or shuffle in a random election. This one currently has <strong>{distinct}</strong> different outcome across the {methods} methods. | Edit the ballots, or shuffle in a random election. This one currently has <strong>{distinct}</strong> different outcomes across the {methods} methods.',
@@ -104,18 +121,19 @@ export default {
     },
     arrow: {
       title: "Arrow's theorem, by brute force",
-      text: "Pick a rule. The server builds every possible election with three candidates and the chosen number of voters, and checks Arrow's four conditions on each. If a condition fails, you get the most telling counterexample.",
+      text: "Pick a rule. The library builds every possible election with three candidates and the chosen number of voters, and checks Arrow's four conditions on each. If a condition fails, you get the most telling counterexample.",
     },
     criteria: {
       title: 'Fairness criteria',
-      text: 'Which method guarantees what. Every ✗ is backed by a real counterexample: click one and the server searches random elections until it finds an election that breaks the rule, then shrinks it.',
+      text: 'Which method guarantees what. Every ✗ is backed by a real counterexample: click one and the library searches random elections until it finds an election that breaks the rule, then shrinks it.',
     },
     manipulability: {
       title: 'How manipulable is each method?',
-      text: 'For each random election, the server tries every possible insincere ballot for every bloc of voters and checks whether any of them would get a result the bloc prefers.',
+      text: 'For each random election, the library tries every possible insincere ballot for every bloc of voters and checks whether any of them would get a result the bloc prefers.',
       candidates: 'Candidates',
       running: 'Running…',
       run: 'Run the experiment',
+      done: 'Experiment finished. Most manipulable: {most} ({mostShare}). Least: {least} ({leastShare}).',
     },
   },
 
@@ -192,16 +210,21 @@ export default {
       clones: 'Clone-proof',
     },
     always: '{method} always satisfies {criterion}',
+    satisfied: 'always satisfied',
+    aria: 'Methods against fairness criteria',
+    found: 'Counterexample found.',
     show: 'Show an election where {method} breaks {criterion}',
     failsAria: '{method} fails {criterion}: show an example',
-    legend: '✓ always satisfied · ✗ can fail: tap it and the server will search for a concrete election.',
+    legend: '✓ always satisfied · ✗ can fail: tap it and the library will search for a concrete election.',
     versus: '{method} vs {criterion}',
     searching: 'Searching random elections…',
     empty: 'The search came back empty this time.',
   },
 
   duelGraph: {
-    aria: 'Head-to-head results. {summary}',
+    list: 'Every head-to-head contest',
+    beatsBy: '{a} beats {b}, {for} to {against}.',
+    tiesWith: '{a} and {b} tie, {for} to {against}.',
     beatsEveryone: '{name} beats everyone head to head.',
     beats: 'beats',
     cycle: 'No Condorcet winner: {cycle}.',
@@ -221,6 +244,7 @@ export default {
     liars: '{n} liar | {n} liars',
     apply: 'Apply this lie',
     partOnly: 'Only the part of the ballot this method reads is changed.',
+    found: 'Found {n} profitable lie. | Found {n} profitable lies.',
   },
 
   profileEditor: {
@@ -235,6 +259,7 @@ export default {
     remove: 'Remove',
     addBloc: '+ Add a bloc of voters',
     hint: "Tap a candidate to move them up that bloc's ballot.",
+    moved: '{name} now {pos} in bloc {n}',
   },
 
   scenarioLab: {
@@ -251,5 +276,7 @@ export default {
     crowd: 'Crowd of {n} voter | Crowd of {n} voters',
     winning: '{name}, winning',
     you: 'You',
+    crowdAt: 'Crowd of {n} voter at {x}, {y} | Crowd of {n} voters at {x}, {y}',
+    howToMove: '{position}. Use the arrow keys to move it, with Shift for bigger steps.',
   },
 }

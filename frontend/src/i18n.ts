@@ -91,4 +91,11 @@ export function setLocale(next: Locale) {
 export const listOf = (items: string[]) =>
   new Intl.ListFormat(locale.value === 'en' ? 'en-GB' : locale.value, { type: 'conjunction' }).format(items)
 
+const ENGLISH_ORDINAL = new Intl.PluralRules('en-GB', { type: 'ordinal' })
+const SUFFIX: Partial<Record<Intl.LDMLPluralRule, string>> = { one: 'st', two: 'nd', few: 'rd' }
+
+/** A place on a ballot: "1st", "2nd" in English; "1re", "2e" in French, where it agrees with "position". */
+export const ordinal = (n: number) =>
+  locale.value === 'fr' ? `${n}${n === 1 ? 're' : 'e'}` : `${n}${SUFFIX[ENGLISH_ORDINAL.select(n)] ?? 'th'}`
+
 if (typeof document !== 'undefined') document.documentElement.lang = locale.value
